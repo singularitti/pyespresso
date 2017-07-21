@@ -323,3 +323,8 @@ TSWLatexianTemp*
 
 # expex forward references with \gathertags
 *-tags.tex
+
+
+# IDE
+.vscode/
+.idea/
