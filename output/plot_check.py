@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 # created at Jul 19, 2017 16:11 by Nil-Zil
 
-import numpy as np
-
-from eos import EOS
-from read_file import ReadOutput
-
 
 class PlotCheck(object):
     def __init__(self, outputfile: str):

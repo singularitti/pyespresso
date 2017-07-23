@@ -1,4 +1,3 @@
-import numpy as np
 class Ekl():
 	def __init__(self, strain_key, st):
 		if strain_key == 1:

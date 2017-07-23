@@ -2,14 +2,6 @@
 # -*- coding: utf-8 -*-
 # created at Jul 21, 2017 12:30 by Nil-Zil
 
-import os
-import re
-import subprocess
-import time
-
-import flow
-import numpy as np
-
 print('Starting workflow calculations.')
 
 
@@ -17,8 +9,10 @@ class VCRelax(object):
     def __init__(self):
         self.input_dat = 'input.dat'
         self.job_header = 'job_header'
-        self.job_lines, self.schedule, self.modules, self.nodes, self.processors = self.read_job_header(self.job_header)
-        self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(self.input_dat)
+        self.job_lines, self.schedule, self.modules, self.nodes, self.processors = self.read_job_header(
+            self.job_header)
+        self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(
+            self.input_dat)
 
     @staticmethod
     def read_input_params(filename) -> tuple:
@@ -41,13 +35,16 @@ class VCRelax(object):
         a2 = np.array(lines[3].split(), dtype=float)
         a3 = np.array(lines[4].split(), dtype=float)
         vecs = np.stack((a1, a2, a3))
-        vol_sc = np.fabs(np.dot(a3, np.cross(a1, a2)))  # volume of a simple cubic
+        # volume of a simple cubic
+        vol_sc = np.fabs(np.dot(a3, np.cross(a1, a2)))
 
         if num_pressures < 7:
             print('You have' + str(num_pressures) + 'pressure points!')
-            print('At least 7 are necessary for a good quality EoS fitting, please, modify your input files.')
+            print(
+                'At least 7 are necessary for a good quality EoS fitting, please, modify your input files.')
         else:
-            print('You have' + str(num_pressures) + 'pressure points, more than 7! You are a smart user!')
+            print('You have' + str(num_pressures) +
+                  'pressure points, more than 7! You are a smart user!')
 
         return pressures, v0, k0, k0p, vecs, vol_sc
 
@@ -83,9 +80,11 @@ class VCRelax(object):
         div = self.nodes * self.processors / self.pressures.size
 
         if (self.nodes * self.processors) % self.pressures.size == 0:
-            print('Therefore, I will consider' + str(div) + 'procs per pressure.')
+            print('Therefore, I will consider' +
+                  str(div) + 'procs per pressure.')
         else:
-            raise ValueError('Number of processors not divided by number of pressures!')
+            raise ValueError(
+                'Number of processors not divided by number of pressures!')
 
         return int(div)
 
@@ -101,7 +100,8 @@ class VCRelax(object):
 
         for p in self.pressures:
             if os.path.exists('cg_' + str(p)):
-                print('Folders cg for P = ' + str(p) + 'found.')  # Checks if cg_p folders exist.
+                # Checks if cg_p folders exist.
+                print('Folders cg for P = ' + str(p) + 'found.')
                 cg_found_list.append(cont_cg)
                 num_cg += 1  # If found one, count one.
             cont_cg += 1  # No matter found or not, count one.
@@ -117,14 +117,17 @@ class VCRelax(object):
         else:
             print('Some remaining pressures to be calculated.')
             flag_cg = True
-            press_cg = np.delete(self.pressures, cg_found_list)  # Delete those which have been calculated.
+            # Delete those which have been calculated.
+            press_cg = np.delete(self.pressures, cg_found_list)
 
         while flag_cg:
             # Create jobs for those which have not been calculated.
             flow.create_files(press_cg, *(self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
-            flow.create_job(self.job_lines, press_cg, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw', self.modules)
+            flow.create_job(self.job_lines, press_cg, self._distribute_task(
+            ), 'job-cg.sh', 'cg_', 'pw', self.modules)
 
-            job_sub = subprocess.Popen(['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
+            job_sub = subprocess.Popen(
+                ['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
             output = job_sub.stdout.read().split()[-1]
             job_id = int(output)
             print('Job submitted. The job ID is' + str(job_id))
@@ -138,7 +141,8 @@ class VCRelax(object):
                 outqueue = job_status.stdout.read().split()
                 # Output is a string that contains the job ID. If it is not in the queue information, the job is done.
                 if output not in outqueue:
-                    print("Crude guess is done! Continuing calculation... I hope your coffee was good!")
+                    print(
+                        "Crude guess is done! Continuing calculation... I hope your coffee was good!")
                     flag_job_cg = False
                 else:
                     time.sleep(2)
@@ -153,7 +157,8 @@ class VCRelax(object):
         for p in self.pressures:
             if error in os.listdir('cg_' + str(p)):
                 # If CRASH files exist, something went wrong. Stop the workflow.
-                raise FileExistsError('Something went wrong, CRASH files found. Check your cg outputs.')
+                raise FileExistsError(
+                    'Something went wrong, CRASH files found. Check your cg outputs.')
             else:
                 output_file = 'cg_' + str(p) + '/' + 'cg_' + str(p) + '.out'
                 try:
@@ -166,11 +171,14 @@ class VCRelax(object):
                 else:
                     for i in range(len(qe_lines)):
                         if re.findall('P=', qe_lines[i]):
-                            paux.append(float(qe_lines[i].split('=')[-1].rstrip().lstrip()) / 10)
+                            paux.append(float(qe_lines[i].split(
+                                '=')[-1].rstrip().lstrip()) / 10)
                         if re.findall('volume', qe_lines[i]):
-                            vaux.append(float(qe_lines[i].split()[-2].rstrip().lstrip()))
+                            vaux.append(
+                                float(qe_lines[i].split()[-2].rstrip().lstrip()))
             cont = cont + 1
 
         if num_error_files > int(self.pressures.size / 2):
             # If more that a half of the calculations are not found, stop the workflow.
-            raise ValueError('More than a half of pressures were not calculated.')
+            raise ValueError(
+                'More than a half of pressures were not calculated.')

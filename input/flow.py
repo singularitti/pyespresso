@@ -1,13 +1,3 @@
-import numpy as np
-import re
-import subprocess
-import os
-import time
-from random import randint
-import shutil
-import atommass as at
-from func_cij import Ekl, apply_strain
-
 def create_qe_input(alat, lat_vec, calc_type, name, pres, tmp_folder, atom_pos=''):
 	""" Function to create an input file for quantum espresso pw.x"""
 	a = float(alat)

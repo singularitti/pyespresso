@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # created at Jul 19, 2017 15:00 by Nil-Zil
 
-from itertools import islice
-
 
 class ReadOutput(object):
     def __init__(self, filename: str):

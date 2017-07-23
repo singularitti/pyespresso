@@ -1,14 +1,5 @@
 #! /usr/bin/env python3
 
-import numpy as np
-from math import exp
-import subprocess
-import re
-import os
-import shelve
-import functions
-import time
-from scipy.optimize import curve_fit
 # Reading input
 
 erro = 'CRASH'

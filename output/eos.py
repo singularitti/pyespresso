@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # created at Jul 19, 2017 16:35 by Nil-Zil
 
-import numpy as np
-
 
 class EOS(object):
     def __init__(self):

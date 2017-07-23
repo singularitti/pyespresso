@@ -1,13 +1,6 @@
 #! /usr/bin/env python3
 
-import os
-import shelve
-import re
-import numpy as np
-import functions
-import time
-import subprocess
-import shutil
+
 
 working_dir = os.getcwd()
 dirs_vc = os.listdir(working_dir)
