@@ -10,13 +10,14 @@ from output.plot_check import PlotCheck
 
 class Main(object):
     def __init__(self):
-        self.test1 = GenerateTest('Initial_PxV300-', ['pbe', 'lda', 'gpbe'])
+        self.test1 = GenerateTest('Initial_PxV', ['300-pbe', '300-lda', '300-gpbe'])
 
     def different_potentials(self, ax):
         filelist = self.test1.generate_filelist()
         legend1 = self.test1.generate_legend()
         test1plot = PlotCheck(filelist, legend1)
         test1plot.plot_p_vs_v(ax)
+        test1plot.plot_vinet_eos(ax)
         test1plot.plot_labels(ax)
 
 

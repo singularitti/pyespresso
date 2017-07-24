@@ -38,7 +38,7 @@ class PlotCheck(object):
         for i in range(len(self.objlist)):
             p = self.eos.vinet(self.v0list[i], self.k0list[i], self.k0plist[i])
             v = np.linspace(self.vlists[i][0], self.vlists[i][-1], 200)
-            ax.plot(v, list(map(p, v)), label="Vinet EOS" + str(i))
+            ax.plot(v, list(map(p, v)), label=' '.join(['Vinet EOS', self.legend[i]]))
 
     @staticmethod
     def plot_labels(ax):

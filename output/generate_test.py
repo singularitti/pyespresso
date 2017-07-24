@@ -5,6 +5,8 @@
 Quickly generate testing cases for plotting and checking.
 """
 
+import re
+
 
 class GenerateTest(object):
     def __init__(self, prefix: str, infix: list, suffix=".dat"):
@@ -26,7 +28,7 @@ class GenerateTest(object):
 
     def generate_legend(self) -> list:
         """
-        To use this function, keep each of your varaiable separated by '.' or '-'.
+        To use this function, keep each of your varaiable separated by '_' or '-'.
         :return: list
         """
-        return [leg.split() for leg in self.infix]
+        return [' '.join(re.split(r'[-_]', leg)) for leg in self.infix]
