@@ -220,7 +220,7 @@ vc_found_list = []
 
 for j in press:
     if os.path.exists('vc_' + str(j)):
-        print('Folders vc for P = %s found.' % str(j))  # Checks if cg_ folders exist.
+        print('Folders vc for P = %s found.' % str(j))  # Checks if vc_ folders exist.
         vc_found_list = vc_found_list + [cont_vc]
         num_vc = num_vc + 1
     cont_vc = cont_vc + 1

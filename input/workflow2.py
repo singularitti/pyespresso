@@ -28,6 +28,7 @@ class VCRelax(object):
             self.input_dat)
         self.num_pressures = self.pressures.size
         self.error = 'CRASH'
+        self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self.fit_crude_guess()
 
     @staticmethod
     def read_input_params(filename: str) -> tuple:
@@ -48,7 +49,7 @@ class VCRelax(object):
         if num_pressures < 7:
             print('You have' + str(num_pressures) + 'pressure points!')
             print(
-                'At least 7 are necessary for a good quality EoS fitting, please, modify your input files.')
+                'At least 7 are necessary for a good quality EOS fitting, please, modify your input files.')
         else:
             print('You have' + str(num_pressures) +
                   'pressure points, more than 7! You are a smart user!')
@@ -133,6 +134,7 @@ class VCRelax(object):
             # If all have been calculated, skip this part and goes to vc-relax optimization.
             # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
             # accept one and loop against the array?
+            print('Now I will generate the files for a crude guess scf calculation.')
             flow.create_files(uncalculated, (self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
             flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
                             self.modules)
@@ -143,9 +145,9 @@ class VCRelax(object):
             job_id = int(output)
             print('Job submitted. The job ID is' + str(job_id))
             print('Waiting calculation. This can take a while, you can grab a coffee!')
-            flag_job_cg = True
 
             # This part monitors the job execution.
+            flag_job_cg = True
             while flag_job_cg:
                 job_status = subprocess.Popen(['squeue', '-j', str(job_id)],
                                               stdout=subprocess.PIPE)  # request SLURM queue information
@@ -164,9 +166,8 @@ class VCRelax(object):
         :return: (list, list)
         """
         num_error_files = 0
-        cont = 0
-        p = []
-        v = []
+        ps = []
+        vs = []
 
         for p in self.pressures:
             if self.error in os.listdir('cg_' + str(p)):
@@ -184,41 +185,165 @@ class VCRelax(object):
                 else:
                     for i in range(len(lines)):
                         if re.findall('P=', lines[i]):
-                            p.append(float(lines[i].split('=')[-1].strip()) / 10)
+                            ps.append(float(lines[i].split('=')[-1].strip()) / 10)
                         if re.findall('volume', lines[i]):
-                            v.append(float(lines[i].split()[-2].strip()))
-                            # cont = cont + 1
+                            vs.append(float(lines[i].split()[-2].strip()))
 
         if num_error_files > int(self.num_pressures / 2):
             # If more that a half of the calculations are not found, stop the workflow.
             raise ValueError('More than a half of pressures were not calculated.')
 
-        if set(p) != set(self.pressures) or len(p) != len(v):
+        if set(ps) != set(self.pressures) or len(ps) != len(vs):
             # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
             raise ValueError('ERROR: Some pressures were not found in the files. Please, review your data.')
 
-        return p, v
+        return ps, vs
 
-    def write_file(self):
+    def fit_crude_guess(self):
+        ps, vs = self.check_crude_guess()
+        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
+        return ps, vs, eos_opt, eos_cov
+
+    def write_crude_guess_result(self):
+        """
+        This subroutine creates a file named 'Initial_PxV.dat', and then writes the results fitted from the crude guess
+        step.
+        :return:
+        """
         print('The initial volumes and pressures were written in the file Initial_PxV.dat')
 
-        with open('Initial_PxV.dat', 'w') as pv:
-            pv.write('Initial PxV\n')
-            pv.write('P (GPa)     V (au^3)\n')
-            p, v = self.check_crude_guess()
-            for i in range(0, len(p)):
-                pv.write("%7.2f   %7.2f\n" % (p[i], v[i]))
-            eos_opt, eos_cov = curve_fit(flow.vinet, v, p, self.v0, self.k0, self.k0p)
-            std = np.sqrt(eos_cov)
+        ps, vs, eos_opt, eos_cov = self.fit_crude_guess()
+        std = np.sqrt(eos_cov)
+
+        with open('Initial_PxV.dat', 'w') as cg:
+            cg.write('Initial PxV\n')
+            cg.write('P (GPa)     V (au^3)\n')
+
+            for i in range(0, len(ps)):
+                cg.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
+
             print('EOS fitted, these are the standard deviations:')
             print('V0 = %6.3f' % std[0])
             print('K0 = %6.3f' % std[1])
             print('Kp = %6.3f' % std[2])
 
             chi2 = 0
-            for i in range(0, len(p)):
-                chi2 = chi2 + (p[i] - flow.vinet(v[i], eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
+            for i in range(0, len(ps)):
+                chi2 = chi2 + (ps[i] - flow.vinet(vs[i], eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
             chi = np.sqrt(chi2)
             print('chi = %7.4f' % chi)
-            pv.write('Results for a Vinet EoS fitting:')
-            pv.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))
+            cg.write('Results for a Vinet EOS fitting:')
+            cg.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))
+
+    def vc_relax(self):
+        """
+        This subroutine creates 'vc_' folders, and then starts each vc-relaxation defined in each 'vc_' folders,
+        and monitor it with a job_id.
+        :return:
+        """
+        ps, vs, eos_opt, eos_cov = self.fit_crude_guess()
+
+        vc_found = []
+
+        for ps in self.pressures:
+            if os.path.exists('vc_' + str(ps)):
+                # Checks if cg_p folders exist.
+                print('Folders cg for P = ' + str(ps) + 'found.')
+                vc_found.append(ps)
+
+        # Return the sorted, unique values in self.pressures that are not in cg_found.
+        uncalculated: np.ndarray = np.setdiff1d(self.pressures, vc_found)
+        # If flag_cg is True, continuously calculate.
+        if uncalculated == np.array([]):
+            print('All vc calculations exist. Proceeding to EOS fitting.')
+            flag_vc = False
+        else:
+            print('There are remaining pressures to be calculated.')
+            flag_vc = True
+
+        while flag_vc:
+            print('Now I will generate the files for a vc-relax calculation.')
+            flow.create_files(uncalculated, eos_opt, self.vecs, self.vol_sc, 'vc_', 'vc-relax')
+            flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-vc.sh', 'vc_', 'pw',
+                            self.modules)
+
+            job_sub_vc = subprocess.Popen(['sbatch', 'job-vc.sh'], stdout=subprocess.PIPE)
+            output_vc = job_sub_vc.stdout.read().split()[-1]
+            job_id_vc = int(output_vc)
+
+            print('Job for variable cell relaxation submitted. The job ID is' + str(job_id_vc))
+            print('Waiting calculation. This can take a long time, you can have lunch! Or take a nap! :)')
+
+            # This part monitors the job execution.
+            flag_job_vc = True
+            while flag_job_vc:
+                job_status_vc = subprocess.Popen(['squeue', '-j', str(job_id_vc)], stdout=subprocess.PIPE)
+                outqueue_vc = job_status_vc.stdout.read().split()
+                if output_vc not in outqueue_vc:
+                    print("Congratulations, the variable cell relaxation is done!")
+                    print("Fitting the final equation of state.")
+                    signal_job_vc = False
+                else:
+                    time.sleep(2)
+            flag_vc = False
+
+    def check_vc_relax(self) -> tuple:
+        """
+
+        :return: (list, list)
+        """
+        num_error_files = 0
+        ps = []
+        paux = []
+        vs = []
+
+        for p in self.pressures:
+            if self.error in os.listdir('vc_' + str(p)):
+                print('CRASH file found. Something went wrong with the vc-relax calculation, check your files.')
+            else:
+                output_file = 'vc_' + str(p) + '/' + 'vc_' + str(p) + '.out'
+                try:
+                    with open(output_file, 'r') as vc_out:
+                        lines = vc_out.readlines()
+                except FileNotFoundError:  # Check if output files exist.
+                    print('The output file for P =' + str(p) +
+                          'was not found. Removing it from list and continuing calculation.')
+                    num_error_files += 1
+                else:
+                    for i in range(len(lines)):
+                        if re.findall('P=', lines[i]):
+                            paux.append(float(lines[i].split('=')[-1].strip()) / 10)
+                        if re.findall('volume', lines[i]):
+                            vs.append(float(lines[i].split()[-2].strip()))
+                    ps.append(paux[-1])
+
+        return ps, vs
+
+    def write_vc_relax_result(self):
+        ps, vs = self.check_vc_relax()
+        if len(ps) != len(vs):
+            raise ValueError('Some volumes are mossing, check your vc-relax outputs.')
+
+        self.eos_opt_vc, self.eos_cov_vc = curve_fit(flow.vinet, vs, ps, *self.eos_opt_cg)
+        std = np.sqrt(self.eos_cov_vc)
+        chi2 = 0
+        for i in range(0, len(ps)):
+            chi2 = chi2 + (ps[i] - flow.vinet(vs[i], *self.eos_opt_vc)) ** 2
+
+        with open('Out_file.dat', 'w') as vc:
+            vc.write('P (GPa)    V (au^3)\n')
+            for i in range(len(ps)):
+                vc.write("%7.2f   %7.2f" % (ps[i], vs[i]))
+                vc.write('Final Results for a Vinet EOS fitting:\n')
+                vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (
+                self.eos_opt_vc[0], self.eos_opt_vc[1], self.eos_opt_vc[2]))
+
+        chi = np.sqrt(chi2)
+        print('Ready, the vc-relax fitting is done. The standart deviations are:')
+        print('V0 = %6.3f' % std[0])
+        print('K0 = %6.3f' % std[1])
+        print('Kp = %6.3f' % std[2])
+
+        print('chi = %7.4f' % chi)
+        print('The final EOS is written in the file Out_file.dat.')
+        print('I hope you have a great day! See you next time.')
