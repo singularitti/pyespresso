@@ -2,23 +2,42 @@
 # -*- coding: utf-8 -*-
 # created at Jul 19, 2017 16:11 by Nil-Zil
 
+import numpy as np
+
+from .eos import EOS
+from .read_file import ReadOutput
+
 
 class PlotCheck(object):
-    def __init__(self, outputfile: str):
-        self.outputfile = outputfile
-        self.readoutput = ReadOutput(self.outputfile)
+    def __init__(self, outputlist: list):
+        self.objlist = [ReadOutput(outputfile) for outputfile in outputlist]
         self.eos = EOS()
-        self.p, self.v = self.readoutput.read_pv()
-        self.v0, self.k0, self.k0p = self.readoutput.read_eos_param()
+        self.plists, self.vlists = self.read_multiple_pv()
+        self.v0list, self.k0list, self.k0plist = self.read_multiple_eosparam()
+
+    def read_multiple_pv(self):
+        pvlists = [obj.read_pv() for obj in self.objlist]
+        plists = [pvlist[0] for pvlist in pvlists]
+        vlists = [pvlist[1] for pvlist in pvlists]
+        return plists, vlists
+
+    def read_multiple_eosparam(self):
+        eosparamlist = [obj.read_eos_param() for obj in self.objlist]
+        v0list = [eosparam[0] for eosparam in eosparamlist]
+        k0list = [eosparam[1] for eosparam in eosparamlist]
+        k0plist = [eosparam[2] for eosparam in eosparamlist]
+        return v0list, k0list, k0plist
 
     def plot_p_vs_v(self, ax):
-        ax.plot(self.v, self.p, 'o-', label="simulation result")
+        for i in range(len(self.objlist)):
+            ax.plot(self.vlists[i], self.plists[i], 'o-', label="simulation result" + str(i))
 
     def plot_vinet_eos(self, ax):
         # p is a function takes 1 parameter.
-        p = self.eos.vinet(self.v0, self.k0, self.k0p)
-        v = np.linspace(self.v[0], self.v[-1], 200)
-        ax.plot(v, list(map(p, v)), label="Vinet EOS")
+        for i in range(len(self.objlist)):
+            p = self.eos.vinet(self.v0list[i], self.k0list[i], self.k0plist[i])
+            v = np.linspace(self.vlists[i][0], self.vlists[i][-1], 200)
+            ax.plot(v, list(map(p, v)), label="Vinet EOS" + str(i))
 
     @staticmethod
     def plot_labels(ax):

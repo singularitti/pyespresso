@@ -2,12 +2,18 @@
 # -*- coding: utf-8 -*-
 # created at Jul 19, 2017 15:00 by Nil-Zil
 
+from itertools import islice
+
 
 class ReadOutput(object):
     def __init__(self, filename: str):
         self.filename = filename
 
-    def read_pv(self):
+    def read_pv(self) -> tuple:
+        """
+        Read pressure and volume from file.
+        :return: (list, list)
+        """
         with open(self.filename, 'r') as f:
             p = []
             v = []
@@ -20,7 +26,11 @@ class ReadOutput(object):
                     v.append(float(sp[1]))
         return p, v
 
-    def read_eos_param(self):
+    def read_eos_param(self) -> tuple:
+        """
+        Read equation of states parameters (volume, bulk modulus and its derivative) from file.
+        :return: (float, float, float)
+        """
         with open(self.filename, 'r') as f:
             for line in islice(f, 2, None):
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
