@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 # created at Jul 23, 2017 4:09 PM by Nil-Zil
 
-from itertools import islice
-import numpy as np
+import sys
 
 __all__ = ["eos", "read_file", "generate_test"]
+
+pyversion = sys.executable
+if 'python3' not in pyversion:
+    print("Please use Python3 and above!")

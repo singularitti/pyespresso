@@ -9,11 +9,12 @@ from .read_file import ReadOutput
 
 
 class PlotCheck(object):
-    def __init__(self, outputlist: list):
+    def __init__(self, outputlist: list, legend: list):
         self.objlist = [ReadOutput(outputfile) for outputfile in outputlist]
         self.eos = EOS()
         self.plists, self.vlists = self.read_multiple_pv()
         self.v0list, self.k0list, self.k0plist = self.read_multiple_eosparam()
+        self.legend = legend
 
     def read_multiple_pv(self):
         pvlists = [obj.read_pv() for obj in self.objlist]
@@ -30,7 +31,7 @@ class PlotCheck(object):
 
     def plot_p_vs_v(self, ax):
         for i in range(len(self.objlist)):
-            ax.plot(self.vlists[i], self.plists[i], 'o-', label="simulation result" + str(i))
+            ax.plot(self.vlists[i], self.plists[i], 'o-', label=self.legend[i])
 
     def plot_vinet_eos(self, ax):
         # p is a function takes 1 parameter.

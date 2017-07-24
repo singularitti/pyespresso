@@ -332,3 +332,7 @@ TSWLatexianTemp*
 
 # macOS
 .DS_Store
+
+
+# Others
+*.dat

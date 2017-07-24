@@ -17,11 +17,16 @@ class GenerateTest(object):
         self.infix = infix
         self.suffix = suffix
 
-    def generate_filelist(self):
+    def generate_filelist(self) -> list:
         """
 
         :return: list(str)
         """
-        return [self.prefix + infix + self.suffix for infix in self.infix]
+        return [self.prefix + inf + self.suffix for inf in self.infix]
 
-
+    def generate_legend(self) -> list:
+        """
+        To use this function, keep each of your varaiable separated by '.' or '-'.
+        :return: list
+        """
+        return [leg.split() for leg in self.infix]
