@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # created at Jul 21, 2017 12:30 by Nil-Zil
+"""
+This will do crude guess and vc-relax simulation automatically.
+"""
+
+import os
+import re
+import subprocess
+import time
+
+import numpy as np
+
+from . import flow
 
 print('Starting workflow calculations.')
 
@@ -9,13 +21,14 @@ class VCRelax(object):
     def __init__(self):
         self.input_dat = 'input.dat'
         self.job_header = 'job_header'
-        self.job_lines, self.schedule, self.modules, self.nodes, self.processors = self.read_job_header(
+        self.job_lines, self.schedule, self.modules, self.num_nodes, self.num_processors = self.read_job_header(
             self.job_header)
         self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(
             self.input_dat)
+        self.num_pressures = self.pressures.size
 
     @staticmethod
-    def read_input_params(filename) -> tuple:
+    def read_input_params(filename: str) -> tuple:
         """
         input.dat has information on the calculation:
         The pressures to be calculated,
@@ -27,8 +40,17 @@ class VCRelax(object):
         with open(filename, 'r') as input_params:
             lines = input_params.readlines()
 
+        # Convert str to numpy.float64
         pressures = np.array(lines[0].split(), dtype=float)
         num_pressures = pressures.size
+        if num_pressures < 7:
+            print('You have' + str(num_pressures) + 'pressure points!')
+            print(
+                'At least 7 are necessary for a good quality EoS fitting, please, modify your input files.')
+        else:
+            print('You have' + str(num_pressures) +
+                  'pressure points, more than 7! You are a smart user!')
+
         v0, k0, k0p = np.array(lines[1].split(), dtype=float)
         # lattice vectors a1, a2, a3
         a1 = np.array(lines[2].split(), dtype=float)
@@ -38,18 +60,10 @@ class VCRelax(object):
         # volume of a simple cubic
         vol_sc = np.fabs(np.dot(a3, np.cross(a1, a2)))
 
-        if num_pressures < 7:
-            print('You have' + str(num_pressures) + 'pressure points!')
-            print(
-                'At least 7 are necessary for a good quality EoS fitting, please, modify your input files.')
-        else:
-            print('You have' + str(num_pressures) +
-                  'pressure points, more than 7! You are a smart user!')
-
         return pressures, v0, k0, k0p, vecs, vol_sc
 
     @staticmethod
-    def read_job_header(filename) -> tuple:
+    def read_job_header(filename: str) -> tuple:
         """
         job_header is a file with the parameters of the job to be submitted:
         wall time,
@@ -66,25 +80,25 @@ class VCRelax(object):
                 if re.findall('^Necessary modules to be', lines[i]):
                     modules = lines[i].split(':')
                 if re.findall('Number of nodes', lines[i]):
-                    nodes = int(lines[i].split(':')[1].strip())
+                    num_nodes = int(lines[i].split(':')[1].strip())
                 if re.findall('Number of processor', lines[i]):
-                    processors = int(lines[i].split(':')[1].strip())
+                    num_processors = int(lines[i].split(':')[1].strip())
 
-        return lines, schedule, modules, nodes, processors
+        return lines, schedule, modules, num_nodes, num_processors
 
     def _distribute_task(self):
         """
         Distribute calculations on different pressures evenly to all processors you have.
         :return: int
         """
-        div = self.nodes * self.processors / self.pressures.size
+        print('You have' + str(self.num_pressures) + 'pressures and' + str(self.num_processors * self.num_nodes) +
+              'processors.')
+        div = self.num_nodes * self.num_processors / self.num_pressures
 
-        if (self.nodes * self.processors) % self.pressures.size == 0:
-            print('Therefore, I will consider' +
-                  str(div) + 'procs per pressure.')
+        if (self.num_nodes * self.num_processors) % self.num_pressures == 0:
+            print('Therefore, I will consider' + str(div) + 'processors per pressure.')
         else:
-            raise ValueError(
-                'Number of processors not divided by number of pressures!')
+            raise TypeError('Number of processors not divided by number of pressures!')
 
         return int(div)
 
@@ -107,7 +121,7 @@ class VCRelax(object):
             cont_cg += 1  # No matter found or not, count one.
 
         # If flag_cg is True, continuously calculate.
-        if num_cg == self.pressures.size:
+        if num_cg == self.num_pressures:
             print('All cg calculations exist. Proceeding to vc-relax calculation.')
             flag_cg = False
         elif num_cg == 0:
@@ -117,12 +131,12 @@ class VCRelax(object):
         else:
             print('Some remaining pressures to be calculated.')
             flag_cg = True
-            # Delete those which have been calculated.
-            press_cg = np.delete(self.pressures, cg_found_list)
+            # Delete those which have been calculated by their natural order 0, 1, 2, ...
+            press_cg = np.delete(self.pressures, cg_found_list)  # Note that np.delete does not occur in-place.
 
         while flag_cg:
             # Create jobs for those which have not been calculated.
-            flow.create_files(press_cg, *(self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
+            flow.create_files(press_cg, (self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
             flow.create_job(self.job_lines, press_cg, self._distribute_task(
             ), 'job-cg.sh', 'cg_', 'pw', self.modules)
 
@@ -182,3 +196,12 @@ class VCRelax(object):
             # If more that a half of the calculations are not found, stop the workflow.
             raise ValueError(
                 'More than a half of pressures were not calculated.')
+        return paux, vaux
+
+    def write_file(self):
+        pv = open('Initial_PxV.dat', 'w')
+        pv.write('Initial PxV\n')
+        pv.write('P (GPa)     V (au^3)\n')
+        p, v = self.check_crude_guess()
+        for i in range(0, len(p)):
+            pv.write("%7.2f   %7.2f\n" % (p[i], v[i]))
