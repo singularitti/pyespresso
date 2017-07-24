@@ -11,6 +11,7 @@ import subprocess
 import time
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 from . import flow
 
@@ -26,6 +27,7 @@ class VCRelax(object):
         self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(
             self.input_dat)
         self.num_pressures = self.pressures.size
+        self.error = 'CRASH'
 
     @staticmethod
     def read_input_params(filename: str) -> tuple:
@@ -108,37 +110,32 @@ class VCRelax(object):
         and monitor it with a job_id.
         :return:
         """
-        num_cg = 0
-        cg_found_list = []
-        cont_cg = 0
+        cg_found = []
 
         for p in self.pressures:
             if os.path.exists('cg_' + str(p)):
                 # Checks if cg_p folders exist.
                 print('Folders cg for P = ' + str(p) + 'found.')
-                cg_found_list.append(cont_cg)
-                num_cg += 1  # If found one, count one.
-            cont_cg += 1  # No matter found or not, count one.
+                cg_found.append(p)
 
+        # Return the sorted, unique values in self.pressures that are not in cg_found.
+        uncalculated: np.ndarray = np.setdiff1d(self.pressures, cg_found)
         # If flag_cg is True, continuously calculate.
-        if num_cg == self.num_pressures:
+        if uncalculated == np.array([]):
             print('All cg calculations exist. Proceeding to vc-relax calculation.')
             flag_cg = False
-        elif num_cg == 0:
-            print('Cg folders not found. Proceeding to crude guess calculation.')
-            flag_cg = True
-            press_cg = np.copy(self.pressures)
         else:
-            print('Some remaining pressures to be calculated.')
+            print('There are remaining pressures to be calculated.')
             flag_cg = True
-            # Delete those which have been calculated by their natural order 0, 1, 2, ...
-            press_cg = np.delete(self.pressures, cg_found_list)  # Note that np.delete does not occur in-place.
 
         while flag_cg:
             # Create jobs for those which have not been calculated.
-            flow.create_files(press_cg, (self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
-            flow.create_job(self.job_lines, press_cg, self._distribute_task(
-            ), 'job-cg.sh', 'cg_', 'pw', self.modules)
+            # If all have been calculated, skip this part and goes to vc-relax optimization.
+            # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
+            # accept one and loop against the array?
+            flow.create_files(uncalculated, (self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
+            flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
+                            self.modules)
 
             job_sub = subprocess.Popen(
                 ['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
@@ -155,53 +152,73 @@ class VCRelax(object):
                 outqueue = job_status.stdout.read().split()
                 # Output is a string that contains the job ID. If it is not in the queue information, the job is done.
                 if output not in outqueue:
-                    print(
-                        "Crude guess is done! Continuing calculation... I hope your coffee was good!")
+                    print("Crude guess is done! Continuing calculation... I hope your coffee was good!")
                     flag_job_cg = False
-                else:
+                else:  # If it is, sleeps a little bit and request queue information again.
                     time.sleep(2)
+            flag_cg = False
 
-    def check_crude_guess(self):
-        error = 'CRASH'
+    def check_crude_guess(self) -> tuple:
+        """
+        When crude guess step is done, we check if there are 'CRASH' files in the folder.
+        :return: (list, list)
+        """
         num_error_files = 0
         cont = 0
-        paux = []
-        vaux = []
+        p = []
+        v = []
 
         for p in self.pressures:
-            if error in os.listdir('cg_' + str(p)):
-                # If CRASH files exist, something went wrong. Stop the workflow.
-                raise FileExistsError(
-                    'Something went wrong, CRASH files found. Check your cg outputs.')
+            if self.error in os.listdir('cg_' + str(p)):
+                # If 'CRASH' files exist, something went wrong. Stop the workflow.
+                raise FileExistsError('Something went wrong, CRASH files found. Check your cg outputs.')
             else:
                 output_file = 'cg_' + str(p) + '/' + 'cg_' + str(p) + '.out'
                 try:
-                    with open(output_file, 'r') as qe_out:
-                        qe_lines = qe_out.readlines()
+                    with open(output_file, 'r') as cg_out:
+                        lines = cg_out.readlines()
                 except FileNotFoundError:  # Check if output files exist.
                     print('The output file for P =' + str(p) +
                           'was not found. Removing it from list and continuing calculation.')
                     num_error_files += 1
                 else:
-                    for i in range(len(qe_lines)):
-                        if re.findall('P=', qe_lines[i]):
-                            paux.append(float(qe_lines[i].split(
-                                '=')[-1].rstrip().lstrip()) / 10)
-                        if re.findall('volume', qe_lines[i]):
-                            vaux.append(
-                                float(qe_lines[i].split()[-2].rstrip().lstrip()))
-            cont = cont + 1
+                    for i in range(len(lines)):
+                        if re.findall('P=', lines[i]):
+                            p.append(float(lines[i].split('=')[-1].strip()) / 10)
+                        if re.findall('volume', lines[i]):
+                            v.append(float(lines[i].split()[-2].strip()))
+                            # cont = cont + 1
 
-        if num_error_files > int(self.pressures.size / 2):
+        if num_error_files > int(self.num_pressures / 2):
             # If more that a half of the calculations are not found, stop the workflow.
-            raise ValueError(
-                'More than a half of pressures were not calculated.')
-        return paux, vaux
+            raise ValueError('More than a half of pressures were not calculated.')
+
+        if set(p) != set(self.pressures) or len(p) != len(v):
+            # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
+            raise ValueError('ERROR: Some pressures were not found in the files. Please, review your data.')
+
+        return p, v
 
     def write_file(self):
-        pv = open('Initial_PxV.dat', 'w')
-        pv.write('Initial PxV\n')
-        pv.write('P (GPa)     V (au^3)\n')
-        p, v = self.check_crude_guess()
-        for i in range(0, len(p)):
-            pv.write("%7.2f   %7.2f\n" % (p[i], v[i]))
+        print('The initial volumes and pressures were written in the file Initial_PxV.dat')
+
+        with open('Initial_PxV.dat', 'w') as pv:
+            pv.write('Initial PxV\n')
+            pv.write('P (GPa)     V (au^3)\n')
+            p, v = self.check_crude_guess()
+            for i in range(0, len(p)):
+                pv.write("%7.2f   %7.2f\n" % (p[i], v[i]))
+            eos_opt, eos_cov = curve_fit(flow.vinet, v, p, self.v0, self.k0, self.k0p)
+            std = np.sqrt(eos_cov)
+            print('EOS fitted, these are the standard deviations:')
+            print('V0 = %6.3f' % std[0])
+            print('K0 = %6.3f' % std[1])
+            print('Kp = %6.3f' % std[2])
+
+            chi2 = 0
+            for i in range(0, len(p)):
+                chi2 = chi2 + (p[i] - flow.vinet(v[i], eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
+            chi = np.sqrt(chi2)
+            print('chi = %7.4f' % chi)
+            pv.write('Results for a Vinet EoS fitting:')
+            pv.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))

@@ -4,12 +4,12 @@
 
 import os
 import re
+import shelve
 import subprocess
 import time
 
 import numpy as np
-
-from . import flow
+from scipy.optimize import curve_fit
 
 erro = 'CRASH'
 
@@ -45,7 +45,7 @@ with open('job_header', 'r') as job_in:
 
 press = np.array(lines[0].split(), dtype=float)
 eos_par = np.array(lines[1].split(), dtype=float)
-param_aux = [float(x) for x in lines[1].split()]  # needless
+param_aux = [float(x) for x in lines[1].split()]  # needless, = eos_par
 npress = len(press)
 
 if npress < 7:
