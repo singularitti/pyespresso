@@ -10,7 +10,7 @@ from output.plot_check import PlotCheck
 
 class Main(object):
     def __init__(self):
-        self.test1 = GenerateTest('Initial_PxV', ['300-pbe', '300-lda', '300-gpbe'])
+        self.test1 = GenerateTest('Out_file', ['300-gpbe', '300-lda', '300-KS'])
 
     def different_potentials(self, ax):
         filelist = self.test1.generate_filelist()

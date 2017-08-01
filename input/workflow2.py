@@ -28,7 +28,7 @@ class VCRelax(object):
             self.input_dat)
         self.num_pressures = self.pressures.size
         self.error = 'CRASH'
-        self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self.fit_crude_guess()
+        self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self._fit_crude_guess()
 
     @staticmethod
     def read_input_params(filename: str) -> tuple:
@@ -139,8 +139,7 @@ class VCRelax(object):
             flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
                             self.modules)
 
-            job_sub = subprocess.Popen(
-                ['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
+            job_sub = subprocess.Popen(['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
             output = job_sub.stdout.read().split()[-1]
             job_id = int(output)
             print('Job submitted. The job ID is' + str(job_id))
@@ -152,7 +151,7 @@ class VCRelax(object):
                 job_status = subprocess.Popen(['squeue', '-j', str(job_id)],
                                               stdout=subprocess.PIPE)  # request SLURM queue information
                 outqueue = job_status.stdout.read().split()
-                # Output is a string that contains the job ID. If it is not in the queue information, the job is done.
+                # output is a string that contains the job ID. If it is not in the queue information, the job is done.
                 if output not in outqueue:
                     print("Crude guess is done! Continuing calculation... I hope your coffee was good!")
                     flag_job_cg = False
@@ -160,9 +159,10 @@ class VCRelax(object):
                     time.sleep(2)
             flag_cg = False
 
-    def check_crude_guess(self) -> tuple:
+    def read_crude_guess_output(self) -> tuple:
         """
         When crude guess step is done, we check if there are 'CRASH' files in the folder.
+        And then we read the '.out' file from scf calculation, gain a list of P and a list of V.
         :return: (list, list)
         """
         num_error_files = 0
@@ -199,8 +199,15 @@ class VCRelax(object):
 
         return ps, vs
 
-    def fit_crude_guess(self):
-        ps, vs = self.check_crude_guess()
+    def _fit_crude_guess(self) -> tuple:
+        """
+        This will use the input V0, K0, and K0', as well as the list of P and V from read_crude_guess_output,
+        to fit the Vinet equation of state.
+        eos_opt are the returned V0, K0, and K0' for Vinet EOS.
+        eos_cov are the estimated covariance of eos_opt.
+        :return: (list, list, np.ndarray, np.ndarray)
+        """
+        ps, vs = self.read_crude_guess_output()
         eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
         return ps, vs, eos_opt, eos_cov
 
@@ -212,8 +219,8 @@ class VCRelax(object):
         """
         print('The initial volumes and pressures were written in the file Initial_PxV.dat')
 
-        ps, vs, eos_opt, eos_cov = self.fit_crude_guess()
-        std = np.sqrt(eos_cov)
+        ps, vs, eos_opt, eos_cov = self._fit_crude_guess()
+        std = np.sqrt(np.diag(eos_cov))
 
         with open('Initial_PxV.dat', 'w') as cg:
             cg.write('Initial PxV\n')
@@ -223,9 +230,9 @@ class VCRelax(object):
                 cg.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
 
             print('EOS fitted, these are the standard deviations:')
-            print('V0 = %6.3f' % std[0])
-            print('K0 = %6.3f' % std[1])
-            print('Kp = %6.3f' % std[2])
+            print('std V0 = %6.3f' % std[0])
+            print('std K0 = %6.3f' % std[1])
+            print('std Kp = %6.3f' % std[2])
 
             chi2 = 0
             for i in range(0, len(ps)):
@@ -241,14 +248,14 @@ class VCRelax(object):
         and monitor it with a job_id.
         :return:
         """
-        ps, vs, eos_opt, eos_cov = self.fit_crude_guess()
+        ps, vs, eos_opt, eos_cov = self._fit_crude_guess()
 
         vc_found = []
 
         for ps in self.pressures:
             if os.path.exists('vc_' + str(ps)):
                 # Checks if cg_p folders exist.
-                print('Folders cg for P = ' + str(ps) + 'found.')
+                print('Folders vc for P = ' + str(ps) + 'found.')
                 vc_found.append(ps)
 
         # Return the sorted, unique values in self.pressures that are not in cg_found.
@@ -282,14 +289,15 @@ class VCRelax(object):
                 if output_vc not in outqueue_vc:
                     print("Congratulations, the variable cell relaxation is done!")
                     print("Fitting the final equation of state.")
-                    signal_job_vc = False
+                    flag_job_vc = False
                 else:
                     time.sleep(2)
             flag_vc = False
 
-    def check_vc_relax(self) -> tuple:
+    def read_vc_relax_output(self) -> tuple:
         """
-
+        When vc-relax step is done, we check if there are 'CRASH' files in the folder.
+        And then we read the '.out' file from vc-relax calculation, gain a list of final P and a list of V.
         :return: (list, list)
         """
         num_error_files = 0
@@ -307,7 +315,7 @@ class VCRelax(object):
                         lines = vc_out.readlines()
                 except FileNotFoundError:  # Check if output files exist.
                     print('The output file for P =' + str(p) +
-                          'was not found. Removing it from list and continuing calculation.')
+                          'was not found. Removing it from list and continuing calculation.') # This is a bug because you have less than 6 but it still works.
                     num_error_files += 1
                 else:
                     for i in range(len(lines)):
@@ -319,24 +327,35 @@ class VCRelax(object):
 
         return ps, vs
 
+    def _fit_vc_relax(self):
+        """
+        This will use the input V0, K0, and K0', as well as the list of P and V from read_vc_relax_output,
+        to fit the Vinet equation of state.
+        eos_opt are the returned V0, K0, and K0' for Vinet EOS.
+        eos_cov are the estimated covariance of eos_opt.
+        :return: (list, list, np.ndarray, np.ndarray)
+        """
+        ps, vs = self.read_vc_relax_output()
+        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, *self.eos_opt_cg)
+        return ps, vs, eos_opt, eos_cov
+
     def write_vc_relax_result(self):
-        ps, vs = self.check_vc_relax()
+        ps, vs, eos_opt, eos_cov = self._fit_vc_relax()
+
         if len(ps) != len(vs):
             raise ValueError('Some volumes are mossing, check your vc-relax outputs.')
 
-        self.eos_opt_vc, self.eos_cov_vc = curve_fit(flow.vinet, vs, ps, *self.eos_opt_cg)
-        std = np.sqrt(self.eos_cov_vc)
+        std = np.sqrt(np.diag(eos_cov))
         chi2 = 0
         for i in range(0, len(ps)):
-            chi2 = chi2 + (ps[i] - flow.vinet(vs[i], *self.eos_opt_vc)) ** 2
+            chi2 = chi2 + (ps[i] - flow.vinet(vs[i], *eos_opt)) ** 2
 
         with open('Out_file.dat', 'w') as vc:
             vc.write('P (GPa)    V (au^3)\n')
             for i in range(len(ps)):
-                vc.write("%7.2f   %7.2f" % (ps[i], vs[i]))
+                vc.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
                 vc.write('Final Results for a Vinet EOS fitting:\n')
-                vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (
-                self.eos_opt_vc[0], self.eos_opt_vc[1], self.eos_opt_vc[2]))
+                vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))
 
         chi = np.sqrt(chi2)
         print('Ready, the vc-relax fitting is done. The standart deviations are:')
