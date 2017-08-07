@@ -1,6 +1,7 @@
 #!/usr/bin/env bash 
 
 folders=()
+
 for folder in vc_*; do
 	[[ -d $folder ]] || break # handle the case of no vc_* folders
 	folders+=($folder)

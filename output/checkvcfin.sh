@@ -6,6 +6,7 @@
 # and https://github.com/koalaman/shellcheck/wiki/SC2068
 
 folders=()
+
 for folder in vc_*; do
 	[[ -d $folder ]] || break # handle the case of no vc_* folders
 	folders+=($folder)
