@@ -32,7 +32,8 @@ class UnitConverter(object):
         scale.update(dict.fromkeys(['a', 'angstrom', 'A'], 1e-10))
         scale.update(dict.fromkeys(['cm', 'centimeter'], 1e-2))
         scale.update(dict.fromkeys(['nm', 'nanometer'], 1e-9))
-        scale.update(dict.fromkeys(['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
+        scale.update(dict.fromkeys(
+            ['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
         normalized_num = num * scale.get(from_unit)
         return normalized_num / scale.get(to_unit)
 
@@ -47,7 +48,9 @@ class UnitConverter(object):
         scale = dict.fromkeys(['m3', 'cubicmeter'], 1)
         scale.update(dict.fromkeys(['cm3', 'cubiccentimeter'], 1e-6))
         scale.update(dict.fromkeys(['nm3', 'cubicnanometer'], 1e-27))
-        scale.update(dict.fromkeys(['b3', 'cubicbohr', 'au3', 'cubicatomic'], self.bohr_radius ** 3))
+        scale.update(dict.fromkeys(['a3', 'cubicangstrom'], 1e-30))
+        scale.update(dict.fromkeys(
+            ['b3', 'cubicbohr', 'au3', 'cubicatomic'], self.bohr_radius ** 3))
         normalized_num = num * scale.get(from_unit)
         return normalized_num / scale.get(to_unit)
 
@@ -61,8 +64,10 @@ class UnitConverter(object):
         """
         scale = dict.fromkeys(['J', 'Joule', 'SI'],
                               1)  # Joule is the standard unit.
-        scale.update(dict.fromkeys(['h', 'ha', 'hartree'], self.hartree_energy))
-        scale.update(dict.fromkeys(['ev', 'eV', 'electronvolt'], self.electron_volt))
+        scale.update(dict.fromkeys(
+            ['h', 'ha', 'hartree'], self.hartree_energy))
+        scale.update(dict.fromkeys(
+            ['ev', 'eV', 'electronvolt'], self.electron_volt))
         scale.update(dict.fromkeys(['ry', 'rydberg'], self.hartree_energy / 2))
         scale.update(dict.fromkeys(['K'], self.boltzmann_const))
         normalized_num = num * scale.get(from_unit)
@@ -77,7 +82,8 @@ class UnitConverter(object):
         :param to_unit: str
         :return: float
         """
-        scale = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'], 1)  # Pa is the standard unit.
+        scale = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'],
+                              1)  # Pa is the standard unit.
         scale.update(dict.fromkeys(['gpa', 'GPa'], 1e9))
         scale.update(dict.fromkeys(['bar'], 1e5))
         scale.update(dict.fromkeys(['mbar', 'Mbar'], 1e11))
@@ -101,8 +107,8 @@ class UnitConverter(object):
 
 if __name__ == '__main__':
     uc = UnitConverter()
-    # print(uc.length_converter(0.3808, 'nm', 'b'))
-    # print(uc.volume_converter(6.687, 'cm3', 'm3'))
-    # print(uc.energy_converter(1000, 'ev', 'J'))
+    # print(uc.length_converter(7.4268, 'b', 'a'))
+    # print(uc.volume_converter(11.176, 'a3', 'b3'))
+    print(uc.energy_converter(1000, 'K', 'ry'))
     # print(uc.pressure_converter(3, 'mbar', 'gpa'))
-    print(uc.mole_converter('volume', 6.687, 'cm3', 'au3'))
+    # print(uc.mole_converter('volume', 6.73, 'cm3', 'au3'))

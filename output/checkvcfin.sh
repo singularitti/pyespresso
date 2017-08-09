@@ -17,8 +17,10 @@ for folder in "${folders[@]}"; do
 	echo -e "\033[34;1m""Folder: $folder""\033[0m"
 	if grep -q "End final coordinates" ./*.out; then
 		echo -e "\033[32;1m""Found \"End final coordinates\", finished!""\033[0m"
-	else
-		echo -e "\033[31;1m""\"End final coordinates\" not found, check your file!""\033[0m"
+	elif grep -q "Maximum number of iterations reached, stopping" ./*.out; then
+		echo -e "\033[35;1m""Maximum number of iterations reached!""\033[0m"
+	elif [ -f CRASH ]; then
+		echo -e "\033[38;5;198m""CRASH file found!""\033[0m"
 	fi
 	cd ..
 done
