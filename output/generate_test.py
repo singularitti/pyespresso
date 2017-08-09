@@ -8,7 +8,7 @@ Quickly generate testing cases for plotting and checking.
 import re
 
 
-class GenerateTest(object):
+class GenerateTest:
     def __init__(self, prefix: str, infix: list, suffix=".dat"):
         """
         :param prefix:

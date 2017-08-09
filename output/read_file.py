@@ -5,7 +5,7 @@
 from itertools import islice
 
 
-class ReadOutput(object):
+class ReadOutput:
     def __init__(self, filename: str):
         self.filename = filename
 

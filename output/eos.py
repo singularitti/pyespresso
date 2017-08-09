@@ -5,7 +5,7 @@
 import numpy as np
 
 
-class EOS(object):
+class EOS:
     def __init__(self):
         pass
 

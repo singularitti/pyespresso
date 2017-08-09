@@ -8,7 +8,7 @@ from .eos import EOS
 from .read_file import ReadOutput
 
 
-class PlotCheck(object):
+class PlotCheck:
     def __init__(self, outputlist: list, legend: list):
         self.objlist = [ReadOutput(outputfile) for outputfile in outputlist]
         self.eos = EOS()

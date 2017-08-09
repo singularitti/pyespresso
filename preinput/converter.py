@@ -2,7 +2,7 @@
 # created at Aug 7, 2017 2:22 PM by Nil-Zil
 
 
-class UnitConverter(object):
+class UnitConverter:
     """
     This is a unit converter.
     Input a number and 2 different units,
@@ -109,6 +109,6 @@ if __name__ == '__main__':
     uc = UnitConverter()
     # print(uc.length_converter(7.4268, 'b', 'a'))
     # print(uc.volume_converter(11.176, 'a3', 'b3'))
-    print(uc.energy_converter(1000, 'K', 'ry'))
+    print(uc.energy_converter(2000, 'K', 'ry'))
     # print(uc.pressure_converter(3, 'mbar', 'gpa'))
     # print(uc.mole_converter('volume', 6.73, 'cm3', 'au3'))

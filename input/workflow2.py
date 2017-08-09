@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # created at Jul 21, 2017 12:30 by Nil-Zil
 """
 This will do crude guess and vc-relax simulation automatically.
@@ -18,7 +17,7 @@ from . import flow
 print('Starting workflow calculations.')
 
 
-class VCRelax(object):
+class VCRelax:
     def __init__(self):
         self.input_dat = 'input.dat'
         self.job_header = 'job_header'
@@ -77,7 +76,7 @@ class VCRelax(object):
         """
         with open(filename, 'r') as job_in:
             lines = job_in.readlines()
-            for i in range(0, len(lines)):
+            for i in range(len(lines)):
                 if re.findall('^Scheduler', lines[i]):
                     schedule = lines[i].split(':')[1].strip()
                 if re.findall('^Necessary modules to be', lines[i]):
@@ -99,9 +98,11 @@ class VCRelax(object):
         div = self.num_nodes * self.num_processors / self.num_pressures
 
         if (self.num_nodes * self.num_processors) % self.num_pressures == 0:
-            print('Therefore, I will consider' + str(div) + 'processors per pressure.')
+            print('Therefore, I will consider' +
+                  str(div) + 'processors per pressure.')
         else:
-            raise TypeError('Number of processors not divided by number of pressures!')
+            raise TypeError(
+                'Number of processors not divided by number of pressures!')
 
         return int(div)
 
@@ -135,11 +136,13 @@ class VCRelax(object):
             # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
             # accept one and loop against the array?
             print('Now I will generate the files for a crude guess scf calculation.')
-            flow.create_files(uncalculated, (self.v0, self.k0, self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
+            flow.create_files(uncalculated, (self.v0, self.k0,
+                                             self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
             flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
                             self.modules)
 
-            job_sub = subprocess.Popen(['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
+            job_sub = subprocess.Popen(
+                ['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
             output = job_sub.stdout.read().split()[-1]
             job_id = int(output)
             print('Job submitted. The job ID is' + str(job_id))
@@ -153,7 +156,8 @@ class VCRelax(object):
                 outqueue = job_status.stdout.read().split()
                 # output is a string that contains the job ID. If it is not in the queue information, the job is done.
                 if output not in outqueue:
-                    print("Crude guess is done! Continuing calculation... I hope your coffee was good!")
+                    print(
+                        "Crude guess is done! Continuing calculation... I hope your coffee was good!")
                     flag_job_cg = False
                 else:  # If it is, sleeps a little bit and request queue information again.
                     time.sleep(2)
@@ -172,7 +176,8 @@ class VCRelax(object):
         for p in self.pressures:
             if self.error in os.listdir('cg_' + str(p)):
                 # If 'CRASH' files exist, something went wrong. Stop the workflow.
-                raise FileExistsError('Something went wrong, CRASH files found. Check your cg outputs.')
+                raise FileExistsError(
+                    'Something went wrong, CRASH files found. Check your cg outputs.')
             else:
                 output_file = 'cg_' + str(p) + '/' + 'cg_' + str(p) + '.out'
                 try:
@@ -185,17 +190,20 @@ class VCRelax(object):
                 else:
                     for i in range(len(lines)):
                         if re.findall('P=', lines[i]):
-                            ps.append(float(lines[i].split('=')[-1].strip()) / 10)
+                            ps.append(
+                                float(lines[i].split('=')[-1].strip()) / 10)
                         if re.findall('volume', lines[i]):
                             vs.append(float(lines[i].split()[-2].strip()))
 
         if num_error_files > int(self.num_pressures / 2):
             # If more that a half of the calculations are not found, stop the workflow.
-            raise ValueError('More than a half of pressures were not calculated.')
+            raise ValueError(
+                'More than a half of pressures were not calculated.')
 
         if set(ps) != set(self.pressures) or len(ps) != len(vs):
             # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
-            raise ValueError('ERROR: Some pressures were not found in the files. Please, review your data.')
+            raise ValueError(
+                'ERROR: Some pressures were not found in the files. Please, review your data.')
 
         return ps, vs
 
@@ -208,7 +216,8 @@ class VCRelax(object):
         :return: (list, list, np.ndarray, np.ndarray)
         """
         ps, vs = self.read_crude_guess_output()
-        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
+        eos_opt, eos_cov = curve_fit(
+            flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
         return ps, vs, eos_opt, eos_cov
 
     def write_crude_guess_result(self):
@@ -236,11 +245,13 @@ class VCRelax(object):
 
             chi2 = 0
             for i in range(0, len(ps)):
-                chi2 = chi2 + (ps[i] - flow.vinet(vs[i], eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
+                chi2 = chi2 + (ps[i] - flow.vinet(vs[i],
+                                                  eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
             chi = np.sqrt(chi2)
             print('chi = %7.4f' % chi)
             cg.write('Results for a Vinet EOS fitting:')
-            cg.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))
+            cg.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' %
+                     (eos_opt[0], eos_opt[1], eos_opt[2]))
 
     def vc_relax(self):
         """
@@ -268,23 +279,29 @@ class VCRelax(object):
             print('There are remaining pressures to be calculated.')
             flag_vc = True
 
+        # TODO: Here should be improved: If too many .out not found, do not rewrite .in, just use already existed files.
         while flag_vc:
             print('Now I will generate the files for a vc-relax calculation.')
-            flow.create_files(uncalculated, eos_opt, self.vecs, self.vol_sc, 'vc_', 'vc-relax')
+            flow.create_files(uncalculated, eos_opt, self.vecs,
+                              self.vol_sc, 'vc_', 'vc-relax')
             flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-vc.sh', 'vc_', 'pw',
                             self.modules)
 
-            job_sub_vc = subprocess.Popen(['sbatch', 'job-vc.sh'], stdout=subprocess.PIPE)
+            job_sub_vc = subprocess.Popen(
+                ['sbatch', 'job-vc.sh'], stdout=subprocess.PIPE)
             output_vc = job_sub_vc.stdout.read().split()[-1]
             job_id_vc = int(output_vc)
 
-            print('Job for variable cell relaxation submitted. The job ID is' + str(job_id_vc))
-            print('Waiting calculation. This can take a long time, you can have lunch! Or take a nap! :)')
+            print(
+                'Job for variable cell relaxation submitted. The job ID is' + str(job_id_vc))
+            print(
+                'Waiting calculation. This can take a long time, you can have lunch! Or take a nap! :)')
 
             # This part monitors the job execution.
             flag_job_vc = True
             while flag_job_vc:
-                job_status_vc = subprocess.Popen(['squeue', '-j', str(job_id_vc)], stdout=subprocess.PIPE)
+                job_status_vc = subprocess.Popen(
+                    ['squeue', '-j', str(job_id_vc)], stdout=subprocess.PIPE)
                 outqueue_vc = job_status_vc.stdout.read().split()
                 if output_vc not in outqueue_vc:
                     print("Congratulations, the variable cell relaxation is done!")
@@ -307,7 +324,8 @@ class VCRelax(object):
 
         for p in self.pressures:
             if self.error in os.listdir('vc_' + str(p)):
-                print('CRASH file found. Something went wrong with the vc-relax calculation, check your files.')
+                print(
+                    'CRASH file found. Something went wrong with the vc-relax calculation, check your files.')
             else:
                 output_file = 'vc_' + str(p) + '/' + 'vc_' + str(p) + '.out'
                 try:
@@ -315,12 +333,13 @@ class VCRelax(object):
                         lines = vc_out.readlines()
                 except FileNotFoundError:  # Check if output files exist.
                     print('The output file for P =' + str(p) +
-                          'was not found. Removing it from list and continuing calculation.') # This is a bug because you have less than 6 but it still works.
+                          'was not found. Removing it from list and continuing calculation.')  # This is a bug because you have less than 6 but it still works.
                     num_error_files += 1
                 else:
                     for i in range(len(lines)):
                         if re.findall('P=', lines[i]):
-                            paux.append(float(lines[i].split('=')[-1].strip()) / 10)
+                            paux.append(
+                                float(lines[i].split('=')[-1].strip()) / 10)
                         if re.findall('volume', lines[i]):
                             vs.append(float(lines[i].split()[-2].strip()))
                     ps.append(paux[-1])
@@ -343,7 +362,8 @@ class VCRelax(object):
         ps, vs, eos_opt, eos_cov = self._fit_vc_relax()
 
         if len(ps) != len(vs):
-            raise ValueError('Some volumes are mossing, check your vc-relax outputs.')
+            raise ValueError(
+                'Some volumes are mossing, check your vc-relax outputs.')
 
         std = np.sqrt(np.diag(eos_cov))
         chi2 = 0
@@ -355,7 +375,8 @@ class VCRelax(object):
             for i in range(len(ps)):
                 vc.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
                 vc.write('Final Results for a Vinet EOS fitting:\n')
-                vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' % (eos_opt[0], eos_opt[1], eos_opt[2]))
+                vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' %
+                         (eos_opt[0], eos_opt[1], eos_opt[2]))
 
         chi = np.sqrt(chi2)
         print('Ready, the vc-relax fitting is done. The standart deviations are:')
