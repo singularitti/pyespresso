@@ -9,7 +9,7 @@ import re
 
 
 class GenerateTest:
-    def __init__(self, prefix: str, infix: list, suffix=".dat"):
+    def __init__(self, prefix: str, infix: list, suffix=""):
         """
         :param prefix:
         :param infix:

@@ -9,29 +9,14 @@ from .read_file import ReadOutput
 
 
 class PlotCheck:
-    def __init__(self, outputlist: list, legend: list):
-        self.objlist = [ReadOutput(outputfile) for outputfile in outputlist]
+    def __init__(self, outputlist: list, *legend: list):
+        self.filelist = outputlist
         self.eos = EOS()
-        self.plists, self.vlists = self.read_multiple_pv()
-        self.v0list, self.k0list, self.k0plist = self.read_multiple_eosparam()
-        self.legend = legend
-
-    def read_multiple_pv(self):
-        pvlists = [obj.read_pv() for obj in self.objlist]
-        plists = [pvlist[0] for pvlist in pvlists]
-        vlists = [pvlist[1] for pvlist in pvlists]
-        return plists, vlists
-
-    def read_multiple_eosparam(self):
-        eosparamlist = [obj.read_eos_param() for obj in self.objlist]
-        v0list = [eosparam[0] for eosparam in eosparamlist]
-        k0list = [eosparam[1] for eosparam in eosparamlist]
-        k0plist = [eosparam[2] for eosparam in eosparamlist]
-        return v0list, k0list, k0plist
 
     def plot_p_vs_v(self, ax):
-        for i in range(len(self.objlist)):
-            ax.plot(self.vlists[i], self.plists[i], 'o-', label=self.legend[i])
+        for i in self.filelist:
+            [p, v] = ReadOutput().read_pv(i)
+            ax.plot(p, v)
 
     def plot_vinet_eos(self, ax):
         # p is a function takes 1 parameter.
@@ -40,8 +25,24 @@ class PlotCheck:
             v = np.linspace(self.vlists[i][0], self.vlists[i][-1], 200)
             ax.plot(v, list(map(p, v)), label=' '.join(['Vinet EOS', self.legend[i]]))
 
-    def plot_v0_vs_temp(self, templist):
-        print(self.v0list)
+    def plot_v0_vs_temp(self, filelist):
+        v0list = []
+        for i in filelist:
+            v0, k0, k0p = ReadOutput().read_eos_param(i)
+            v0list.append(v0)
+        return v0list
+
+
+    def plot_iternum_vs_p(self, ax):
+        ls = []
+        for i in self.objlist:
+            [p, iternum] = i.read_iter_num()
+            ax.plot(p, iternum)
+            # ls.append(np.transpose([p, iternum]))
+            # for j in range(2):
+        ax.set_title('iteration numbers vs pressures on different tests', fontsize=16)
+        ax.set_xlabel('pressures', fontsize=12)
+        ax.set_ylabel('iteration numbers', fontsize=12)
 
     @staticmethod
     def plot_labels(ax):
