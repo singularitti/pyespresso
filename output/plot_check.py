@@ -40,6 +40,9 @@ class PlotCheck:
             v = np.linspace(self.vlists[i][0], self.vlists[i][-1], 200)
             ax.plot(v, list(map(p, v)), label=' '.join(['Vinet EOS', self.legend[i]]))
 
+    def plot_v0_vs_temp(self, templist):
+        print(self.v0list)
+
     @staticmethod
     def plot_labels(ax):
         ax.set_xlabel("volume $(au^3)$", fontsize=12)

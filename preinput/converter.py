@@ -24,6 +24,9 @@ class UnitConverter:
 
 
 class LengthConverter(UnitConverter):
+    """
+    """
+
     def __init__(self):
         self.bohr_radius = 5.2917721067e-11
 
@@ -40,11 +43,15 @@ class LengthConverter(UnitConverter):
         scale.update(dict.fromkeys(['a', 'angstrom', 'A'], 1e-10))
         scale.update(dict.fromkeys(['cm', 'centimeter'], 1e-2))
         scale.update(dict.fromkeys(['nm', 'nanometer'], 1e-9))
-        scale.update(dict.fromkeys(['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
+        scale.update(dict.fromkeys(
+            ['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 
 class VolumeConverter(UnitConverter):
+    """
+    """
+
     def __init__(self):
         self.bohr_radius = 5.2917721067e-11
 
@@ -91,6 +98,9 @@ class EnergyConverter(UnitConverter):
 
 
 class PressureConverter(UnitConverter):
+    """
+    """
+
     def simple_converter(self, num, from_unit='gpa', to_unit='mbar'):
         """
         This function converts the input first to pascal, then converts it to desired unit.
@@ -108,6 +118,9 @@ class PressureConverter(UnitConverter):
 
 
 class MoleConverter(UnitConverter):
+    """
+    """
+
     def __init__(self):
         self.avogadro_const = 6.022140857e23
 
@@ -139,10 +152,3 @@ def simple_converter(physical_quantity, num, from_unit, to_unit):
                       'p': PressureConverter}
     unitconverter = unitconverters[physical_quantity]()
     return unitconverter.simple_converter(num, from_unit, to_unit)
-
-
-if __name__ == '__main__':
-    print(simple_converter('l', 7.4268, 'b', 'a'))
-    print(simple_converter('v', 11.176, 'a3', 'b3'))
-    print(simple_converter('e', 2000, 'K', 'ry'))
-    print(simple_converter('p', 3, 'mbar', 'gpa'))

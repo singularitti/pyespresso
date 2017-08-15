@@ -39,3 +39,6 @@ class ReadOutput:
                     k0 = float(sp[5])
                     k0p = float(sp[8])
         return v0, k0, k0p
+
+    def read_iter_num(self):
+        

@@ -14,8 +14,14 @@ class SCFGenerator:
         with open(file, 'r') as f:
             lines = f.readlines()
             for i in range(len(lines)):
-                kv = lines[i].split('=', maxsplit=1)
+                kv = lines[i].split('=')
                 k = kv[0]
-                v = kv[1:]
+                v = kv[1]
                 if '!' in v:
                     v = v.split('!')[0]  # ignore things after the first '!'
+                v = v.split(':')
+                v = list(map(lambda x: x.strip(), v))
+
+
+
+
