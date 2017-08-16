@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # created at Jul 19, 2017 16:35 by Nil-Zil
 
 import numpy as np
 
 
 class EOS:
-    def __init__(self):
-        pass
-
     @staticmethod
     def vinet(v0: float, k0: float, k0p: float):
         """

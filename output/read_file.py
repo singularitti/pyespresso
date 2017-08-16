@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # created at Jul 19, 2017 15:00 by Nil-Zil
 
 import re
@@ -9,13 +8,10 @@ import numpy as np
 
 
 class ReadOutput:
-    # def __init__(self, filename):
-    #     self.iternum = filename
-
     @staticmethod
     def read_pv(filename: str) -> tuple:
         """
-        Read pressure and volume from file.
+        Read pressure and volume from one file each time.
         :param filename: str
         :return: (list, list)
         """
@@ -32,10 +28,10 @@ class ReadOutput:
         return p, v
 
     @staticmethod
-    def read_eos_param(filename) -> tuple:
+    def read_eos_param(filename: str) -> tuple:
         """
-        Read equation of states parameters (volume, bulk modulus and its derivative) from file.
-        :param filename:
+        Read equation of states parameters (volume, bulk modulus and its derivative) from one file each time.
+        :param filename: str
         :return: (float, float, float)
         """
         with open(filename, 'r') as f:
@@ -47,15 +43,30 @@ class ReadOutput:
                     k0p = float(sp[8])
         return v0, k0, k0p
 
-    def read_iter_num(self):
+    @staticmethod
+    def read_iter_num(filename: str) -> tuple:
+        """
+        Read iteration number of each test consisting of a series of pressures from one file each time.
+        This works if your result is given by checkiternum.sh in this package.
+        :param filename: str
+        :return: (numpy.ndarray, numpy.ndarray)
+        """
         p = []
         num = []
-        with open(self.iternum, 'r') as f:
+        with open(filename, 'r') as f:
             for line in islice(f, 0, None):
-                p.append(float(re.findall("\-?\d.*\.\d", line)[0]))
+                p.append(float(re.findall("-?\d.*\.\d", line)[0]))
                 num.append(float(f.readline()))
-        pn = np.transpose([p, num])
-        pnn = sorted(pn, key=itemgetter(0))
-        p = np.transpose(pnn)[0]
-        num = np.transpose(pnn)[1]
+        # Group p and num first, then sort num according to the order of p, then un-group new p and num.
+        [p, num] = np.transpose(sorted(np.transpose([p, num]), key=itemgetter(0)))
         return p, num
+
+
+class ReadTestCase:
+    @staticmethod
+    def read_from_ls(filename):
+        filelists = []
+        with open(filename, 'r') as f:
+            for line in f:
+                filelists.append(re.split("\n", line)[0])
+        return filelists

@@ -4,7 +4,7 @@
 
 class UnitConverter:
     """
-    This is a unit converter.
+    This is a basic unit converter.
     Input a number and 2 different units,
     it will automatically transform the first in terms of the second one.
     """
@@ -12,7 +12,7 @@ class UnitConverter:
     @staticmethod
     def simplest_converter(scale, num, from_unit, to_unit):
         """
-
+        This is the basic logic of unit-conversion. It will be handful if you implement further methods based on this.
         :param scale:
         :param num:
         :param from_unit:
@@ -139,7 +139,7 @@ class MoleConverter(UnitConverter):
         return options[option](num / self.avogadro_const, from_unit, to_unit)
 
 
-def simple_converter(physical_quantity, num, from_unit, to_unit):
+def call_simple_converter(physical_quantity, num, from_unit, to_unit):
     """
     This is a polymorphism function, it can apply to any object that defined simple_converter method.
     :param physical_quantity:
@@ -152,3 +152,7 @@ def simple_converter(physical_quantity, num, from_unit, to_unit):
                       'p': PressureConverter}
     unitconverter = unitconverters[physical_quantity]()
     return unitconverter.simple_converter(num, from_unit, to_unit)
+
+
+if __name__ == "__main__":
+    print(call_simple_converter('v', 8.67, 'a3', 'b3'))
