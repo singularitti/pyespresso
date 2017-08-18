@@ -15,10 +15,11 @@ class ReadOutput:
         :param filename: str
         :return: (list, list)
         """
+        start = 1
         with open(filename, 'r') as f:
             p = []
             v = []
-            for line in islice(f, 2, None):
+            for line in islice(f, start, None):
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
                     break
                 else:
@@ -37,22 +38,25 @@ class ReadOutput:
         v0 = None
         k0 = None
         k0p = None
+        start = 1
+        count = 2
         with open(filename, 'r') as f:
-            for line in islice(f, 2, None):
+            for line in islice(f, start, None):
+                count += 1
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
                     sp = f.readline().split()  # Read next line
                     if 'V0' in sp:
                         v0 = float(sp[2])
                     else:
-                        print('V0 not found in your file:' + filename)
+                        print('V0 not found in your file: ' + filename + 'in line: ' + str(count))
                     if 'K0' in sp:
                         k0 = float(sp[5])
                     else:
-                        print('K0 not found in your file:' + filename)
+                        print('K0 not found in your file:' + filename + 'in line: ' + str(count))
                     if 'Kp' in sp:
                         k0p = float(sp[8])
                     else:
-                        print("K0' not found in your file:" + filename)
+                        print("K0' not found in your file:" + filename + 'in line: ' + str(count))
         return v0, k0, k0p
 
     @staticmethod
