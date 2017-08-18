@@ -34,13 +34,25 @@ class ReadOutput:
         :param filename: str
         :return: (float, float, float)
         """
+        v0 = None
+        k0 = None
+        k0p = None
         with open(filename, 'r') as f:
             for line in islice(f, 2, None):
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
-                    sp = f.readline().split()
-                    v0 = float(sp[2])
-                    k0 = float(sp[5])
-                    k0p = float(sp[8])
+                    sp = f.readline().split()  # Read next line
+                    if 'V0' in sp:
+                        v0 = float(sp[2])
+                    else:
+                        print('V0 not found in your file:' + filename)
+                    if 'K0' in sp:
+                        k0 = float(sp[5])
+                    else:
+                        print('K0 not found in your file:' + filename)
+                    if 'Kp' in sp:
+                        k0p = float(sp[8])
+                    else:
+                        print("K0' not found in your file:" + filename)
         return v0, k0, k0p
 
     @staticmethod
@@ -60,6 +72,39 @@ class ReadOutput:
         # Group p and num first, then sort num according to the order of p, then un-group new p and num.
         [p, num] = np.transpose(sorted(np.transpose([p, num]), key=itemgetter(0)))
         return p, num
+
+    def read_v0_from_files(self, files: list) -> list:
+        """
+        This function reads EOS parameters V0 from each file in a list of files, and collect them as a list.
+        :param files: list(str)
+        :return: list(float)
+        """
+        v0list = []
+        for file in files:
+            v0list.append(self.read_eos_param(file)[0])
+        return v0list
+
+    def read_k0_from_files(self, files: list) -> list:
+        """
+        This function reads EOS parameters K0 from each file in a list of files, and collect them as a list.
+        :param files: list(str)
+        :return: list(float)
+        """
+        k0list = []
+        for file in files:
+            k0list.append(self.read_eos_param(file)[1])
+        return k0list
+
+    def read_k0p_from_files(self, files: list) -> list:
+        """
+        This function reads EOS parameters K0' from each file in a list of files, and collect them as a list.
+        :param files: list(str)
+        :return: list(float)
+        """
+        k0plist = []
+        for file in files:
+            k0plist.append(self.read_eos_param(file)[2])
+        return k0plist
 
 
 class ReadTestCase:
