@@ -2,8 +2,10 @@
 # created at Jul 19, 2017 15:00 by Nil-Zil
 
 import re
+import shlex
 from itertools import islice
 from operator import itemgetter
+
 import numpy as np
 
 
@@ -16,9 +18,9 @@ class ReadOutput:
         :return: (list, list)
         """
         start = 1
+        p = []
+        v = []
         with open(filename, 'r') as f:
-            p = []
-            v = []
             for line in islice(f, start, None):
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
                     break
@@ -109,6 +111,24 @@ class ReadOutput:
         for file in files:
             k0plist.append(self.read_eos_param(file)[2])
         return k0plist
+
+    @staticmethod
+    def read_final_cell(filename: str):
+        cell_params = []
+        with open(filename, 'r') as f:
+            for line in f:
+                # If line starts with '#', it will be regarded as comment, we do not parse it.
+                fields = shlex.split(line, comments=True)
+                if not fields:
+                    continue
+                if 'CELL_PARAMETERS' in line:
+                    a = np.zeros((3, 3))
+                    for i in range(3):
+                        sp = f.readline().split()
+                        a[i] = list(map(float, sp))
+                    cell_params.append(a)
+
+        return cell_params
 
 
 class ReadTestCase:

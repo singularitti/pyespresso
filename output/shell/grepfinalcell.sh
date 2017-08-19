@@ -1,7 +1,11 @@
 #!/usr/bin/env bash 
-# Helpful guide: https://github.com/koalaman/shellcheck/wiki/SC1065
+# Helpful guides: https://github.com/koalaman/shellcheck/wiki/SC1065
+# and: https://superuser.com/questions/748724/pass-a-large-string-to-grep-instead-of-a-file-name
 
 folders=()
+rm finalcell
+touch finalcell
+echo "# This file is generated in directory $(pwd)" >finalcell
 
 for folder in vc_*; do
 	[[ -d $folder ]] || break # handle the case of no vc_* folders
@@ -9,19 +13,13 @@ for folder in vc_*; do
 done
 
 for folder in "${folders[@]}"; do
-	cd "$folder" && echo "$folder"
-    awk "/Begin final coordinates/,/End final coordinates/" *.out
-    cd ..
+	cd "$folder" && echo "Current folder is: $folder"
+	contents=$(awk "/Begin final coordinates/,/End final coordinates/" ./*.out)
+	GREP_COLOR='31;1' grep -E --color=always "new unit-cell volume.*" <<<"$contents"
+	grep "new unit-cell volume.*" <<<"$contents" >>../finalcell
+	GREP_COLOR='36;1' grep -E --color=always -A 3 "CELL_PARAMETERS.*" <<<"$contents"
+	grep -A 3 "CELL_PARAMETERS.*" <<<"$contents" >>../finalcell
+	GREP_COLOR='34;1' grep -E --color=always -A 2 "ATOMIC_POSITIONS.*" <<<"$contents"
+	grep -A 2 "ATOMIC_POSITIONS.*" <<<"$contents" >>../finalcell
+	cd ..
 done
-
-function red() {
-    printf ("%s%s%s", "\033[1;31m", "$1", "\033[0m ")
-}
-
-function green() {
-    printf ("%s%s%s","\033[1;32m", "$1", "\033[0m ")
-}
-
-function blue() {
-    printf ("%s%s%s","\033[1;34m", "$1", "\033[0m ")
-}
