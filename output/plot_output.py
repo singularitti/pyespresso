@@ -2,12 +2,12 @@
 # created at Jul 19, 2017 16:11 by Nil-Zil
 
 import matplotlib.pyplot as plt
-import numpy as np
+from matplotlib.font_manager import FontProperties
 
-from .read_file import ReadOutput
+from .read_file import *
 
 
-class PlotOutput:
+class PlotVCRelax:
     def __init__(self):
         self.ro = ReadOutput()
 
@@ -71,3 +71,25 @@ class PlotOutput:
         ax.set_xlabel("volume $(au^3)$", fontsize=12)
         ax.set_ylabel("pressure (GPa)", fontsize=12)
         ax.legend(loc="best")
+
+
+class PlotPhonon:
+    def __init__(self):
+        self.rpb = ReadPlotBand()
+
+    def gnuplot(self):
+        coords, bands = self.rpb.read_gunplot('gnuplot')
+        fig, ax = plt.subplots()
+        for i, (coord, band) in enumerate(zip(coords, bands)):
+            ax.plot(coord, band, 'o-', label="band " + str(i))
+
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.2,
+                         box.width, box.height * 0.8])
+        fontP = FontProperties()
+        fontP.set_size('small')
+        ax.legend(loc='center', bbox_to_anchor=(0.5, -0.25), ncol=3, prop=fontP)
+        ax.set_xlabel('k-points', fontsize=12)
+        ax.set_ylabel("frequency (cm$^{-1})$", fontsize=12)
+        ax.set_title('phonon dispersion relation', fontsize=16)
+        plt.show()

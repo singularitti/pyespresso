@@ -3,9 +3,12 @@
 # and: https://superuser.com/questions/748724/pass-a-large-string-to-grep-instead-of-a-file-name
 
 folders=()
-rm finalcell
-touch finalcell
-echo "# This file is generated in directory $(pwd)" >finalcell
+if [ -f finalcell ]; then
+	rm finalcell
+else
+	touch finalcell
+fi
+echo "# This is generated in directory $(pwd)" >finalcell
 
 for folder in vc_*; do
 	[[ -d $folder ]] || break # handle the case of no vc_* folders
@@ -13,7 +16,7 @@ for folder in vc_*; do
 done
 
 for folder in "${folders[@]}"; do
-	cd "$folder" && echo "Current folder is: $folder"
+	cd "$folder" && echo "Current folder is: $folder" >>../finalcell
 	contents=$(awk "/Begin final coordinates/,/End final coordinates/" ./*.out)
 	GREP_COLOR='31;1' grep -E --color=always "new unit-cell volume.*" <<<"$contents"
 	grep "new unit-cell volume.*" <<<"$contents" >>../finalcell

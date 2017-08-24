@@ -15,7 +15,7 @@ class ReadOutput:
         """
         Read pressure and volume from one file each time.
         :param filename: str
-        :return: (list, list)
+        :return: ([float], [float])
         """
         start = 1
         p = []
@@ -82,8 +82,8 @@ class ReadOutput:
     def read_v0_from_files(self, files: list) -> list:
         """
         This function reads EOS parameters V0 from each file in a list of files, and collect them as a list.
-        :param files: list(str)
-        :return: list(float)
+        :param files: [str]
+        :return: [float]
         """
         v0list = []
         for file in files:
@@ -93,8 +93,8 @@ class ReadOutput:
     def read_k0_from_files(self, files: list) -> list:
         """
         This function reads EOS parameters K0 from each file in a list of files, and collect them as a list.
-        :param files: list(str)
-        :return: list(float)
+        :param files: [str]
+        :return: [float]
         """
         k0list = []
         for file in files:
@@ -104,8 +104,8 @@ class ReadOutput:
     def read_k0p_from_files(self, files: list) -> list:
         """
         This function reads EOS parameters K0' from each file in a list of files, and collect them as a list.
-        :param files: list(str)
-        :return: list(float)
+        :param files: [str]
+        :return: [float]
         """
         k0plist = []
         for file in files:
@@ -113,7 +113,13 @@ class ReadOutput:
         return k0plist
 
     @staticmethod
-    def read_final_cell(filename: str):
+    def read_final_cell(filename: str) -> tuple:
+        """
+        This function reads result from finalcell file, and collect the data, prepare them for plotting.
+        :param filename: str
+        :return: ([float], [float])
+        """
+        p = []
         cell_params = []
         with open(filename, 'r') as f:
             for line in f:
@@ -121,6 +127,8 @@ class ReadOutput:
                 fields = shlex.split(line, comments=True)
                 if not fields:
                     continue
+                if 'Current folder is' in line:
+                    p.append(float(re.findall("-?[0-9]+\.[0-9]+", line)[0]))
                 if 'CELL_PARAMETERS' in line:
                     a = np.zeros((3, 3))
                     for i in range(3):
@@ -128,14 +136,45 @@ class ReadOutput:
                         a[i] = list(map(float, sp))
                     cell_params.append(a)
 
-        return cell_params
+        return p, cell_params
 
 
 class ReadTestCase:
     @staticmethod
-    def read_from_ls(filename):
-        filelists = []
+    def read_from_ls(filename: str):
+        """
+
+        :param filename: str
+        :return: [str]
+        """
+        file_lists = []
         with open(filename, 'r') as f:
             for line in f:
-                filelists.append(re.split("\n", line)[0])
-        return filelists
+                file_lists.append(re.split("\n", line)[0])
+        return file_lists
+
+
+class ReadPlotBand:
+    @staticmethod
+    def read_gunplot(filename: str) -> tuple:
+        """
+        Read in coordinates and energy information,
+        and the collect them as an array.
+        :param filename: str
+        :return: ([[float]], [[float]])
+        """
+        coordinates = []
+        bands = []
+        coordinate = []
+        band = []
+        with open(filename, 'r') as f:
+            for line in f:
+                if not line.strip():  # If the line is empty or blank
+                    coordinates.append(coordinate)
+                    bands.append(band)
+                    coordinate = []  # Clear the list to accept new data
+                    band = []  # Clear the list to accept new data
+                else:  # If the line has data
+                    coordinate.append(float(line.split()[0]))
+                    band.append(float(line.split()[1]))
+        return coordinates, bands
