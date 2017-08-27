@@ -77,6 +77,7 @@ class EnergyConverter(UnitConverter):
         self.hartree_energy = 4.359744650e-18
         self.electron_volt = 1.602176565e-19
         self.boltzmann_const = 1.38064852e-23
+        self.freq_to_joule = 1.98630e-23
 
     def simple_converter(self, num, from_unit='ha', to_unit='ry'):
         """
@@ -94,6 +95,7 @@ class EnergyConverter(UnitConverter):
             ['ev', 'eV', 'electronvolt'], self.electron_volt))
         scale.update(dict.fromkeys(['ry', 'rydberg'], self.hartree_energy / 2))
         scale.update(dict.fromkeys(['K'], self.boltzmann_const))
+        scale.update(dict.fromkeys(['cm-1', self.freq_to_joule]))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 

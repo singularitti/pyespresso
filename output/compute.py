@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Nil-Zil
 
-from .read_file import *
+from output.read_file import *
+from miscellaneous.converter import *
 
 
 class ComputeVCRelax:
@@ -28,11 +29,14 @@ class ComputePHonon:
     def __init__(self):
         self.rpb = ReadPHononOutput()
 
-    # def frequency_to_mev(self):
-    #     frequency, dos = self.rpb.read_dos('dos.out')
-    #     frequency = [call_simple_converter('e', freq 'cm-1', 'ev') for freq in frequency]
-    #     return frequency, dos
-    #
+    def frequency_to_ev(self, filename: str) -> List[float]:
+        """
+        This method converts the frequency read from density of states calculation output to electron-volt.
+        :param filename: density of states calculation output
+        :return: energy in unit of electron-volt
+        """
+        frequency = self.rpb.read_dos(filename)[0]
+        return [call_simple_converter('e', freq, 'cm-1', 'ev') for freq in frequency]
 
     def generate_q_path(self, filename: str, q_path: str, dens: Union[int, List[int], np.ndarray],
                         mode='default') -> None:
