@@ -8,9 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-import numpy as np
-
-from .eos import EOS
+from miscellaneous.eos import EOS
 
 
 class TestEOS(unittest.TestCase):

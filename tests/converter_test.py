@@ -8,7 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from converter import call_simple_converter
+from miscellaneous.converter import call_simple_converter
 
 
 class TestConverter(unittest.TestCase):

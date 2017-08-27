@@ -155,5 +155,6 @@ def call_simple_converter(physical_quantity, num, from_unit, to_unit):
 
 
 if __name__ == "__main__":
-    print(call_simple_converter('v', 8.67, 'a3', 'b3'))
-    print(call_simple_converter('e', 0.00633, 'ry', 'K'))
+    print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
+    # print(call_simple_converter('v', 8.67, 'a3', 'b3'))
+    # print(call_simple_converter('e', 250, 'ev', 'ry'))
