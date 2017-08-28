@@ -29,17 +29,17 @@ class ComputePHonon:
     def __init__(self):
         self.rpb = ReadPHononOutput()
 
-    def frequency_to_ev(self, filename: str) -> List[float]:
+    @staticmethod
+    def frequency_to_ev(frequency_list: List[float]) -> List[float]:
         """
         This method converts the frequency read from density of states calculation output to electron-volt.
-        :param filename: density of states calculation output
+
         :return: energy in unit of electron-volt
         """
-        frequency = self.rpb.read_dos(filename)[0]
-        return [call_simple_converter('e', freq, 'cm-1', 'ev') for freq in frequency]
+        return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
 
-    def generate_q_path(self, filename: str, q_path: str, dens: Union[int, List[int], np.ndarray],
-                        mode='default') -> None:
+    def generate_q_path(self, filename: str, q_path: str, dens: Union[None, int, List[int], np.ndarray] = 100,
+                        mode: Optional[str] = 'default') -> None:
         """
         If you give a path like 'GM->M->K->GM->A->K', then this method will automatically generate---according
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
@@ -58,9 +58,10 @@ class ComputePHonon:
             separated by a '->' character, spaces are allow, other characters are not allowed.
         :param dens: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
             the method will automatically generate an array filled with same value. If it is already an array or list,
-            the length of them should be the number of q-points minus 1.
+            the length of them should be the number of q-points minus 1. The default value is 100.
         :param mode: If you are in debugging mode, then will not write to file but directly print the result,
-            if you are in default mode, write result to file, if you input a wrong mode, error will be raised.
+            if you are in default mode, write result to file, if you input a wrong mode, error will be raised. The
+            default value is 'default'.
         :return: None
         """
         qp = q_path.upper().replace(' ', '').split('->')

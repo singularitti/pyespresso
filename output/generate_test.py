@@ -1,37 +1,19 @@
 #!/usr/bin/env python3
 # created at Jul 23, 2017 10:26 PM by Nil-Zil
 """
-Quickly generate testing cases for plotting and checking.
+Quickly generate testing cases for plotting.
 """
 
-import re
-from .read_file import ReadTestCase
+from output.read_file import *
 
 
 class GenerateTest:
-    # def __init__(self, prefix: str, infix: list, suffix=""):
-    #     """
-    #     :param prefix:
-    #     :param infix:
-    #     :param suffix:
-    #     """
-    #     self.prefix = prefix
-    #     self.infix = infix
-    #     self.suffix = suffix
+    def __init__(self):
+        self.sr = SimpleRead()
 
-    # def generate_filelist(self) -> list:
-    #     """
-    #     :return: list(str)
-    #     """
-    #     return [self.prefix + inf + self.suffix for inf in self.infix]
-    #
-    # def generate_legend(self) -> list:
-    #     """
-    #     To use this function, keep each of your varaiable separated by '_' or '-'.
-    #     :return: list
-    #     """
-    #     return [' '.join(re.split(r'[-_]', leg)) for leg in self.infix]
+    def generate_from_ls(self, test_filename) -> list:
+        return self.sr.read_each_line(test_filename)
 
     @staticmethod
-    def generate_from_ls(test_filename) -> list:
-        return ReadTestCase.read_from_ls(test_filename)
+    def generate_from_composition(prefix: str, infix: list, suffix=""):
+        return [prefix + inf + suffix for inf in infix]

@@ -8,7 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from miscellaneous.converter import call_simple_converter
+from miscellaneous.converter import *
 
 
 class TestConverter(unittest.TestCase):
@@ -26,6 +26,11 @@ class TestConverter(unittest.TestCase):
 
     def test_pressure(self):
         self.assertAlmostEqual(call_simple_converter('p', 3, 'mbar', 'gpa'), 300.0)
+        self.assertTrue(call_simple_converter('p', [1, 2, 4], 'mbar', 'gpa') == [100.0, 200.0, 400])
+        self.assertTrue(np.array_equal(
+            call_simple_converter('p', np.array([1, 2, 4]), 'mbar', 'gpa'),
+            np.array([100, 200, 400])
+        ))
 
 
 if __name__ == "__main__":

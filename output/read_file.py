@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 15:00 by Nil-Zil
+"""
+This module will only deal with output files reading processes.
+"""
 
 import re
 import shlex
@@ -8,8 +11,6 @@ from operator import itemgetter
 from typing import *
 
 import numpy as np
-
-import miscellaneous.maths as mm
 
 
 class SimpleRead:
@@ -236,21 +237,19 @@ class ReadPHononOutput(SimpleRead):
         :param filename: A single file that is to be read.
         :return: ([[float]], [[float]])
         """
+        coordinates_list = []
+        bands_list = []
         coordinates = []
         bands = []
-        coordinate = []
-        band = []
         with open(filename, 'r') as f:
             for line in f:
                 if not line.strip():  # If the line is empty or blank
-                    coordinates.append(coordinate)
-                    bands.append(band)
-                    # coordinate = []  # Clear the list to accept new data
-                    # band = []  # Clear the list to accept new data
+                    coordinates_list.append(coordinates)
+                    bands_list.append(bands)
                 else:  # If the line has data
-                    coordinate.append(float(line.split()[0]))
-                    band.append(float(line.split()[1]))
-        return coordinates, bands
+                    coordinates.append(float(line.split()[0]))
+                    bands.append(float(line.split()[1]))
+        return coordinates_list, bands_list
 
     def read_dos(self, filename: str) -> Tuple[List[float], List[float]]:
         """
@@ -273,38 +272,49 @@ class ReadPHononOutput(SimpleRead):
         return self.read_k_points(filename)
 
     @staticmethod
-    def read_phonon_dispersion(filename: str):
+    def read_phonon_dispersion(filename: str, q_dict, q_path) -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
-        :param filename: str
+        :param filename:
+        :param q_dict:
+        :param q_path:
         :return:
         """
-        qs = []
+        q_list = np.array([])
+        bands_list = np.array([])
+        q = []
         bands = []
+        i = 0
+        cols = None
+        rows = None
         with open(filename, 'r') as f:
-            head = f.readline()
-            cols = float(re.findall("nbnd=\s+(\d+)", head)[0])
-            rows = float(re.findall("nks=\s+(\d+)", head)[0])
-            qp = []
-            bandp = []
-            i = 1
             for line in f:
-                qp.append(list(map(float, line.split())))
-                newline = f.readline()
-                bandp.append(list(map(float, newline.split())))
-                if i % 100 == 0:
-                    qs.append(qp)
-                    bands.append(bandp)
-                    qp = []  # Clear
-                    bandp = []  # Clear
-                i += 1
-        qs = np.array(qs)
-        bands = np.array(bands)
-        if qs.shape[1] * qs.shape[0] == rows and bands.shape[2] == cols:
-            ls = []
-            for i in range(len(qs)):
-                ls.append(mm.compute_3d_distance(qs[i][0], qs[i][-1]))
-            return qs, bands, ls
+                if 'nbnd' and 'nks' in line:  # Headline
+                    cols = float(re.findall("nbnd=\s+(\d+)", line)[0])
+                    rows = float(re.findall("nks=\s+(\d+)", line)[0])
+                elif not line.strip():  # If the line is empty or blank
+                    try:
+                        f.readline()  # Read next line
+                    except StopIteration:  # Meet the last line
+                        return
+                else:  # If not headline, not empty and not last line
+                    q.append(list(map(float, line.split())))
+                    newline = f.readline()
+                    bands.append(list(map(float, newline.split())))
+                if np.testing.assert_allclose(q_dict[q_path[i]], q[-1]):
+                    np.append(q_list, q)
+                    np.append(bands_list, bands)
+                    q.clear()
+                    bands.clear()
+                    i += 1
+        if cols is None or rows is None:
+            raise ValueError("'nbnd' or 'nks' not found in your file! Please check it!")
+        elif q_list.shape[0] * q_list.shape[1] == rows and bands_list.shape[2] == cols:
+            return q_list, bands_list
         else:
-            raise ValueError('Number of bands or number of k points does not match header!')
+            try:
+                print(q_list.shape[1] * q_list.shape[0], rows)
+                print(bands_list.shape[2], cols)
+            except ValueError:
+                raise ValueError('Number of bands or number of k points does not match header!')
