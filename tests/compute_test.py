@@ -18,5 +18,22 @@ class TestCompute(unittest.TestCase):
         self.cph = oc.ComputePHonon()
 
     def test_generate_3d_segment(self):
-        self.assertTrue(np.array_equal(self.cph.generate_3d_segment([0, 0, 0], [1, 1, 1], 10),
-                                       np.repeat(np.linspace(0, 0.9, 10), 3).reshape([10, 3])))
+        m = np.array([[2, 0, 1],
+                      [1.9, 0, 1],
+                      [1.8, 0, 1],
+                      [1.7, 0, 1],
+                      [1.6, 0, 1],
+                      [1.5, 0, 1],
+                      [1.4, 0, 1],
+                      [1.3, 0, 1],
+                      [1.2, 0, 1],
+                      [1.1, 0, 1],
+                      [1, 0, 1]])
+        self.assertTrue(np.allclose(self.cph.generate_3d_segment([2, 0, 1], [1, 0, 1], 11), m))
+
+    def test_generate_q_path(self):
+        self.cph.generate_q_path('phonon_data/high_sym_q', 'phonon_data/qpts', 'GM->M->K->GM->A->K', 100)
+
+
+if __name__ == "__main__":
+    unittest.main()

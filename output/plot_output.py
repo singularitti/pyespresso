@@ -72,13 +72,14 @@ class PlotPHononOutput:
 
     def plot_phonon_dispersion(self):
         label = ['GM', 'M', 'K', 'GM', 'A', 'K']
-        ks, bands, ls = self.rpb.read_phonon_dispersion('freq.out', 100)
+        ks, bands, ls = self.rpb.read_phonon_dispersion('freq.out', 'GM->M->K->GM->A->K')
         fig, axes = plt.subplots(nrows=1, ncols=5, sharey='all', gridspec_kw={'width_ratios': ls})
         plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
         for i in range(len(axes)):
             axes[i].get_xaxis().set_ticks([])  # Cancel x-axis ticks
             axes[i].plot(range(len(ks[i])), bands[i])
             axes[i].set_xlim((min(range(len(ks[i]))), max(range(len(ks[i])))))  # To make plot without inner paddings
+            axes[i].set_ylim((0, 450))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
         fig.suptitle('phonon dispersion relation', fontsize=16)
         axes[0].set_ylabel("frequency (cm$^{-1})$", fontsize=12)

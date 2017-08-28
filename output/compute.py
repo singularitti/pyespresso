@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Nil-Zil
 
-from output.read_file import *
 from miscellaneous.converter import *
+from output.read_file import *
 
 
 class ComputeVCRelax:
@@ -38,7 +38,8 @@ class ComputePHonon:
         """
         return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
 
-    def generate_q_path(self, filename: str, q_path: str, dens: Union[None, int, List[int], np.ndarray] = 100,
+    def generate_q_path(self, filename: str, output_filename: str, q_path: str,
+                        dens: Union[None, int, List[int], np.ndarray] = 100,
                         mode: Optional[str] = 'default') -> None:
         """
         If you give a path like 'GM->M->K->GM->A->K', then this method will automatically generate---according
@@ -54,6 +55,7 @@ class ComputePHonon:
         See output.read_file.SimpleRead.read_k_points for more information.
 
         :param filename: As explained above.
+        :param output_filename: Write result to here.
         :param q_path: A specific q-path you are interested in, like 'GM->M->K->GM->A->K'. Each q-point should be
             separated by a '->' character, spaces are allow, other characters are not allowed.
         :param dens: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
@@ -69,7 +71,7 @@ class ComputePHonon:
 
         # Check if dens is given a reasonable value
         if isinstance(dens, int):
-            dens = np.repeat(dens, path_segment)
+            density = [dens] * path_segment
         elif isinstance(dens, list) or isinstance(dens, np.ndarray):
             if not len(dens) == path_segment:
                 raise ValueError('The length of k-point density is incorrect!')
@@ -79,16 +81,16 @@ class ComputePHonon:
         q_dict = self.rpb.read_q_points(filename)
         coords = []
         for i in range(path_segment):
-            coords.append(self.generate_3d_segment(q_dict[qp[i]], q_dict[qp[i + 1]], dens[i]))
-        coords = np.array(coords).reshape(path_segment * dens, 3)
+            coords.append(self.generate_3d_segment(q_dict[qp[i]], q_dict[qp[i + 1]], density[i]))
+        coords = np.array(coords).reshape((path_segment * dens, 3))
 
         if mode == 'debug':
             print(coords)
         elif mode == 'default':
-            with open('q-points', 'ab') as f:
+            with open(output_filename, 'ab') as f:
                 f.write(('K path is: ' + q_path).encode('ascii'))
                 f.write(str(coords.size).encode('ascii'))
-                np.savetxt('qpts', coords, fmt='%f')
+                np.savetxt(output_filename, coords, fmt='%f')
         else:
             raise ValueError('You input a wrong mode!')
 
@@ -103,7 +105,4 @@ class ComputePHonon:
         """
         l = mm.compute_3d_distance(point1, point2)
         normalize_vec = (np.array(point2) - np.array(point1)) / l
-        coordinates = np.repeat(np.array(point1, dtype=np.float64), [dens], axis=0).reshape([dens, 3])
-        for i in range(dens):
-            coordinates[i] += l * i * normalize_vec / dens
-        return coordinates
+        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens)]

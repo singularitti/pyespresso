@@ -9,6 +9,7 @@ import shlex
 from itertools import islice
 from operator import itemgetter
 from typing import *
+import miscellaneous.maths as mm
 
 import numpy as np
 
@@ -272,49 +273,52 @@ class ReadPHononOutput(SimpleRead):
         return self.read_k_points(filename)
 
     @staticmethod
-    def read_phonon_dispersion(filename: str, q_dict, q_path) -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
+    def read_density_on_path(filename: str):
+        return [100] * 5
+
+    def read_phonon_dispersion(self, filename: str, q_path):  # -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
         :param filename:
-        :param q_dict:
         :param q_path:
         :return:
         """
-        q_list = np.array([])
-        bands_list = np.array([])
-        q = []
-        bands = []
-        i = 0
-        cols = None
-        rows = None
+        dens = self.read_density_on_path('aa')
+        qp = q_path.upper().replace(' ', '').split('->')
+        num_of_paths = len(qp) - 1
+        q_list = np.concatenate([np.zeros([num_of_paths, dens[i], 3]) for i in range(num_of_paths)])
+        q = []  # A list of all q-points
+        bands = []  # A list of all bands
         with open(filename, 'r') as f:
+            headline = f.readline()
+            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
+            nks = int(re.findall("nks=\s+(\d+)", headline)[0])
+            bands_list = np.concatenate([np.zeros([num_of_paths, dens[i], nbnd]) for i in range(num_of_paths)])
             for line in f:
-                if 'nbnd' and 'nks' in line:  # Headline
-                    cols = float(re.findall("nbnd=\s+(\d+)", line)[0])
-                    rows = float(re.findall("nks=\s+(\d+)", line)[0])
-                elif not line.strip():  # If the line is empty or blank
-                    try:
-                        f.readline()  # Read next line
-                    except StopIteration:  # Meet the last line
-                        return
-                else:  # If not headline, not empty and not last line
-                    q.append(list(map(float, line.split())))
-                    newline = f.readline()
-                    bands.append(list(map(float, newline.split())))
-                if np.testing.assert_allclose(q_dict[q_path[i]], q[-1]):
-                    np.append(q_list, q)
-                    np.append(bands_list, bands)
-                    q.clear()
-                    bands.clear()
-                    i += 1
-        if cols is None or rows is None:
-            raise ValueError("'nbnd' or 'nks' not found in your file! Please check it!")
-        elif q_list.shape[0] * q_list.shape[1] == rows and bands_list.shape[2] == cols:
-            return q_list, bands_list
-        else:
-            try:
-                print(q_list.shape[1] * q_list.shape[0], rows)
-                print(bands_list.shape[2], cols)
-            except ValueError:
-                raise ValueError('Number of bands or number of k points does not match header!')
+                q.append(list(map(float, line.split())))
+                newline = f.readline()
+                bands.append(list(map(float, newline.split())))
+
+        for i in range(num_of_paths):
+            for j in range(dens[i]):
+                q_list[i][j][:] = q[i * dens[i] + j][:]
+                bands_list[i][j][:] = bands[i * dens[i] + j][:]
+
+        q_path_len_list = []
+        for i in range(num_of_paths):
+            q_path_len_list.append(mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
+
+        return q_list, bands_list, q_path_len_list
+
+        # Reading file is finished
+        # if cols is None or rows is None:
+        #     raise NameError("'nbnd' or 'nks' not found in your file! Please check it!")
+        # elif q_list.shape[0] * q_list.shape[1] == rows and bands_list.shape[2] == cols:
+        #     return q_list, bands_list
+        # else:
+        #     try:
+        #         print(q_list.shape[1] * q_list.shape[0], rows)
+        #         print(bands_list.shape[2], cols)
+        #     except ValueError:
+        #         raise ValueError('Number of bands or number of k points does not match header!')
