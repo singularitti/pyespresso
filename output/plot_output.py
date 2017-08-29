@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Nil-Zil
 
+import os
+
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 from output.compute import *
 
 
-class PlotVCRelax:
+class PlotPWscfOutput:
+    def __init__(self):
+        self.rpw = ReadPWscfOutput()
+
+    def plot_e_vs_k_num(self, filename: str):
+        e_list = self.rpw.read_total_energy(filename)
+        pass
+
+
+class PlotVCRelaxOutput:
     def __init__(self):
         self.ro = ReadVCRelaxOutput()
         self.cmap = plt.get_cmap('nipy_spectral')
@@ -70,23 +81,29 @@ class PlotPHononOutput:
         ax.set_title('phonon dispersion relation', fontsize=16)
         plt.show()
 
-    def plot_phonon_dispersion(self):
-        label = ['GM', 'M', 'K', 'GM', 'A', 'K']
-        ks, bands, ls = self.rpb.read_phonon_dispersion('freq.out', 'GM->M->K->GM->A->K')
+    def plot_phonon_dispersion(self, path):
+        label = ['Γ', 'M', 'K', 'Γ', 'A', 'K']
+        ks, bands, ls = self.rpb.read_phonon_dispersion(path + '/freq.out', '->'.join(label))
+        bands = self.cph.frequency_to_ev(bands)
         fig, axes = plt.subplots(nrows=1, ncols=5, sharey='all', gridspec_kw={'width_ratios': ls})
         plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
         for i in range(len(axes)):
             axes[i].get_xaxis().set_ticks([])  # Cancel x-axis ticks
+            axes[i].set_xticks(range(0, 600, 100))
+            axes[i].set_xticklabels(label[i])
             axes[i].plot(range(len(ks[i])), bands[i])
             axes[i].set_xlim((min(range(len(ks[i]))), max(range(len(ks[i])))))  # To make plot without inner paddings
-            axes[i].set_ylim((0, 450))  # To make plot without inner paddings
+            axes[i].set_ylim((0, self.cph.frequency_to_ev(450)))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
         fig.suptitle('phonon dispersion relation', fontsize=16)
-        axes[0].set_ylabel("frequency (cm$^{-1})$", fontsize=12)
+        axes[0].set_ylabel("ev", fontsize=12)
         axes[0].yaxis.tick_left()
+        axes[-1].set_xticks([0, 100])
+        axes[-1].set_xticklabels([label[-2], label[-1]])
         axes[-1].yaxis.tick_right()
         axes[-1].yaxis.set_ticks_position('right')
-        plt.show()
+        fig.savefig(path + "/dispersion.pdf")
+        # plt.show()
 
     def plot_dos(self, filename: Optional[str] = 'dos.out', freq_unit: Optional[str] = 'ev',
                  mode: Optional[str] = 'preview') -> None:

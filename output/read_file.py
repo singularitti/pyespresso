@@ -87,6 +87,26 @@ class SimpleRead:
         return self.read_one_column_as_keys(filename, 0, lambda x: list(map(float, x)))
 
 
+class ReadPWscfOutput:
+    @staticmethod
+    def read_total_energy(filename: str):
+        with open(filename, 'r') as f:
+            match = re.findall("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
+        return list(map(float, match))
+
+    @staticmethod
+    def read_k_mesh(filename: str):
+        k_grid = None
+        k_shift = None
+        with open(filename, 'r') as f:
+            for line in f:
+                if 'K_POINTS' in line:  # TODO: allow case-insensitive pattern match
+                    sp = f.readline().split()
+                    k_grid = sp[0:3]
+                    k_shift = sp[3:]
+        return k_grid, k_shift
+
+
 class ReadVCRelaxOutput:
     @staticmethod
     def read_pv(filename: str) -> Tuple[List[float], List[float]]:
