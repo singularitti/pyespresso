@@ -10,7 +10,7 @@ import unittest
 
 import numpy as np
 
-import output.compute as oc
+import miscellaneous.compute as oc
 
 
 class TestCompute(unittest.TestCase):

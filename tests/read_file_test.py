@@ -13,14 +13,18 @@ from output.read_file import *
 
 class TestReadPHononOutput(unittest.TestCase):
     def setUp(self):
-        self.rpo = ReadPHononOutput()
-        self.q_dict = self.test_read_q_points()
+        self.rpw = ReadPWscfOutput()
+        self.rph = ReadPHononOutput()
+        # self.q_dict = self.test_read_q_points()
 
-    def test_read_q_points(self):
-        return self.rpo.read_q_points('phonon_data/high_sym_q')
+    def test_read_k_mesh(self):
+        print(self.rpw.read_k_mesh('pw_data/eg0.in'))
 
-    def test_read_phonon_dispersion(self):
-        self.rpo.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
+    # def test_read_q_points(self):
+    #     return self.rph.read_q_points('phonon_data/high_sym_q')
+    #
+    # def test_read_phonon_dispersion(self):
+    #     self.rph.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
 
 
 if __name__ == "__main__":

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Nil-Zil
 
-import os
-
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-from output.compute import *
+from miscellaneous.compute import *
 
 
 class PlotPWscfOutput:

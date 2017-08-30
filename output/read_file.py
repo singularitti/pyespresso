@@ -9,37 +9,51 @@ import shlex
 from itertools import islice
 from operator import itemgetter
 from typing import *
-import miscellaneous.maths as mm
+import collections
 
 import numpy as np
+
+import miscellaneous.maths as mm
+
+
+def _str_list_to(inp: List[str], to_type) -> List:
+    return list(map(to_type, inp))
+
+
+def str_list_to_int_list(inp: List[str]) -> List[int]:
+    return _str_list_to(inp, int)
+
+
+def str_list_to_float_list(inp: List[str]) -> List[float]:
+    return _str_list_to(inp, float)
 
 
 class SimpleRead:
     @staticmethod
-    def read_each_line(filename: str) -> List[str]:
+    def read_each_line(inp: str) -> List[str]:
         """
         This method reads each line simply from a file, and discard the '\n' character.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: A list contains all the lines of the file.
         """
         line_list = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in f:
                 line_list.append(re.split('\n', line)[0])
         return line_list
 
     @staticmethod
-    def read_two_columns(filename: str) -> Tuple[List[str], List[str]]:
+    def read_two_columns(inp: str) -> Tuple[List[str], List[str]]:
         """
         This method reads 2 columns from a file.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: two columns of the file
         """
         col1_list = []
         col2_list = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in f:
                 sp = line.split()
                 col1_list.append(sp[0])
@@ -47,20 +61,19 @@ class SimpleRead:
         return col1_list, col2_list
 
     @staticmethod
-    def read_one_column_as_keys(filename: str, col_index: int, wrapper: Callable[[List[str]], Any]) -> Dict[str, Any]:
+    def read_one_column_as_keys(inp: str, col_index: int, wrapper: Callable[[List[str]], Any]) -> Dict[str, Any]:
         """
         This method read the one of the columns of a file as keys,
         the combination of rest columns are values to corresponding keys.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :param col_index: the index of the column that you want to make it as keys.
         :param wrapper: A function that can process the values to the form that you want.
         :return: A dictionary that could contain anything as its values, but with strings as its keys.
         """
         key_list = []
         value_list = []
-        with open(filename, 'r',
-                  encoding='utf-8') as f:  # We add utf-8 support simply because we may use special characters.
+        with open(inp, 'r', encoding='utf-8') as f:  # We add utf-8 support because we may use special characters.
             for line in f:
                 sp = line.split()
                 key_list.append(sp[col_index])
@@ -68,7 +81,7 @@ class SimpleRead:
                 value_list.append(wrapper(sp))
         return dict(zip(key_list, value_list))
 
-    def read_k_points(self, filename: str) -> Dict[str, List[float]]:
+    def _read_reciprocal_points(self, inp: str) -> Dict[str, List[float]]:
         """
         Suppose you have a file like this:
             A	0.0000000000	0.0000000000	0.8396948868
@@ -82,46 +95,68 @@ class SimpleRead:
         This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
         its value, forms a dictionary.
 
-        :param filename: file you want to specify your k-points
+        :param inp: file you want to specify your k-points
         :return: a dictionary
         """
-        return self.read_one_column_as_keys(filename, 0, lambda x: list(map(float, x)))
+        return self.read_one_column_as_keys(inp, 0, lambda x: list(map(float, x)))
+
+    def read_k_points(self, inp: str) -> Dict[str, List[float]]:
+        """
+        This is exactly same as read _read_reciprocal_points method, for band structure, we here call them k-points.
+
+        :param inp: a file that you want to specify your q-points
+        :return: a dictionary
+        """
+        return self._read_reciprocal_points(inp)
+
+    def read_q_points(self, inp: str) -> Dict[str, List[float]]:
+        """
+        This is exactly same as read _read_reciprocal_points method, but for phonons, we here call them q-points rather
+        than k-points.
+
+        :param inp: a file that you want to specify your q-points
+        :return: a dictionary
+        """
+        return self._read_reciprocal_points(inp)
 
 
 class ReadPWscfOutput:
     @staticmethod
-    def read_total_energy(filename: str):
-        with open(filename, 'r') as f:
+    def read_total_energy(inp: str):
+        with open(inp, 'r') as f:
             match = re.findall(
                 "!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
-        return list(map(float, match))
+        return str_list_to_float_list(match)
+
+    KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
     @staticmethod
-    def read_k_mesh(filename: str):
-        k_grid = None
-        k_shift = None
-        with open(filename, 'r') as f:
+    def read_k_mesh(inp: str) -> KMesh:
+        with open(inp, 'r') as f:
             for line in f:
-                if 'K_POINTS' in line:  # TODO: allow case-insensitive pattern match
+                if re.search('K_POINTS', line, re.IGNORECASE):
                     sp = f.readline().split()
-                    k_grid = sp[0:3]
-                    k_shift = sp[3:]
-        return k_grid, k_shift
+                    k_grid = str_list_to_float_list(sp[0:3])
+                    k_shift = str_list_to_float_list(sp[3:7])
+                    k_mesh = collections.namedtuple('k_mesh', ['k_grid', 'k_shift'])
+                    return k_mesh(k_grid, k_shift)
+                else:
+                    raise ValueError("'K_POINTS' not found in your input! Please check!")
 
 
 class ReadVCRelaxOutput:
     @staticmethod
-    def read_pv(filename: str) -> Tuple[List[float], List[float]]:
+    def read_pv(inp: str) -> Tuple[List[float], List[float]]:
         """
         Read pressure and volume from one file each time.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: pressures and volumes
         """
         start = 1
         p_list = []
         v_list = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in islice(f, start, None):
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
                     break
@@ -132,11 +167,11 @@ class ReadVCRelaxOutput:
         return p_list, v_list
 
     @staticmethod
-    def read_eos_param(filename: str) -> Tuple[float, float, float]:
+    def read_eos_param(inp: str) -> Tuple[float, float, float]:
         """
         Read equation of states parameters (volume, bulk modulus and its derivative) from one file each time.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: zero-pressure volume, zero-pressure bulk modulus, and its first derivative W.R.T. pressure
         """
         v0 = None
@@ -144,7 +179,7 @@ class ReadVCRelaxOutput:
         k0p = None
         start = 1
         count = 2
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in islice(f, start, None):
                 count += 1
                 if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
@@ -153,17 +188,17 @@ class ReadVCRelaxOutput:
                         v0 = float(sp[2])
                     else:
                         print('V0 not found in your file: ' +
-                              filename + 'in line: ' + str(count))
+                              inp + 'in line: ' + str(count))
                     if 'K0' in sp:
                         k0 = float(sp[5])
                     else:
                         print('K0 not found in your file:' +
-                              filename + 'in line: ' + str(count))
+                              inp + 'in line: ' + str(count))
                     if 'Kp' in sp:
                         k0p = float(sp[8])
                     else:
                         print("K0' not found in your file:" +
-                              filename + 'in line: ' + str(count))
+                              inp + 'in line: ' + str(count))
         return v0, k0, k0p
 
     def _read_eos_from_multiple_files(self, file_list: list, i: int) -> List[float]:
@@ -208,16 +243,16 @@ class ReadVCRelaxOutput:
         return self._read_eos_from_multiple_files(file_list, 2)
 
     @staticmethod
-    def read_final_cell(filename: str) -> Tuple[List[float], List[np.ndarray]]:
+    def read_final_cell(inp: str) -> Tuple[List[float], List[np.ndarray]]:
         """
         This method reads result from 'finalcell' file, and collect the data, prepare them for plotting.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: ([float], [float])
         """
         p_list = []
         cell_params_list = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in f:
                 # If a line starts with '#', it will be regarded as a comment, we do not parse it.
                 fields = shlex.split(line, comments=True)
@@ -230,22 +265,22 @@ class ReadVCRelaxOutput:
                     cell_params = np.zeros((3, 3))
                     for i in range(3):
                         sp = f.readline().split()
-                        cell_params[i] = list(map(float, sp))
+                        cell_params[i] = str_list_to_float_list(sp)
                     cell_params_list.append(cell_params)
         return p_list, cell_params_list
 
     @staticmethod
-    def read_iter_num(filename: str) -> Tuple[np.ndarray, np.ndarray]:
+    def read_iter_num(inp: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Read iteration number of each test consisting of a series of pressures from one file each time.
         This works if your result is given by checkiternum.sh in this package.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return:
         """
         p_list = []
         iternum_list = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in islice(f, 0, None):
                 p_list.append(float(re.findall("-?\d.*\.\d", line)[0]))
                 iternum_list.append(float(f.readline()))
@@ -258,18 +293,18 @@ class ReadVCRelaxOutput:
 
 class ReadPHononOutput(SimpleRead):
     @staticmethod
-    def read_gunplot(filename: str) -> tuple:
+    def read_gunplot(inp: str) -> tuple:
         """
         Read in coordinates and energy information, and the collect them as an array.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: ([[float]], [[float]])
         """
         coordinates_list = []
         bands_list = []
         coordinates = []
         bands = []
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             for line in f:
                 if not line.strip():  # If the line is empty or blank
                     coordinates_list.append(coordinates)
@@ -282,37 +317,26 @@ class ReadPHononOutput(SimpleRead):
         # bands_list = np.array(bands_list).reshape([5, 3600])
         return coordinates_list, bands_list
 
-    def read_dos(self, filename: str) -> Tuple[List[float], List[float]]:
+    def read_dos(self, inp: str) -> Tuple[List[float], List[float]]:
         """
         This method reads frequency and density of states from a file generated by matdyn.x automatically.
 
-        :param filename: A single file that is to be read.
+        :param inp: A single file that is to be read.
         :return: ([float], [float])
         """
-        frequency_list, dos_list = self.read_two_columns(
-            filename)  # These 2 lists are filled with strings.
-        return list(map(float, frequency_list)), list(map(float, dos_list))
-
-    def read_q_points(self, filename: str) -> Dict[str, List[float]]:
-        """
-        This is exactly same as read read_k_points method, but for phonons, we here call them q-points rather
-        than k-points.
-
-        :param filename: a file that you want to specify your q-points
-        :return: a dictionary
-        """
-        return self.read_k_points(filename)
+        frequency_list, dos_list = self.read_two_columns(inp)  # Tuple[List[str], List[str]]
+        return str_list_to_float_list(frequency_list), str_list_to_float_list(dos_list)
 
     @staticmethod
-    def read_density_on_path(filename: str):
+    def read_density_on_path(inp: str):
         return [100] * 5
 
     # -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
-    def read_phonon_dispersion(self, filename: str, q_path):
+    def read_phonon_dispersion(self, inp: str, q_path):
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
-        :param filename:
+        :param inp:
         :param q_path:
         :return:
         """
@@ -323,7 +347,7 @@ class ReadPHononOutput(SimpleRead):
             [np.zeros([num_of_paths, dens[i], 3]) for i in range(num_of_paths)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
-        with open(filename, 'r') as f:
+        with open(inp, 'r') as f:
             headline = f.readline()
             # Number of bands for each q-point
             nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])

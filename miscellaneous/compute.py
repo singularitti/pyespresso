@@ -25,22 +25,26 @@ class ComputeVCRelax:
         return p_list, c_over_a_list
 
 
-class ComputePHonon:
-    def __init__(self):
-        self.rpb = ReadPHononOutput()
+class ReciprocalPathGenerator:
+    def __init__(self, reci_path: str):
+        self.reci_path = reci_path
 
     @staticmethod
-    def frequency_to_ev(frequency_list: List[float]) -> List[float]:
+    def linspace_3d(point1: List[float], point2: List[float], dens: int) -> np.ndarray:
         """
-        This method converts the frequency read from density of states calculation output to electron-volt.
-
-        :return: energy in unit of electron-volt
+        This method generates a series of evenly-spaced points between 2 given points.
+        :param point1: point 1
+        :param point2: point 2
+        :param dens: density, i.e., number of points between 2 given points
+        :return: a series of evenly-spaced points
         """
-        return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
+        l = mm.compute_3d_distance(point1, point2)
+        normalize_vec = (np.array(point2) - np.array(point1)) / l
+        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens)]
 
-    def generate_q_path(self, filename: str, output_filename: str, q_path: str,
-                        dens: Union[None, int, List[int], np.ndarray] = 100,
-                        mode: Optional[str] = 'default') -> None:
+    def _generate_reciprocal_path(self, filename: str, output_filename: str, q_path: str,
+                                  dens: Union[None, int, List[int], np.ndarray] = 100,
+                                  mode: Optional[str] = 'default') -> None:
         """
         If you give a path like 'GM->M->K->GM->A->K', then this method will automatically generate---according
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
@@ -52,7 +56,7 @@ class ComputePHonon:
             K	0.8886483087	1.5391840208	0.0000000000
             L	1.3329724631	0.7695920104	0.8396948868
             M	1.3329724631	0.7695920104	0.0000000000
-        See output.read_file.SimpleRead.read_k_points for more information.
+        See output.read_file.SimpleRead._read_reciprocal_points for more information.
 
         :param filename: As explained above.
         :param output_filename: Write result to here.
@@ -81,30 +85,34 @@ class ComputePHonon:
         q_dict = self.rpb.read_q_points(filename)
         coords = []
         for i in range(path_segment):
-            coords.append(self.generate_3d_segment(
+            coords.append(self.linspace_3d(
                 q_dict[qp[i]], q_dict[qp[i + 1]], density[i]))
         coords = np.array(coords).reshape((path_segment * dens, 3))
+        return coords
 
-        if mode == 'debug':
-            print(coords)
-        elif mode == 'default':
-            with open(output_filename, 'ab') as f:
-                f.write(('K path is: ' + q_path).encode('utf-8'))
-                f.write(str(coords.size).encode('utf-8'))
-                np.savetxt(output_filename, coords, fmt='%f')
-        else:
-            raise ValueError('You input a wrong mode!')
+        # if mode == 'debug':
+        #     print(coords)
+        # elif mode == 'default':
+        #     with open(output_filename, 'ab') as f:
+        #         f.write(('K path is: ' + q_path).encode('utf-8'))
+        #         f.write(str(coords.size).encode('utf-8'))
+        #         np.savetxt(output_filename, coords, fmt='%f')
+        # else:
+        #     raise ValueError('You input a wrong mode!')
+
+    def generate_q_path(self):
+        pass
+
+
+class ComputePHonon:
+    def __init__(self):
+        self.rpb = ReadPHononOutput()
 
     @staticmethod
-    def generate_3d_segment(point1: List[float], point2: List[float], dens: int) -> np.ndarray:
+    def frequency_to_ev(frequency_list: List[float]) -> List[float]:
         """
-        This method generates a series of evenly-spaced points between 2 given points.
-        :param point1: point 1
-        :param point2: point 2
-        :param dens: density, i.e., number of points between 2 given points
-        :return: a series of evenly-spaced points
+        This method converts the frequency read from density of states calculation output to electron-volt.
+
+        :return: energy in unit of electron-volt
         """
-        l = mm.compute_3d_distance(point1, point2)
-        normalize_vec = (np.array(point2) - np.array(point1)) / l
-        return np.array(point1) + \
-               [x * normalize_vec for x in np.linspace(0, l, dens)]
+        return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
