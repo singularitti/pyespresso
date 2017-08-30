@@ -59,7 +59,8 @@ class SimpleRead:
         """
         key_list = []
         value_list = []
-        with open(filename, 'r') as f:
+        with open(filename, 'r',
+                  encoding='utf-8') as f:  # We add utf-8 support simply because we may use special characters.
             for line in f:
                 sp = line.split()
                 key_list.append(sp[col_index])
@@ -91,7 +92,8 @@ class ReadPWscfOutput:
     @staticmethod
     def read_total_energy(filename: str):
         with open(filename, 'r') as f:
-            match = re.findall("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
+            match = re.findall(
+                "!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
         return list(map(float, match))
 
     @staticmethod
@@ -150,15 +152,18 @@ class ReadVCRelaxOutput:
                     if 'V0' in sp:
                         v0 = float(sp[2])
                     else:
-                        print('V0 not found in your file: ' + filename + 'in line: ' + str(count))
+                        print('V0 not found in your file: ' +
+                              filename + 'in line: ' + str(count))
                     if 'K0' in sp:
                         k0 = float(sp[5])
                     else:
-                        print('K0 not found in your file:' + filename + 'in line: ' + str(count))
+                        print('K0 not found in your file:' +
+                              filename + 'in line: ' + str(count))
                     if 'Kp' in sp:
                         k0p = float(sp[8])
                     else:
-                        print("K0' not found in your file:" + filename + 'in line: ' + str(count))
+                        print("K0' not found in your file:" +
+                              filename + 'in line: ' + str(count))
         return v0, k0, k0p
 
     def _read_eos_from_multiple_files(self, file_list: list, i: int) -> List[float]:
@@ -219,7 +224,8 @@ class ReadVCRelaxOutput:
                 if not fields:
                     continue
                 if 'Current folder is' in line:
-                    p_list.append(float(re.findall("-?[0-9]+\.[0-9]+", line)[0]))
+                    p_list.append(
+                        float(re.findall("-?[0-9]+\.[0-9]+", line)[0]))
                 if 'CELL_PARAMETERS' in line:
                     cell_params = np.zeros((3, 3))
                     for i in range(3):
@@ -245,7 +251,8 @@ class ReadVCRelaxOutput:
                 iternum_list.append(float(f.readline()))
         # Group pressures and iteration numbers first,
         # then sort the latter according to the order of pressures, then un-group new pressures and iteration numbers.
-        [p_list, iternum_list] = np.transpose(sorted(np.transpose([p_list, iternum_list]), key=itemgetter(0)))
+        [p_list, iternum_list] = np.transpose(
+            sorted(np.transpose([p_list, iternum_list]), key=itemgetter(0)))
         return p_list, iternum_list
 
 
@@ -282,7 +289,8 @@ class ReadPHononOutput(SimpleRead):
         :param filename: A single file that is to be read.
         :return: ([float], [float])
         """
-        frequency_list, dos_list = self.read_two_columns(filename)  # These 2 lists are filled with strings.
+        frequency_list, dos_list = self.read_two_columns(
+            filename)  # These 2 lists are filled with strings.
         return list(map(float, frequency_list)), list(map(float, dos_list))
 
     def read_q_points(self, filename: str) -> Dict[str, List[float]]:
@@ -299,7 +307,8 @@ class ReadPHononOutput(SimpleRead):
     def read_density_on_path(filename: str):
         return [100] * 5
 
-    def read_phonon_dispersion(self, filename: str, q_path):  # -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
+    # -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
+    def read_phonon_dispersion(self, filename: str, q_path):
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
@@ -310,14 +319,17 @@ class ReadPHononOutput(SimpleRead):
         dens = self.read_density_on_path('aa')
         qp = q_path.upper().replace(' ', '').split('->')
         num_of_paths = len(qp) - 1
-        q_list = np.concatenate([np.zeros([num_of_paths, dens[i], 3]) for i in range(num_of_paths)])
+        q_list = np.concatenate(
+            [np.zeros([num_of_paths, dens[i], 3]) for i in range(num_of_paths)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
         with open(filename, 'r') as f:
             headline = f.readline()
-            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
+            # Number of bands for each q-point
+            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])
             nks = int(re.findall("nks=\s+(\d+)", headline)[0])
-            bands_list = np.concatenate([np.zeros([num_of_paths, dens[i], nbnd]) for i in range(num_of_paths)])
+            bands_list = np.concatenate(
+                [np.zeros([num_of_paths, dens[i], nbnd]) for i in range(num_of_paths)])
             for line in f:
                 q.append(list(map(float, line.split())))
                 newline = f.readline()
@@ -330,7 +342,8 @@ class ReadPHononOutput(SimpleRead):
 
         q_path_len_list = []
         for i in range(num_of_paths):
-            q_path_len_list.append(mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
+            q_path_len_list.append(
+                mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
 
         return q_list, bands_list, q_path_len_list
 

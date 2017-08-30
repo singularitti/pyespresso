@@ -46,7 +46,7 @@ class ComputePHonon:
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
         The file is like:
             A	0.0000000000	0.0000000000	0.8396948868
-            GM	0.0000000000	0.0000000000	0.0000000000
+            Γ   0.0000000000	0.0000000000	0.0000000000
             H	0.8886483087	1.5391840208	0.8396948868
             H2	0.8886483087	1.5391840208   -0.8396948868
             K	0.8886483087	1.5391840208	0.0000000000
@@ -81,15 +81,16 @@ class ComputePHonon:
         q_dict = self.rpb.read_q_points(filename)
         coords = []
         for i in range(path_segment):
-            coords.append(self.generate_3d_segment(q_dict[qp[i]], q_dict[qp[i + 1]], density[i]))
+            coords.append(self.generate_3d_segment(
+                q_dict[qp[i]], q_dict[qp[i + 1]], density[i]))
         coords = np.array(coords).reshape((path_segment * dens, 3))
 
         if mode == 'debug':
             print(coords)
         elif mode == 'default':
             with open(output_filename, 'ab') as f:
-                f.write(('K path is: ' + q_path).encode('ascii'))
-                f.write(str(coords.size).encode('ascii'))
+                f.write(('K path is: ' + q_path).encode('utf-8'))
+                f.write(str(coords.size).encode('utf-8'))
                 np.savetxt(output_filename, coords, fmt='%f')
         else:
             raise ValueError('You input a wrong mode!')
@@ -105,4 +106,5 @@ class ComputePHonon:
         """
         l = mm.compute_3d_distance(point1, point2)
         normalize_vec = (np.array(point2) - np.array(point1)) / l
-        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens)]
+        return np.array(point1) + \
+               [x * normalize_vec for x in np.linspace(0, l, dens)]

@@ -20,7 +20,7 @@ class TestReadPHononOutput(unittest.TestCase):
         return self.rpo.read_q_points('phonon_data/high_sym_q')
 
     def test_read_phonon_dispersion(self):
-        self.rpo.read_phonon_dispersion('phonon_data/freq.out', self.q_dict, 'GM->M->K->GM->A->K')
+        self.rpo.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
 
 
 if __name__ == "__main__":

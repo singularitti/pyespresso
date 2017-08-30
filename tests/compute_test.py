@@ -32,7 +32,7 @@ class TestCompute(unittest.TestCase):
         self.assertTrue(np.allclose(self.cph.generate_3d_segment([2, 0, 1], [1, 0, 1], 11), m))
 
     def test_generate_q_path(self):
-        self.cph.generate_q_path('phonon_data/high_sym_q', 'phonon_data/qpts', 'GM->M->K->GM->A->K', 100)
+        self.cph.generate_q_path('phonon_data/high_sym_q', 'phonon_data/qpts', 'Γ->M->K->Γ->A->K', 100)
 
 
 if __name__ == "__main__":
