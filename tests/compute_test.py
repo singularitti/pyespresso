@@ -10,12 +10,13 @@ import unittest
 
 import numpy as np
 
-import miscellaneous.compute as oc
+import miscellaneous.compute as mc
 
 
 class TestCompute(unittest.TestCase):
     def setUp(self):
-        self.cph = oc.ComputePHonon()
+        self.cph = mc.ComputePHonon()
+        self.gp = mc.ReciprocalPathGenerator('phonon_data/high_sym_q', 'Γ->M->K->Γ->A->K')
 
     def test_generate_3d_segment(self):
         m = np.array([[2, 0, 1],
@@ -29,10 +30,12 @@ class TestCompute(unittest.TestCase):
                       [1.2, 0, 1],
                       [1.1, 0, 1],
                       [1, 0, 1]])
-        self.assertTrue(np.allclose(self.cph.generate_3d_segment([2, 0, 1], [1, 0, 1], 11), m))
+        self.assertTrue(np.allclose(self.gp.linspace_3d([2, 0, 1], [1, 0, 1], 11), m))
 
     def test_generate_q_path(self):
-        self.cph.generate_q_path('phonon_data/high_sym_q', 'phonon_data/qpts', 'Γ->M->K->Γ->A->K', 100)
+        # self.gp.generate_q_path(100)
+        print(self.gp.generate_q_path([4, 4, 4, 3, 3]))
+        # self.gp.generate_q_path(np.array([100, 100, 200, 50, 100]))
 
 
 if __name__ == "__main__":
