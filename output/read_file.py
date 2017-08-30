@@ -270,6 +270,9 @@ class ReadPHononOutput(SimpleRead):
                 else:  # If the line has data
                     coordinates.append(float(line.split()[0]))
                     bands.append(float(line.split()[1]))
+
+        # coordinates_list = np.array(coordinates_list).reshape([5, 3600])
+        # bands_list = np.array(bands_list).reshape([5, 3600])
         return coordinates_list, bands_list
 
     def read_dos(self, filename: str) -> Tuple[List[float], List[float]]:

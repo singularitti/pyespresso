@@ -93,7 +93,6 @@ class PlotPHononOutput:
             axes[i].set_xticklabels(label[i])
             axes[i].plot(range(len(ks[i])), bands[i])
             axes[i].set_xlim((min(range(len(ks[i]))), max(range(len(ks[i])))))  # To make plot without inner paddings
-            axes[i].set_ylim((0, self.cph.frequency_to_ev(450)))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
         fig.suptitle('phonon dispersion relation', fontsize=16)
         axes[0].set_ylabel("ev", fontsize=12)
@@ -105,19 +104,18 @@ class PlotPHononOutput:
         fig.savefig(path + "/dispersion.pdf")
         # plt.show()
 
-    def plot_dos(self, filename: Optional[str] = 'dos.out', freq_unit: Optional[str] = 'ev',
+    def plot_dos(self, filename: Optional[str] = 'matdyn.dos.out', freq_unit: Optional[str] = 'ev',
                  mode: Optional[str] = 'preview') -> None:
         """
         This method plots the density of states (DOS) of a phonon dispersion relation.
 
-        :param filename: file that contains DOS-data. The default value is 'dos.out'.
+        :param filename: file that contains DOS-data. The default value is 'matdyn.dos.out'.
         :param freq_unit: You can choose from 'ev' or 'cm-1'. The default value is 'ev'.
         :param mode: You can choose to preview/show the plot ('preview') or save it to file ('save'). The default value
             is 'preview'.
         :return: None
         """
         fig, ax = plt.subplots()
-
         frequency_list, dos_list = self.rpb.read_dos(filename)
         if freq_unit == 'ev':
             frequency_list = self.cph.frequency_to_ev(frequency_list)  # Convert unit from cm^-1 to ev
@@ -127,6 +125,8 @@ class PlotPHononOutput:
         else:
             raise ValueError('Unknown frequency unit!')
 
+        ax.set_xlim((min(frequency_list), max(frequency_list)))
+        ax.set_ylim((0, max(dos_list)))
         ax.plot(frequency_list, dos_list)
         ax.set_ylabel('density of states', fontsize=12)
         ax.set_title('phonon density of states', fontsize=16)
@@ -134,6 +134,6 @@ class PlotPHononOutput:
         if mode == 'preview':
             plt.show()
         elif mode == 'save':
-            fig.savefig("dos" + str(np.random.random_integers(0, 1000)) + ".png", dpi=400)
+            plt.savefig("dos.pdf")
         else:
             raise ValueError('Unknown output mode!')
