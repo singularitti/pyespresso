@@ -65,8 +65,8 @@ class PlotPHononOutput:
     def plot_gnuplot(self, filename: Optional[str] = 'gnuplot'):
         coords_list, bands_list = self.rpb.read_gunplot(filename)
         fig, ax = plt.subplots()
-        for i, (coords, bands) in enumerate(zip(coords_list, bands_list)):
-            ax.plot(coords, bands, label="band " + str(i))
+        for i, p in enumerate(zip(coords_list, bands_list)):
+            ax.plot(*p, label="band " + str(i))
         # Next we will make some adjustment to plot all bands.
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.2,
@@ -82,7 +82,8 @@ class PlotPHononOutput:
     def plot_phonon_dispersion(self, path):
         label = ['Γ', 'M', 'K', 'Γ', 'A', 'K']
         ks, bands, ls = self.rpb.read_phonon_dispersion(path + '/freq.out', '->'.join(label))
-        bands = self.cph.frequency_to_ev(bands)
+        bands = self.cph.frequency_to_hertz(bands)
+        # bands = self.cph.frequency_to_ev(bands)
         fig, axes = plt.subplots(nrows=1, ncols=5, sharey='all', gridspec_kw={'width_ratios': ls})
         plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
         for i in range(len(axes)):
@@ -93,7 +94,7 @@ class PlotPHononOutput:
             axes[i].set_xlim((min(range(len(ks[i]))), max(range(len(ks[i])))))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
         fig.suptitle('phonon dispersion relation', fontsize=16)
-        axes[0].set_ylabel("ev", fontsize=12)
+        axes[0].set_ylabel("hz", fontsize=12)
         axes[0].yaxis.tick_left()
         axes[-1].set_xticks([0, 100])
         axes[-1].set_xticklabels([label[-2], label[-1]])

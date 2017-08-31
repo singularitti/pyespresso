@@ -55,9 +55,12 @@ class SimpleRead:
         col2_list = []
         with open(inp, 'r') as f:
             for line in f:
-                sp = line.split()
-                col1_list.append(sp[0])
-                col2_list.append(sp[1])
+                if not line.split():
+                    f.readline()
+                else:
+                    sp = line.split()
+                    col1_list.append(sp[0])
+                    col2_list.append(sp[1])
         return col1_list, col2_list
 
     @staticmethod
@@ -84,13 +87,13 @@ class SimpleRead:
     def _read_reciprocal_points(self, inp: str) -> Dict[str, List[float]]:
         """
         Suppose you have a file like this:
-            A	0.0000000000	0.0000000000	0.8396948868
-            GM	0.0000000000	0.0000000000	0.0000000000
-            H	0.8886483087	1.5391840208	0.8396948868
-            H2	0.8886483087	1.5391840208   -0.8396948868
-            K	0.8886483087	1.5391840208	0.0000000000
-            L	1.3329724631	0.7695920104	0.8396948868
-            M	1.3329724631	0.7695920104	0.0000000000
+            A	0.0000000000	0.0000000000	0.5000000000
+            Γ   0.0000000000	0.0000000000	0.0000000000
+            H	0.3333333333	0.3333333333	0.5000000000
+            H2	0.3333333333	0.3333333333   -0.5000000000
+            K	0.3333333333	0.3333333333	0.0000000000
+            L	0.5000000000	0.0000000000	0.5000000000
+            M	0.5000000000	0.0000000000	0.0000000000
         These are the k-points you want to track through.
         This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
         its value, forms a dictionary.
@@ -292,30 +295,15 @@ class ReadVCRelaxOutput:
 
 
 class ReadPHononOutput(SimpleRead):
-    @staticmethod
-    def read_gunplot(inp: str) -> tuple:
+    def read_gunplot(self, inp: str) -> tuple:
         """
         Read in coordinates and energy information, and the collect them as an array.
 
         :param inp: A single file that is to be read.
         :return: ([[float]], [[float]])
         """
-        coordinates_list = []
-        bands_list = []
-        coordinates = []
-        bands = []
-        with open(inp, 'r') as f:
-            for line in f:
-                if not line.strip():  # If the line is empty or blank
-                    coordinates_list.append(coordinates)
-                    bands_list.append(bands)
-                else:  # If the line has data
-                    coordinates.append(float(line.split()[0]))
-                    bands.append(float(line.split()[1]))
-
-        # coordinates_list = np.array(coordinates_list).reshape([5, 3600])
-        # bands_list = np.array(bands_list).reshape([5, 3600])
-        return coordinates_list, bands_list
+        coordinates_list, bands_list = self.read_two_columns(inp)
+        return str_list_to_float_list(coordinates_list), str_list_to_float_list(bands_list)
 
     def read_dos(self, inp: str) -> Tuple[List[float], List[float]]:
         """
@@ -331,7 +319,6 @@ class ReadPHononOutput(SimpleRead):
     def read_density_on_path(inp: str):
         return [100] * 5
 
-    # -> Optional[Tuple[np.ndarray, np.ndarray], Exception]:
     def read_phonon_dispersion(self, inp: str, q_path):
         """
         This method reads phonon dispersion relation returned by matdyn.x.

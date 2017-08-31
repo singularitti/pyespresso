@@ -42,7 +42,8 @@ class LengthConverter(UnitConverter):
         :param to_unit: str
         :return: float
         """
-        scale = dict.fromkeys(['m', 'meter', 'metre', 'SI'], 1)  # Meter is the standard unit.
+        scale = dict.fromkeys(['m', 'meter', 'metre', 'SI'],
+                              1)  # Meter is the standard unit.
         scale.update(dict.fromkeys(['a', 'angstrom', 'A'], 1e-10))
         scale.update(dict.fromkeys(['cm', 'centimeter'], 1e-2))
         scale.update(dict.fromkeys(['nm', 'nanometer'], 1e-9))
@@ -81,6 +82,7 @@ class EnergyConverter(UnitConverter):
         self.electron_volt = 1.602176565e-19
         self.boltzmann_const = 1.38064852e-23
         self.freq_to_joule = 1.98630e-23
+        self.freq_to_hertz = 29979300000
 
     def simple_converter(self, num, from_unit='ha', to_unit='ry'):
         """
@@ -90,7 +92,8 @@ class EnergyConverter(UnitConverter):
         :param to_unit:
         :return:
         """
-        scale = dict.fromkeys(['J', 'Joule', 'SI'], 1)  # Joule is the standard unit.
+        scale = dict.fromkeys(['J', 'Joule', 'SI'],
+                              1)  # Joule is the standard unit.
         scale.update(dict.fromkeys(
             ['h', 'ha', 'hartree'], self.hartree_energy))
         scale.update(dict.fromkeys(
@@ -98,6 +101,7 @@ class EnergyConverter(UnitConverter):
         scale.update(dict.fromkeys(['ry', 'rydberg'], self.hartree_energy / 2))
         scale.update(dict.fromkeys(['K'], self.boltzmann_const))
         scale.update(dict.fromkeys(['cm-1'], self.freq_to_joule))
+        scale.update(dict.fromkeys(['hz', 'hertz'], self.freq_to_hertz))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 
@@ -113,7 +117,8 @@ class PressureConverter(UnitConverter):
         :param to_unit: str
         :return: float
         """
-        scale = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'], 1)  # Pa is the standard unit.
+        scale = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'],
+                              1)  # Pa is the standard unit.
         scale.update(dict.fromkeys(['gpa', 'GPa'], 1e9))
         scale.update(dict.fromkeys(['bar'], 1e5))
         scale.update(dict.fromkeys(['mbar', 'Mbar'], 1e11))
@@ -165,6 +170,6 @@ def call_simple_converter(physical_quantity: str, numeric: Union[int, float, Lis
 
 
 if __name__ == "__main__":
-    print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
-    # print(call_simple_converter('v', 8.67, 'a3', 'b3'))
+    # print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
+    print(call_simple_converter('v', 121.4543 / 2, 'b3', 'a3'))
     # print(call_simple_converter('e', 250, 'ev', 'ry'))

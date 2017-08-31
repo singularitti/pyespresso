@@ -32,10 +32,13 @@ class TestCompute(unittest.TestCase):
                       [1, 0, 1]])
         self.assertTrue(np.allclose(self.gp.linspace_3d([2, 0, 1], [1, 0, 1], 11), m))
 
-    def test_generate_q_path(self):
-        # self.gp.generate_q_path(100)
-        print(self.gp.generate_q_path([4, 4, 4, 3, 3]))
-        # self.gp.generate_q_path(np.array([100, 100, 200, 50, 100]))
+    def test_generate_path(self):
+        # print(self.gp.generate_q_path(3))
+        print((self.gp.generate_reciprocal_path([4, 4, 4, 3, 3])))
+        print((self.gp.generate_reciprocal_path(np.array([4, 4, 4, 3, 3]))))
+        # np.testing.assert_array_almost_equal(self.gp.generate_reciprocal_path([4, 4, 4, 3, 3]),
+        #                                      self.gp.generate_reciprocal_path(np.array([4, 4, 4, 3, 3])))
+        self.gp.generate_q_path(100, 'phonon_data/qpts')
 
 
 if __name__ == "__main__":

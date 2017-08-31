@@ -4,6 +4,9 @@
 from miscellaneous.converter import *
 from output.read_file import *
 
+# Type aliases
+IntArray = Union[int, List[int], np.ndarray]
+
 
 class ComputeVCRelax:
     def __init__(self):
@@ -30,41 +33,61 @@ class ReciprocalPathGenerator:
         """
         If you give a path like 'GM->M->K->GM->A->K', then this method will automatically generate---according
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
-        The file is like:
-            A	0.0000000000	0.0000000000	0.8396948868
+        The file looks like:
+            A	0.0000000000	0.0000000000	0.5000000000
             Γ   0.0000000000	0.0000000000	0.0000000000
-            H	0.8886483087	1.5391840208	0.8396948868
-            H2	0.8886483087	1.5391840208   -0.8396948868
-            K	0.8886483087	1.5391840208	0.0000000000
-            L	1.3329724631	0.7695920104	0.8396948868
-            M	1.3329724631	0.7695920104	0.0000000000
+            H	0.3333333333	0.3333333333	0.5000000000
+            H2	0.3333333333	0.3333333333   -0.5000000000
+            K	0.3333333333	0.3333333333	0.0000000000
+            L	0.5000000000	0.0000000000	0.5000000000
+            M	0.5000000000	0.0000000000	0.0000000000
         See output.read_file.SimpleRead._read_reciprocal_points for more information.
 
         :param inp: As explained above.
-        :param reci_path:  A specific q-path you are interested in, like 'GM->M->K->GM->A->K'. Each q-point should be
-            separated by a '->' character, spaces are allow, other characters are not allowed. Special character,
-            like 'Γ' in utf-8 is allowed.
+        :param reci_path:  A specific q-path you are interested in, like 'GM->M->K->GM->A->K'.
+            Each q-point should be separated by a '->' character, spaces are allow, other characters are not allowed.
+            Special character, like 'Γ' in utf-8 is allowed.
+            Note that if you use 'Γ' in your `inp` file, you should also use 'Γ' in `reci_path`!
         """
         self.rph = ReadPHononOutput()
         self.reci_dict = self.rph.read_q_points(inp)
         self.reci_path = reci_path
 
-    def generate_k_path(self, density: Union[None, int, List[int], np.ndarray]) -> np.ndarray:
-        return self._generate_reciprocal_path(density)
-
-    def generate_q_path(self, density: Union[None, int, List[int], np.ndarray]) -> np.ndarray:
-        return self._generate_reciprocal_path(density)
-
-    def _generate_reciprocal_path(self, density: Union[None, int, List[int], np.ndarray] = 100) -> np.ndarray:
+    def generate_k_path(self, density: Optional[IntArray], out: str) -> np.ndarray:
         """
+        This is just a wrapper for `generate_reciprocal_path`, with writing to file function.
 
         :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
             the method will automatically generate an array filled with same value. If it is already an array or list,
             the length of them should be the number of q-points minus 1. The default value is 100.
-        :param mode: If you are in debugging mode, then will not write to file but directly print the result,
-            if you are in default mode, write result to file, if you input a wrong mode, error will be raised. The
-            default value is 'default'.
-        :return: None
+        :param out: filename you want to write to. The coordinates of the k-points on the path will be written.
+        :return: the coordinates of the k-points on the path.
+        """
+        coords = self.generate_reciprocal_path(density)
+        self._write_path_to_file(coords, out)
+        return coords
+
+    def generate_q_path(self, density: Optional[IntArray], out: str) -> np.ndarray:
+        """
+        This is just a wrapper for `generate_reciprocal_path`, with writing to file function.
+
+        :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
+            the method will automatically generate an array filled with same value. If it is already an array or list,
+            the length of them should be the number of q-points minus 1. The default value is 100.
+        :param out: filename you want to write to. The coordinates of the q-points on the path will be written.
+        :return: the coordinates of the q-points on the path.
+        """
+        coords = self.generate_reciprocal_path(density)
+        self._write_path_to_file(coords, out)
+        return coords
+
+    def generate_reciprocal_path(self, density: Optional[IntArray]) -> np.ndarray:
+        """
+
+        :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
+            the method will automatically generate an array filled with same value. If it is already an array or list,
+            the length of them should be the number of q-points minus 1.
+        :return:
         """
         path: List[str] = self.reci_path.upper().replace(' ', '').split('->')
         path_num: int = len(path) - 1
@@ -78,21 +101,17 @@ class ReciprocalPathGenerator:
         else:
             raise TypeError('The type of k-point density is incorrect!')
 
-        reci_coords = np.zeros((np.sum(density), 3))
+        reci_coords = []
         for i in range(path_num):
-            reci_coords[i * density[i]:(i + 1) * density[i]] = \
-                self.linspace_3d(self.reci_dict[path[i]], self.reci_dict[path[i + 1]], density[i], endpoint=False)
-        return reci_coords
+            reci_coords.append(self.linspace_3d(self.reci_dict[path[i]], self.reci_dict[path[i + 1]], density[i]))
+        return np.array(reci_coords)
 
-        # if mode == 'debug':
-        #     print(coords)
-        # elif mode == 'default':
-        #     with open(out, 'ab') as f:
-        #         f.write(('K path is: ' + reci_path).encode('utf-8'))
-        #         f.write(str(coords.size).encode('utf-8'))
-        #         np.savetxt(out, coords, fmt='%f')
-        # else:
-        #     raise ValueError('You input a wrong mode!')
+    def _write_path_to_file(self, coords: np.ndarray, out: str):
+        with open(out, 'wb') as f:
+            f.write(('The reciprocal path is: ' + self.reci_path + ", and the number of points is: \n").encode('utf-8'))
+            f.write((str(coords.size / 3) + "\n").encode('utf-8'))
+            for row in coords:
+                np.savetxt(f, row)
 
     @staticmethod
     def linspace_3d(point1: List[float], point2: List[float], dens: int, **option) -> np.ndarray:
@@ -100,9 +119,10 @@ class ReciprocalPathGenerator:
         This method generates a series of evenly-spaced points between 2 given points.
         :param point1: point 1
         :param point2: point 2
-        :param dens: density, i.e., number of points between 2 given points.
-        :param option: It is the same as options for np.linspace. I suggest that you use endpoint=False. Then dens is
-            exactly number of points between 2 given points, endpoint not included.
+        :param dens: density, i.e., number of points between 2 given points. If option is endpoint=True,
+            then dens includes the start point and the end point.
+        :param option: It is the same as options for np.linspace. I suggest that you use endpoint=True,
+            which is the default for np.linspace.
         :return: a series of evenly-spaced points
         """
         l = mm.compute_3d_distance(point1, point2)
@@ -122,3 +142,7 @@ class ComputePHonon:
         :return: energy in unit of electron-volt
         """
         return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
+
+    @staticmethod
+    def frequency_to_hertz(frequency_list: List[float]) -> List[float]:
+        return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
