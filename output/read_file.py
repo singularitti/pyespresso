@@ -29,6 +29,7 @@ def str_list_to_float_list(inp: List[str]) -> List[float]:
 
 
 class SimpleRead:
+
     @staticmethod
     def read_each_line(inp: str) -> List[str]:
         """
@@ -76,7 +77,8 @@ class SimpleRead:
         """
         key_list = []
         value_list = []
-        with open(inp, 'r', encoding='utf-8') as f:  # We add utf-8 support because we may use special characters.
+        # We add utf-8 support because we may use special characters.
+        with open(inp, 'r', encoding='utf-8') as f:
             for line in f:
                 sp = line.split()
                 key_list.append(sp[col_index])
@@ -124,6 +126,7 @@ class SimpleRead:
 
 
 class ReadPWscfOutput:
+
     @staticmethod
     def read_total_energy(inp: str):
         with open(inp, 'r') as f:
@@ -131,7 +134,8 @@ class ReadPWscfOutput:
                 "!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
         return str_list_to_float_list(match)
 
-    KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
+    KMesh = NamedTuple(
+        'KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
     @staticmethod
     def read_k_mesh(inp: str) -> KMesh:
@@ -141,13 +145,16 @@ class ReadPWscfOutput:
                     sp = f.readline().split()
                     k_grid = str_list_to_float_list(sp[0:3])
                     k_shift = str_list_to_float_list(sp[3:7])
-                    k_mesh = collections.namedtuple('k_mesh', ['k_grid', 'k_shift'])
+                    k_mesh = collections.namedtuple(
+                        'k_mesh', ['k_grid', 'k_shift'])
                     return k_mesh(k_grid, k_shift)
                 else:
-                    raise ValueError("'K_POINTS' not found in your input! Please check!")
+                    raise ValueError(
+                        "'K_POINTS' not found in your input! Please check!")
 
 
 class ReadVCRelaxOutput:
+
     @staticmethod
     def read_pv(inp: str) -> Tuple[List[float], List[float]]:
         """
@@ -257,7 +264,8 @@ class ReadVCRelaxOutput:
         cell_params_list = []
         with open(inp, 'r') as f:
             for line in f:
-                # If a line starts with '#', it will be regarded as a comment, we do not parse it.
+                # If a line starts with '#', it will be regarded as a comment,
+                # we do not parse it.
                 fields = shlex.split(line, comments=True)
                 if not fields:
                     continue
@@ -288,22 +296,32 @@ class ReadVCRelaxOutput:
                 p_list.append(float(re.findall("-?\d.*\.\d", line)[0]))
                 iternum_list.append(float(f.readline()))
         # Group pressures and iteration numbers first,
-        # then sort the latter according to the order of pressures, then un-group new pressures and iteration numbers.
+        # then sort the latter according to the order of pressures, then
+        # un-group new pressures and iteration numbers.
         [p_list, iternum_list] = np.transpose(
             sorted(np.transpose([p_list, iternum_list]), key=itemgetter(0)))
         return p_list, iternum_list
 
 
 class ReadPHononOutput(SimpleRead):
-    def read_gunplot(self, inp: str) -> tuple:
+
+    @staticmethod
+    def read_gunplot(inp: str) -> tuple:
         """
         Read in coordinates and energy information, and the collect them as an array.
 
         :param inp: A single file that is to be read.
         :return: ([[float]], [[float]])
         """
-        coordinates_list, bands_list = self.read_two_columns(inp)
-        return str_list_to_float_list(coordinates_list), str_list_to_float_list(bands_list)
+        coordinates_list = []
+        bands_list = []
+        with open(inp, 'r') as f:
+            for line in f:  # If the line has data
+                line = line.strip()
+                if line:
+                    coordinates_list.append(float(line.split()[0]))
+                    bands_list.append(float(line.split()[1]))
+        return coordinates_list, bands_list
 
     def read_dos(self, inp: str) -> Tuple[List[float], List[float]]:
         """
@@ -312,14 +330,12 @@ class ReadPHononOutput(SimpleRead):
         :param inp: A single file that is to be read.
         :return: ([float], [float])
         """
-        frequency_list, dos_list = self.read_two_columns(inp)  # Tuple[List[str], List[str]]
+        frequency_list, dos_list = self.read_two_columns(
+            inp)  # Tuple[List[str], List[str]]
         return str_list_to_float_list(frequency_list), str_list_to_float_list(dos_list)
 
     @staticmethod
-    def read_density_on_path(inp: str):
-        return [100] * 5
-
-    def read_phonon_dispersion(self, inp: str, q_path):
+    def read_phonon_dispersion(inp: str, q_path, dens):
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
@@ -327,11 +343,10 @@ class ReadPHononOutput(SimpleRead):
         :param q_path:
         :return:
         """
-        dens = self.read_density_on_path('aa')
         qp = q_path.upper().replace(' ', '').split('->')
-        num_of_paths = len(qp) - 1
+        path_num = len(qp) - 1
         q_list = np.concatenate(
-            [np.zeros([num_of_paths, dens[i], 3]) for i in range(num_of_paths)])
+            [np.zeros([path_num, dens[i], 3]) for i in range(path_num)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
         with open(inp, 'r') as f:
@@ -340,32 +355,21 @@ class ReadPHononOutput(SimpleRead):
             nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])
             nks = int(re.findall("nks=\s+(\d+)", headline)[0])
             bands_list = np.concatenate(
-                [np.zeros([num_of_paths, dens[i], nbnd]) for i in range(num_of_paths)])
+                [np.zeros([path_num, dens[i], nbnd]) for i in range(path_num)])
             for line in f:
                 q.append(list(map(float, line.split())))
                 newline = f.readline()
                 bands.append(list(map(float, newline.split())))
 
-        for i in range(num_of_paths):
+        for i in range(path_num):
             for j in range(dens[i]):
                 q_list[i][j][:] = q[i * dens[i] + j][:]
                 bands_list[i][j][:] = bands[i * dens[i] + j][:]
 
-        q_path_len_list = []
-        for i in range(num_of_paths):
-            q_path_len_list.append(
-                mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
+        return q_list, bands_list
 
-        return q_list, bands_list, q_path_len_list
-
-        # Reading file is finished
-        # if cols is None or rows is None:
-        #     raise NameError("'nbnd' or 'nks' not found in your file! Please check it!")
-        # elif q_list.shape[0] * q_list.shape[1] == rows and bands_list.shape[2] == cols:
-        #     return q_list, bands_list
-        # else:
-        #     try:
-        #         print(q_list.shape[1] * q_list.shape[0], rows)
-        #         print(bands_list.shape[2], cols)
-        #     except ValueError:
-        #         raise ValueError('Number of bands or number of k points does not match header!')
+    def read_phonon_dispersion_from_multiple(self, file_list: List[str], dens, q_path):
+        xs = []
+        for file in file_list:
+            xs.append(self.read_phonon_dispersion(file, q_path, dens))
+        return xs

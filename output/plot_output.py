@@ -3,8 +3,10 @@
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
+from matplotlib.collections import LineCollection
 
 from miscellaneous.compute import *
+from output.generate_test import *
 
 
 class PlotPWscfOutput:
@@ -64,9 +66,11 @@ class PlotPHononOutput:
 
     def plot_gnuplot(self, filename: Optional[str] = 'gnuplot'):
         coords_list, bands_list = self.rpb.read_gunplot(filename)
+        print(np.array(coords_list))
         fig, ax = plt.subplots()
-        for i, p in enumerate(zip(coords_list, bands_list)):
-            ax.plot(*p, label="band " + str(i))
+        # for i, p in enumerate(zip(coords_list, bands_list)):
+        #     ax.plot(*p, label="band " + str(i))
+        ax.plot(coords_list, bands_list)
         # Next we will make some adjustment to plot all bands.
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.2,
@@ -79,29 +83,49 @@ class PlotPHononOutput:
         ax.set_title('phonon dispersion relation', fontsize=16)
         plt.show()
 
-    def plot_phonon_dispersion(self, path):
-        label = ['Γ', 'M', 'K', 'Γ', 'A', 'K']
-        ks, bands, ls = self.rpb.read_phonon_dispersion(path + '/freq.out', '->'.join(label))
-        bands = self.cph.frequency_to_hertz(bands)
-        # bands = self.cph.frequency_to_ev(bands)
-        fig, axes = plt.subplots(nrows=1, ncols=5, sharey='all', gridspec_kw={'width_ratios': ls})
+    def plot_phonon_dispersion(self, fig, axes, filename, q_path, color):
+        q_path = q_path.upper().replace(' ', '').split('->')
+        path_num = len(q_path) - 1
+        qs, bands = self.rpb.read_phonon_dispersion(filename, '->'.join(q_path), [100] * 5)
+        ls = self.cph.q_path_len_list(path_num, qs)
+        # bands = self.cph.frequency_to_hertz(bands)
+        bands = self.cph.frequency_to_ev(bands)
         plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
+        sp = filename.split('.')[0].split('/')
         for i in range(len(axes)):
             axes[i].get_xaxis().set_ticks([])  # Cancel x-axis ticks
             axes[i].set_xticks(range(0, 600, 100))
-            axes[i].set_xticklabels(label[i])
-            axes[i].plot(range(len(ks[i])), bands[i])
-            axes[i].set_xlim((min(range(len(ks[i]))), max(range(len(ks[i])))))  # To make plot without inner paddings
+            axes[i].set_xticklabels(q_path[i])
+            axes[i].plot(range(len(qs[i])), bands[i], color=color, label=sp[-1])
+            axes[i].set_xlim((min(range(len(qs[i]))), max(range(len(qs[i])))))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
+
+            box = axes[i].get_position()
+            axes[i].set_position([box.x0, box.y0 + box.height * 0.2,
+                                  box.width, box.height * 0.8])
+            fontP = FontProperties()
+            fontP.set_size('small')
+        handles, labels = plt.gca().get_legend_handles_labels()
+        labels, ids = np.unique(labels, return_index=True)
+        handles = [handles[i] for i in ids]
+        axes[2].legend(handles, labels, loc='center', bbox_to_anchor=(0.5, -0.25), ncol=3, prop=fontP)
         fig.suptitle('phonon dispersion relation', fontsize=16)
-        axes[0].set_ylabel("hz", fontsize=12)
+        axes[2].set_xlabel('q-path', fontsize=12)
+        axes[0].set_ylabel('hz', fontsize=12)
         axes[0].yaxis.tick_left()
         axes[-1].set_xticks([0, 100])
-        axes[-1].set_xticklabels([label[-2], label[-1]])
+        axes[-1].set_xticklabels([q_path[-2], q_path[-1]])
         axes[-1].yaxis.tick_right()
         axes[-1].yaxis.set_ticks_position('right')
-        fig.savefig(path + "/dispersion.pdf")
+        # fig.savefig(path + "/dispersion.pdf")
         # plt.show()
+
+    def plot_multiple_phonon_dispersion(self, file_list, q_path, fig, axes):
+        cmap = plt.get_cmap('viridis')
+        colors = cmap(np.linspace(0, 1, len(file_list)))
+        for i, file in enumerate(file_list):
+            self.plot_phonon_dispersion(fig, axes, file, q_path, colors[i])
+        plt.show()
 
     def plot_dos(self, filename: Optional[str] = 'matdyn.dos.out', freq_unit: Optional[str] = 'ev',
                  mode: Optional[str] = 'preview') -> None:

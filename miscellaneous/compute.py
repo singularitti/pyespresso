@@ -28,10 +28,29 @@ class ComputeVCRelax:
         return p_list, c_over_a_list
 
 
-class ReciprocalPathGenerator:
+class PathGenerator:
+    @staticmethod
+    def linspace_3d(point1: List[float], point2: List[float], dens: int, **option) -> np.ndarray:
+        """
+        This method generates a series of evenly-spaced points between 2 given points.
+
+        :param point1: point 1
+        :param point2: point 2
+        :param dens: density, i.e., number of points between 2 given points. If option is endpoint=True,
+            then dens includes the start point and the end point.
+        :param option: It is the same as options for np.linspace. I suggest that you use endpoint=True,
+            which is the default for np.linspace.
+        :return: a series of evenly-spaced points
+        """
+        l = mm.compute_3d_distance(point1, point2)
+        normalize_vec = (np.array(point2) - np.array(point1)) / l
+        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens, **option)]
+
+
+class ReciprocalPathGenerator(PathGenerator):
     def __init__(self, inp: str, reci_path: str):
         """
-        If you give a path like 'GM->M->K->GM->A->K', then this method will automatically generate---according
+        If you give a path like 'Γ->M->K->Γ->A->K', then this method will automatically generate---according
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
         The file looks like:
             A	0.0000000000	0.0000000000	0.5000000000
@@ -50,8 +69,8 @@ class ReciprocalPathGenerator:
             Note that if you use 'Γ' in your `inp` file, you should also use 'Γ' in `reci_path`!
         """
         self.rph = ReadPHononOutput()
-        self.reci_dict = self.rph.read_q_points(inp)
-        self.reci_path = reci_path
+        self.reci_dict: Dict[str, List[float]] = self.rph.read_q_points(inp)
+        self.reci_path: List[str] = reci_path.upper().replace(' ', '').split('->')
 
     def generate_k_path(self, density: Optional[IntArray], out: str) -> np.ndarray:
         """
@@ -83,14 +102,15 @@ class ReciprocalPathGenerator:
 
     def generate_reciprocal_path(self, density: Optional[IntArray]) -> np.ndarray:
         """
+        This method will generate an array of coordinates of points on the path, specified in `self.__init__` function,
+        making use of 3D linear interpolation of a straight line.
 
         :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
             the method will automatically generate an array filled with same value. If it is already an array or list,
             the length of them should be the number of q-points minus 1.
-        :return:
+        :return: a numpy array of shape `path_num[i], dens[i], 3`, where i ranges from 0 to `path_num - 1`.
         """
-        path: List[str] = self.reci_path.upper().replace(' ', '').split('->')
-        path_num: int = len(path) - 1
+        path_num: int = len(self.reci_path) - 1  # Number of paths
 
         # Check if density is given a reasonable type, the only allowed are int, list, and np.ndarray.
         if isinstance(density, int):
@@ -103,31 +123,25 @@ class ReciprocalPathGenerator:
 
         reci_coords = []
         for i in range(path_num):
-            reci_coords.append(self.linspace_3d(self.reci_dict[path[i]], self.reci_dict[path[i + 1]], density[i]))
+            reci_coords.append(
+                self.linspace_3d(self.reci_dict[self.reci_path[i]], self.reci_dict[self.reci_path[i + 1]], density[i]))
         return np.array(reci_coords)
 
-    def _write_path_to_file(self, coords: np.ndarray, out: str):
+    def _write_path_to_file(self, coords: np.ndarray, out: str) -> None:
+        """
+        Write the above result to file `out`.
+
+        :param coords: As explained above.
+        :param out: output filename.
+        :return: None
+        """
         with open(out, 'wb') as f:
-            f.write(('The reciprocal path is: ' + self.reci_path + ", and the number of points is: \n").encode('utf-8'))
+            f.write(
+                ('The reciprocal path is: ' + '->'.join(self.reci_path) +
+                 ", and the number of points is: \n").encode('utf-8'))
             f.write((str(coords.size / 3) + "\n").encode('utf-8'))
             for row in coords:
                 np.savetxt(f, row)
-
-    @staticmethod
-    def linspace_3d(point1: List[float], point2: List[float], dens: int, **option) -> np.ndarray:
-        """
-        This method generates a series of evenly-spaced points between 2 given points.
-        :param point1: point 1
-        :param point2: point 2
-        :param dens: density, i.e., number of points between 2 given points. If option is endpoint=True,
-            then dens includes the start point and the end point.
-        :param option: It is the same as options for np.linspace. I suggest that you use endpoint=True,
-            which is the default for np.linspace.
-        :return: a series of evenly-spaced points
-        """
-        l = mm.compute_3d_distance(point1, point2)
-        normalize_vec = (np.array(point2) - np.array(point1)) / l
-        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens, **option)]
 
 
 class ComputePHonon:
@@ -146,3 +160,11 @@ class ComputePHonon:
     @staticmethod
     def frequency_to_hertz(frequency_list: List[float]) -> List[float]:
         return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
+
+    @staticmethod
+    def q_path_len_list(path_num, q_list):
+        q_path_len_list = []
+        for i in range(path_num):
+            q_path_len_list.append(
+                mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
+        return q_path_len_list
