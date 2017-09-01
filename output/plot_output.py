@@ -88,8 +88,8 @@ class PlotPHononOutput:
         path_num = len(q_path) - 1
         qs, bands = self.rpb.read_phonon_dispersion(filename, '->'.join(q_path), [100] * 5)
         ls = self.cph.q_path_len_list(path_num, qs)
-        # bands = self.cph.frequency_to_hertz(bands)
-        bands = self.cph.frequency_to_ev(bands)
+        bands = self.cph.frequency_to_hertz(bands)
+        # bands = self.cph.frequency_to_ev(bands)
         plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
         sp = filename.split('.')[0].split('/')
         for i in range(len(axes)):
@@ -111,7 +111,7 @@ class PlotPHononOutput:
         axes[2].legend(handles, labels, loc='center', bbox_to_anchor=(0.5, -0.25), ncol=3, prop=fontP)
         fig.suptitle('phonon dispersion relation', fontsize=16)
         axes[2].set_xlabel('q-path', fontsize=12)
-        axes[0].set_ylabel('hz', fontsize=12)
+        axes[0].set_ylabel('Hz', fontsize=12)
         axes[0].yaxis.tick_left()
         axes[-1].set_xticks([0, 100])
         axes[-1].set_xticklabels([q_path[-2], q_path[-1]])

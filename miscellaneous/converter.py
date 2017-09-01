@@ -82,7 +82,7 @@ class EnergyConverter(UnitConverter):
         self.electron_volt = 1.602176565e-19
         self.boltzmann_const = 1.38064852e-23
         self.freq_to_joule = 1.98630e-23
-        self.freq_to_hertz = 29979300000
+        self.hertz_to_joule = 6.62561e-34
 
     def simple_converter(self, num, from_unit='ha', to_unit='ry'):
         """
@@ -101,7 +101,7 @@ class EnergyConverter(UnitConverter):
         scale.update(dict.fromkeys(['ry', 'rydberg'], self.hartree_energy / 2))
         scale.update(dict.fromkeys(['K'], self.boltzmann_const))
         scale.update(dict.fromkeys(['cm-1'], self.freq_to_joule))
-        scale.update(dict.fromkeys(['hz', 'hertz'], self.freq_to_hertz))
+        scale.update(dict.fromkeys(['hz', 'hertz'], self.hertz_to_joule))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 
@@ -171,5 +171,5 @@ def call_simple_converter(physical_quantity: str, numeric: Union[int, float, Lis
 
 if __name__ == "__main__":
     # print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
-    print(call_simple_converter('v', 121.4543 / 2, 'b3', 'a3'))
-    # print(call_simple_converter('e', 250, 'ev', 'ry'))
+    # print(call_simple_converter('v', 121.4543 / 2, 'b3', 'a3'))
+    print(call_simple_converter('e', 1, 'cm-1', 'hz'))
