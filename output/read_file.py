@@ -4,16 +4,17 @@
 This module will only deal with output files reading processes.
 """
 
+import collections
 import re
 import shlex
 from itertools import islice
 from operator import itemgetter
 from typing import *
-import collections
 
 import numpy as np
 
-import miscellaneous.maths as mm
+# Type aliases
+IntArray = Union[int, List[int], np.ndarray]
 
 
 def _str_list_to(inp: List[str], to_type) -> List:
@@ -29,7 +30,6 @@ def str_list_to_float_list(inp: List[str]) -> List[float]:
 
 
 class SimpleRead:
-
     @staticmethod
     def read_each_line(inp: str) -> List[str]:
         """
@@ -126,7 +126,6 @@ class SimpleRead:
 
 
 class ReadPWscfOutput:
-
     @staticmethod
     def read_total_energy(inp: str):
         with open(inp, 'r') as f:
@@ -154,7 +153,6 @@ class ReadPWscfOutput:
 
 
 class ReadVCRelaxOutput:
-
     @staticmethod
     def read_pv(inp: str) -> Tuple[List[float], List[float]]:
         """
@@ -304,7 +302,6 @@ class ReadVCRelaxOutput:
 
 
 class ReadPHononOutput(SimpleRead):
-
     @staticmethod
     def read_gunplot(inp: str) -> tuple:
         """
@@ -330,46 +327,52 @@ class ReadPHononOutput(SimpleRead):
         :param inp: A single file that is to be read.
         :return: ([float], [float])
         """
-        frequency_list, dos_list = self.read_two_columns(
-            inp)  # Tuple[List[str], List[str]]
+        frequency_list, dos_list = self.read_two_columns(inp)  # Tuple[List[str], List[str]]
         return str_list_to_float_list(frequency_list), str_list_to_float_list(dos_list)
 
     @staticmethod
-    def read_phonon_dispersion(inp: str, q_path, dens):
+    def read_phonon_dispersion(inp: str, density) -> Tuple[np.ndarray, np.ndarray]:
         """
         This method reads phonon dispersion relation returned by matdyn.x.
 
         :param inp:
-        :param q_path:
+        :param density:
         :return:
         """
-        qp = q_path.upper().replace(' ', '').split('->')
-        path_num = len(qp) - 1
-        q_list = np.concatenate(
-            [np.zeros([path_num, dens[i], 3]) for i in range(path_num)])
+        path_num = len(density) - 1
+        # q_array = np.concatenate(
+        #     [np.zeros([5, 100, 3]) for i in range(path_num)])
+        q_array = np.zeros([5, 100, 3])
+        print(q_array.shape)
         q = []  # A list of all q-points
         bands = []  # A list of all bands
         with open(inp, 'r') as f:
             headline = f.readline()
-            # Number of bands for each q-point
-            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])
+            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
             nks = int(re.findall("nks=\s+(\d+)", headline)[0])
-            bands_list = np.concatenate(
-                [np.zeros([path_num, dens[i], nbnd]) for i in range(path_num)])
+            bands_array = np.concatenate(
+                [np.zeros([path_num, density[i], nbnd]) for i in range(path_num)])
             for line in f:
                 q.append(list(map(float, line.split())))
                 newline = f.readline()
                 bands.append(list(map(float, newline.split())))
 
-        for i in range(path_num):
-            for j in range(dens[i]):
-                q_list[i][j][:] = q[i * dens[i] + j][:]
-                bands_list[i][j][:] = bands[i * dens[i] + j][:]
+        for i in range(5):
+            for j in range(density[i]):
+                q_array[i][j][:] = q[i * density[i] + j][:]
+                bands_array[i][j][:] = bands[i * density[i] + j][:]
+        print(q_array)
+        return q_array, bands_array
 
-        return q_list, bands_list
+    def read_phonon_dispersion_from_files(self, file_list: List[str], density: Optional[IntArray]) -> \
+            List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        This method allows you to read a list of q coordinates and a list of bands
+        from each file in the list.
 
-    def read_phonon_dispersion_from_multiple(self, file_list: List[str], dens, q_path):
-        xs = []
-        for file in file_list:
-            xs.append(self.read_phonon_dispersion(file, q_path, dens))
-        return xs
+        :param file_list: A list of files to be read from.
+            You should inspect the same reciprocal-space path for all the files in `file_list`.
+        :param density: Used to specify number of points between each 2 neighbor q-points. It should be a list.
+        :return:
+        """
+        return [self.read_phonon_dispersion(file, density) for file in file_list]

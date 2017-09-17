@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Nil-Zil
 
+import miscellaneous.maths as mm
 from miscellaneous.converter import *
 from output.read_file import *
 
@@ -149,7 +150,7 @@ class ComputePHonon:
         self.rpb = ReadPHononOutput()
 
     @staticmethod
-    def frequency_to_ev(frequency_list: List[float]) -> List[float]:
+    def frequency_to_ev(frequency_list: np.ndarray) -> np.ndarray:
         """
         This method converts the frequency read from density of states calculation output to electron-volt.
 
@@ -158,7 +159,7 @@ class ComputePHonon:
         return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
 
     @staticmethod
-    def frequency_to_hertz(frequency_list: List[float]) -> List[float]:
+    def frequency_to_hertz(frequency_list: np.ndarray) -> np.ndarray:
         return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
 
     @staticmethod

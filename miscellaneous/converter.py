@@ -147,8 +147,8 @@ class MoleConverter(UnitConverter):
         return options[option](num / self.avogadro_const, from_unit, to_unit)
 
 
-def call_simple_converter(physical_quantity: str, numeric: Union[int, float, List[float], np.ndarray], from_unit: str,
-                          to_unit: str) -> Union[float, List[float], np.ndarray]:
+def call_simple_converter(physical_quantity: str, numeric: Union[int, float, List, np.ndarray], from_unit: str,
+                          to_unit: str) -> Union[float, List, np.ndarray]:
     """
     This is a polymorphism function, it can apply to any object that defined simple_converter method.
 
@@ -161,15 +161,18 @@ def call_simple_converter(physical_quantity: str, numeric: Union[int, float, Lis
     pool = {'l': LengthConverter, 'v': VolumeConverter, 'e': EnergyConverter,
             'p': PressureConverter}
     converter = pool[physical_quantity]()
+
     if isinstance(numeric, float) or isinstance(numeric, int):
         return converter.simple_converter(numeric, from_unit, to_unit)
     elif isinstance(numeric, list):
-        return [converter.simple_converter(x, from_unit, to_unit) for x in numeric]
+        return converter.simple_converter(np.array(numeric), from_unit, to_unit).tolist()
     elif isinstance(numeric, np.ndarray):
         return converter.simple_converter(numeric, from_unit, to_unit)
+    else:
+        raise TypeError('Unknown data type' + str(type(numeric)))
 
 
 if __name__ == "__main__":
     # print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
-    # print(call_simple_converter('v', 121.4543 / 2, 'b3', 'a3'))
-    print(call_simple_converter('e', 1, 'cm-1', 'hz'))
+    # print(call_simple_converter('v', 8.67*2, 'a3', 'b3'))
+    print(call_simple_converter('e', 0.02533, 'ry', 'K'))

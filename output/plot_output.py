@@ -3,7 +3,6 @@
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-from matplotlib.collections import LineCollection
 
 from miscellaneous.compute import *
 from output.generate_test import *
@@ -60,12 +59,13 @@ class PlotVCRelaxOutput:
 
 
 class PlotPHononOutput:
-    def __init__(self):
-        self.rpb = ReadPHononOutput()
+    def __init__(self, q_path):
+        self.q_path = q_path.upper().replace(' ', '').split('->')
+        self.rph = ReadPHononOutput()
         self.cph = ComputePHonon()
 
     def plot_gnuplot(self, filename: Optional[str] = 'gnuplot'):
-        coords_list, bands_list = self.rpb.read_gunplot(filename)
+        coords_list, bands_list = self.rph.read_gunplot(filename)
         print(np.array(coords_list))
         fig, ax = plt.subplots()
         # for i, p in enumerate(zip(coords_list, bands_list)):
@@ -83,20 +83,29 @@ class PlotPHononOutput:
         ax.set_title('phonon dispersion relation', fontsize=16)
         plt.show()
 
-    def plot_phonon_dispersion(self, fig, axes, filename, q_path, color):
-        q_path = q_path.upper().replace(' ', '').split('->')
-        path_num = len(q_path) - 1
-        qs, bands = self.rpb.read_phonon_dispersion(filename, '->'.join(q_path), [100] * 5)
+    def generate_data_for_plotting(self, filename, density):
+        path_num = len(self.q_path) - 1
+        qs, bands = self.rph.read_phonon_dispersion(filename, density)
         ls = self.cph.q_path_len_list(path_num, qs)
-        bands = self.cph.frequency_to_hertz(bands)
-        # bands = self.cph.frequency_to_ev(bands)
-        plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
-        sp = filename.split('.')[0].split('/')
+        return qs, bands, ls
+
+    def plot_phonon_dispersion(self, data, color, option: Optional[str] = 'hz'):
+        qs, bands, ls = data
+        print(ls)
+        fig, axes = plt.subplots(1, 5, gridspec_kw={'width_ratios': ls})
+
+        if option == 'hz':
+            bands = self.cph.frequency_to_hertz(bands)
+        elif option == 'ev':
+            bands = self.cph.frequency_to_ev(bands)
+        else:
+            raise ValueError('Unknown option' + str(option) + 'given!')
+
         for i in range(len(axes)):
+            axes[i].plot(range(len(qs[i])), bands[i], color=color)
             axes[i].get_xaxis().set_ticks([])  # Cancel x-axis ticks
             axes[i].set_xticks(range(0, 600, 100))
-            axes[i].set_xticklabels(q_path[i])
-            axes[i].plot(range(len(qs[i])), bands[i], color=color, label=sp[-1])
+            axes[i].set_xticklabels(self.q_path[i])
             axes[i].set_xlim((min(range(len(qs[i]))), max(range(len(qs[i])))))  # To make plot without inner paddings
             axes[i].yaxis.set_ticks_position('none')  # Remove side effect
 
@@ -109,22 +118,21 @@ class PlotPHononOutput:
         labels, ids = np.unique(labels, return_index=True)
         handles = [handles[i] for i in ids]
         axes[2].legend(handles, labels, loc='center', bbox_to_anchor=(0.5, -0.25), ncol=3, prop=fontP)
-        fig.suptitle('phonon dispersion relation', fontsize=16)
         axes[2].set_xlabel('q-path', fontsize=12)
         axes[0].set_ylabel('Hz', fontsize=12)
         axes[0].yaxis.tick_left()
         axes[-1].set_xticks([0, 100])
-        axes[-1].set_xticklabels([q_path[-2], q_path[-1]])
+        axes[-1].set_xticklabels([self.q_path[-2], self.q_path[-1]])
         axes[-1].yaxis.tick_right()
         axes[-1].yaxis.set_ticks_position('right')
-        # fig.savefig(path + "/dispersion.pdf")
-        # plt.show()
+        plt.subplots_adjust(wspace=0, hspace=0)  # Remove spaces between subplots
 
-    def plot_multiple_phonon_dispersion(self, file_list, q_path, fig, axes):
+    def plot_multiple_phonon_dispersion(self, file_list, density, fig, axes, title):
         cmap = plt.get_cmap('viridis')
         colors = cmap(np.linspace(0, 1, len(file_list)))
         for i, file in enumerate(file_list):
-            self.plot_phonon_dispersion(fig, axes, file, q_path, colors[i])
+            self.plot_phonon_dispersion(density, axes, file, colors[i])
+        fig.suptitle(title, fontsize=16)
         plt.show()
 
     def plot_dos(self, filename: Optional[str] = 'matdyn.dos.out', freq_unit: Optional[str] = 'ev',
@@ -139,7 +147,7 @@ class PlotPHononOutput:
         :return: None
         """
         fig, ax = plt.subplots()
-        frequency_list, dos_list = self.rpb.read_dos(filename)
+        frequency_list, dos_list = self.rph.read_dos(filename)
         if freq_unit == 'ev':
             frequency_list = self.cph.frequency_to_ev(frequency_list)  # Convert unit from cm^-1 to ev
             ax.set_xlabel("electron-volt", fontsize=12)
