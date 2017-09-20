@@ -43,9 +43,30 @@ class PathGenerator:
             which is the default for np.linspace.
         :return: a series of evenly-spaced points
         """
-        l = mm.compute_3d_distance(point1, point2)
-        normalize_vec = (np.array(point2) - np.array(point1)) / l
-        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, l, dens, **option)]
+        dist: np.float64 = mm.compute_3d_distance(point1, point2)
+        normalize_vec = (np.array(point2) - np.array(point1)) / dist
+        return np.array(point1) + [x * normalize_vec for x in np.linspace(0, dist, dens, **option)]
+
+    @staticmethod
+    def check_density(path_num: int, density: IntArray) -> IntArray:
+        """
+        If you give an `density` argument, it will check what actually `density` is: an integer, a list of integers,
+        or an numpy array of integers. I grab this function out because it is constantly reused.
+
+        :param path_num: This specify how many paths do you want to have. Like, in 'Γ->M->K->Γ->A->K', you have 6 points,
+            thus 5 paths.
+        :param density: Number of points on each path
+        :return: If the type of `density` is correct, return `density` back.
+        """
+        # Check if density is given a reasonable type, the only allowed are int, list, and np.ndarray.
+        if isinstance(density, int):
+            density = [density] * path_num
+        elif isinstance(density, list) or isinstance(density, np.ndarray):
+            if len(density) != path_num:  # The length of density should be the same to number of q-points minus 1.
+                raise ValueError('The length of k-point density is incorrect!')
+        else:
+            raise TypeError('The type of k-point density is incorrect!')
+        return density
 
 
 class ReciprocalPathGenerator(PathGenerator):
@@ -83,7 +104,7 @@ class ReciprocalPathGenerator(PathGenerator):
         :param out: filename you want to write to. The coordinates of the k-points on the path will be written.
         :return: the coordinates of the k-points on the path.
         """
-        coords = self.generate_reciprocal_path(density)
+        coords = self._generate_reciprocal_path(density)
         self._write_path_to_file(coords, out)
         return coords
 
@@ -97,11 +118,11 @@ class ReciprocalPathGenerator(PathGenerator):
         :param out: filename you want to write to. The coordinates of the q-points on the path will be written.
         :return: the coordinates of the q-points on the path.
         """
-        coords = self.generate_reciprocal_path(density)
+        coords = self._generate_reciprocal_path(density)
         self._write_path_to_file(coords, out)
         return coords
 
-    def generate_reciprocal_path(self, density: Optional[IntArray]) -> np.ndarray:
+    def _generate_reciprocal_path(self, density: Optional[IntArray]) -> np.ndarray:
         """
         This method will generate an array of coordinates of points on the path, specified in `self.__init__` function,
         making use of 3D linear interpolation of a straight line.
@@ -113,14 +134,7 @@ class ReciprocalPathGenerator(PathGenerator):
         """
         path_num: int = len(self.reci_path) - 1  # Number of paths
 
-        # Check if density is given a reasonable type, the only allowed are int, list, and np.ndarray.
-        if isinstance(density, int):
-            density = [density] * path_num
-        elif isinstance(density, list) or isinstance(density, np.ndarray):
-            if len(density) != path_num:  # The length of density should be the same to number of q-points minus 1.
-                raise ValueError('The length of k-point density is incorrect!')
-        else:
-            raise TypeError('The type of k-point density is incorrect!')
+        density = self.check_density(path_num, density)
 
         reci_coords = []
         for i in range(path_num):
@@ -137,9 +151,8 @@ class ReciprocalPathGenerator(PathGenerator):
         :return: None
         """
         with open(out, 'wb') as f:
-            f.write(
-                ('The reciprocal path is: ' + '->'.join(self.reci_path) +
-                 ", and the number of points is: \n").encode('utf-8'))
+            f.write(('The reciprocal path is: ' + '->'.join(self.reci_path) +
+                     ", and the number of points is: \n").encode('utf-8'))
             f.write((str(coords.size / 3) + "\n").encode('utf-8'))
             for row in coords:
                 np.savetxt(f, row)
@@ -150,7 +163,7 @@ class ComputePHonon:
         self.rpb = ReadPHononOutput()
 
     @staticmethod
-    def frequency_to_ev(frequency_list: np.ndarray) -> np.ndarray:
+    def frequency_to_ev(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
         """
         This method converts the frequency read from density of states calculation output to electron-volt.
 
@@ -159,7 +172,7 @@ class ComputePHonon:
         return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
 
     @staticmethod
-    def frequency_to_hertz(frequency_list: np.ndarray) -> np.ndarray:
+    def frequency_to_hertz(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
         return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
 
     @staticmethod

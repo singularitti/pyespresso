@@ -34,8 +34,8 @@ class TestCompute(unittest.TestCase):
 
     def test_generate_path(self):
         # print(self.gp.generate_q_path(3))
-        print((self.gp.generate_reciprocal_path([4, 4, 4, 3, 3])))
-        print((self.gp.generate_reciprocal_path(np.array([4, 4, 4, 3, 3]))))
+        print((self.gp._generate_reciprocal_path([4, 4, 4, 3, 3])))
+        print((self.gp._generate_reciprocal_path(np.array([4, 4, 4, 3, 3]))))
         # np.testing.assert_array_almost_equal(self.gp.generate_reciprocal_path([4, 4, 4, 3, 3]),
         #                                      self.gp.generate_reciprocal_path(np.array([4, 4, 4, 3, 3])))
         self.gp.generate_q_path(100, 'phonon_data/qpts')

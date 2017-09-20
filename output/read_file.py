@@ -331,25 +331,24 @@ class ReadPHononOutput(SimpleRead):
         return str_list_to_float_list(frequency_list), str_list_to_float_list(dos_list)
 
     @staticmethod
-    def read_phonon_dispersion(inp: str, density) -> Tuple[np.ndarray, np.ndarray]:
+    def read_phonon_dispersion(inp: str, density: IntArray) -> Tuple[np.ndarray, np.ndarray]:
         """
         This method reads phonon dispersion relation returned by matdyn.x.
+        This only works for 3-dimensional q-points grid.
 
-        :param inp:
-        :param density:
-        :return:
+        :param inp: filename
+        :param density: Number of points on each path.
+        :return: q-points array and bands array.
         """
-        path_num = len(density) - 1
-        # q_array = np.concatenate(
-        #     [np.zeros([5, 100, 3]) for i in range(path_num)])
-        q_array = np.zeros([5, 100, 3])
-        print(q_array.shape)
+        path_num = len(density)
+        q_array = np.concatenate(
+            [np.zeros([1, density[i], 3]) for i in range(path_num)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
         with open(inp, 'r') as f:
             headline = f.readline()
             nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
-            nks = int(re.findall("nks=\s+(\d+)", headline)[0])
+            nq = int(re.findall("nks=\s+(\d+)", headline)[0])
             bands_array = np.concatenate(
                 [np.zeros([path_num, density[i], nbnd]) for i in range(path_num)])
             for line in f:
@@ -357,14 +356,20 @@ class ReadPHononOutput(SimpleRead):
                 newline = f.readline()
                 bands.append(list(map(float, newline.split())))
 
-        for i in range(5):
+        for i in range(path_num):
             for j in range(density[i]):
                 q_array[i][j][:] = q[i * density[i] + j][:]
                 bands_array[i][j][:] = bands[i * density[i] + j][:]
-        print(q_array)
-        return q_array, bands_array
 
-    def read_phonon_dispersion_from_files(self, file_list: List[str], density: Optional[IntArray]) -> \
+        if bands_array.shape[2] == nbnd:
+            if q_array.size / 3 == nq:
+                return q_array, bands_array
+            else:
+                raise ValueError('Number of q-points is incorrect! Check your file!')
+        else:
+            raise ValueError('Number of bands is incorrect! Check your file!')
+
+    def read_multiple_phonon_dispersion(self, file_list: List[str], density: Optional[IntArray]) -> \
             List[Tuple[np.ndarray, np.ndarray]]:
         """
         This method allows you to read a list of q coordinates and a list of bands
