@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Jul 19, 2017 15:00 by Nil-Zil
+# created at Jul 19, 2017 15:00 by Qi Zhang
 """
 This module will only deal with output files reading processes.
 """
@@ -128,6 +128,11 @@ class SimpleRead:
 class ReadPWscfOutput:
     @staticmethod
     def read_total_energy(inp: str):
+        """
+
+        :param inp:
+        :return:
+        """
         with open(inp, 'r') as f:
             match = re.findall(
                 "!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
@@ -138,6 +143,11 @@ class ReadPWscfOutput:
 
     @staticmethod
     def read_k_mesh(inp: str) -> KMesh:
+        """
+
+        :param inp:
+        :return:
+        """
         with open(inp, 'r') as f:
             for line in f:
                 if re.search('K_POINTS', line, re.IGNORECASE):
@@ -381,3 +391,15 @@ class ReadPHononOutput(SimpleRead):
         :return:
         """
         return [self.read_phonon_dispersion(file, density) for file in file_list]
+
+
+class ReadElasticityOutput(SimpleRead):
+    def read_cij_vs_pressures(self, inp: str):
+        """
+        Read first column as pressures, then the second to the last column as the compliance of the crystal at
+        corresponding pressure.
+
+        :param inp:
+        :return:
+        """
+        return self.read_one_column_as_keys(inp, 0, lambda x: list(map(float, x)))

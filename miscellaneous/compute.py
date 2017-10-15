@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Aug 18, 2017 11:21 PM by Nil-Zil
+# created at Aug 18, 2017 11:21 PM by Qi Zhang
 
 import miscellaneous.maths as mm
 from miscellaneous.converter import *
@@ -173,6 +173,12 @@ class ComputePHonon:
 
     @staticmethod
     def frequency_to_hertz(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
+        """
+        This method converts the frequency read from density of states calculation output to hertz.
+        
+        :param frequency_list: 
+        :return: energy in unit of hertz
+        """
         return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
 
     @staticmethod

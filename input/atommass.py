@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Aug 9, 2017 12:46 PM by Nil-Zil
+# created at Aug 9, 2017 12:46 PM by Qi Zhang
 
 # List of atomic weights
 atWeight = {'H': 1.0080000,

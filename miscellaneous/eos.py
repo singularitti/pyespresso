@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Jul 19, 2017 16:35 by Nil-Zil
+# created at Jul 19, 2017 16:35 by Qi Zhang
 
 import numpy as np
 from scipy.optimize import fsolve

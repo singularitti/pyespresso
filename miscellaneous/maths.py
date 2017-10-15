@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Aug 26, 2017 9:04 PM by Nil-Zil
+# created at Aug 26, 2017 9:04 PM by Qi Zhang
 
 from typing import *
 

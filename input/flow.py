@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+# created at Oct 4, 2017 4:43 PM by Nil-Zil
+
+import numpy as np
+import re
+import subprocess
+import os
+import time
+from random import randint
+import shutil
+import atommass as at
+from func_cij import Ekl, apply_strain
+
+
 def create_qe_input(alat, lat_vec, calc_type, name, pres, tmp_folder, atom_pos=''):
     """ Function to create an input file for quantum espresso pw.x"""
     a = float(alat)
@@ -158,7 +172,7 @@ def create_job_cij(job_head, pressures, d, job_name, dir_name, cclass, nstrain, 
 #	jb.write('for i in ')
 #	for i in pressures:
 #		jb.write('%s ' % str(i))
-#	
+#
 #	jb.write('; do\n')
 #	jb.write('cd %s$i\n' % dir_name)
 #	if prog == 'pw':
@@ -203,7 +217,7 @@ def create_job_cij(job_head, pressures, d, job_name, dir_name, cclass, nstrain, 
 #	jb.write('done\n')
 #	jb.write('cd ../..\n')
 #	jb.write('done\n')
-#	jb.write('wait\n')	
+#	jb.write('wait\n')
 
 def create_files(press, params_eos, vectors, volsc, file_n, calc):
     """ This function creates the files at each pressure"""
@@ -281,23 +295,23 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
         Cij[index, 1] = calc_cij(stress_p, stress_n, 1, dist[1])
         if cclass == '-62m':
             Cij[1, 1] = Cij[0, 0]
-        #		C66 for some crystal classes can be calculated with C11 and C12
+        # C66 for some crystal classes can be calculated with C11 and C12
         if cclass == '3' or cclass == '-3' or cclass == '32' or cclass == '3m' or cclass == '-3m' or cclass == '-32/m' or cclass == '6' or cclass == '-6' or cclass == '622' or cclass == '62' or cclass == '6mm' or cclass == '6/m' or cclass == '6/mmm' or cclass == '-6m2':
             Cij[5, 5] = 0.5 * (Cij[0, 0] - Cij[0, 1])
             Cij[1, 1] = Cij[0, 0]
-        #		For cubic systems, C13, C23, C22 and C33 can be calculated at this point
+        # For cubic systems, C13, C23, C22 and C33 can be calculated at this point
         if cclass == '23' or cclass == '-43m' or cclass == '432' or cclass == '43' or cclass == 'm3' or cclass == '2/m-3' or cclass == 'm3m' or cclass == 'm-3m':
             Cij[0, 2] = Cij[0, 1]
             Cij[1, 2] = Cij[0, 1]
             Cij[1, 1] = Cij[0, 0]
             Cij[2, 2] = Cij[0, 0]
-        #		C13
+        # C13
         else:
             Cij[index, 2] = calc_cij(stress_p, stress_n, 2, dist[1])
-        #		For tetragonal trigonal and hexagonal cells, C13 defines C23
+        # For tetragonal trigonal and hexagonal cells, C13 defines C23
         if cclass == '4' or cclass == '-4' or cclass == '4/m' or cclass == '4mm' or cclass == '422' or cclass == '42' or cclass == '-42m' or cclass == '4/mmm' or cclass == '3' or cclass == '-3' or cclass == '32' or cclass == '3m' or cclass == '-3m' or cclass == '-32/m' or cclass == '6' or cclass == '-6' or cclass == '622' or cclass == '62' or cclass == '6mm' or cclass == '6/m' or cclass == '6/mmm':
             Cij[1, 2] = Cij[0, 2]
-        #		C14
+        # C14
         if cclass == '1' or cclass == '-1' or cclass == '3' or cclass == '-3':
             Cij[index, 3] = calc_cij(stress_p, stress_n, 3, dist[1])
             if cclass == '3' or cclass == '-3':
@@ -309,7 +323,7 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
             Cij[4, 5] = 2 * Cij[0, 3]
         else:
             Cij[index, 3] = 0.0
-        #		C15
+        # C15
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m':
             Cij[index, 4] = calc_cij(stress_p, stress_n, 4, dist[1])
         elif cclass == '3' or cclass == '-3':
@@ -318,7 +332,7 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
             Cij[3, 5] = 2 * Cij[1, 4]
         else:
             Cij[index, 4] = 0.0
-        #		C16
+        # C16
         if cclass == '1' or cclass == '-1' or cclass == '4' or cclass == '-4' or cclass == '4/m':
             Cij[index, 5] = calc_cij(stress_p, stress_n, 5, dist[1])
             if cclass == '4' or cclass == '-4' or cclass == '4/m':
@@ -331,24 +345,24 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m' or cclass == '222' or cclass == 'mm2' or cclass == '2mm' or cclass == 'mm' or cclass == 'mmm':
             Cij[index, 1] = calc_cij(stress_p, stress_n, 1, dist[1])
             Cij[index, 2] = calc_cij(stress_p, stress_n, 2, dist[1])
-        #		C24
+        # C24
         if cclass == '1' or cclass == '-1':
             Cij[index, 3] = calc_cij(stress_p, stress_n, 3, dist[1])
-        #		C25
+        # C25
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m':
             Cij[index, 4] = calc_cij(stress_p, stress_n, 4, dist[1])
-        #		C26
+        # C26
         if cclass == '1' or cclass == '-1':
             Cij[index, 5] = calc_cij(stress_p, stress_n, 5, dist[1])
     if strain_number == 3:
         Cij[index, 2] = calc_cij(stress_p, stress_n, 2, dist[1])
         if cclass == '-6m2':
             Cij[1, 2] = calc_cij(stress_p, stress_n, 2, dist[1])
-        #		C34
+        # C34
         if cclass == '1' or cclass == '-1':
             Cij[index, 3] = calc_cij(stress_p, stress_n, 3, dist[1])
             Cij[index, 5] = calc_cij(stress_p, stress_n, 5, dist[1])
-        #		C35
+        # C35
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m':
             Cij[index, 4] = calc_cij(stress_p, stress_n, 4, dist[1])
     if strain_number == 4:
@@ -358,7 +372,7 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
         if cclass == '23' or cclass == '-43m' or cclass == '432' or cclass == '43' or cclass == 'm3' or cclass == '2/m-3' or cclass == 'm3m' or cclass == 'm-3m':
             Cij[4, 4] = Cij[index, 3]
             Cij[5, 5] = Cij[index, 3]
-        #		C45
+        # C45
         if cclass == '1' or cclass == '-1':
             Cij[index, 4] = 0.5 * calc_cij(stress_p, stress_n, 4, dist[1])
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m':
@@ -374,7 +388,7 @@ def calculate_cij_tensor(Cij, dir_cij, cclass, dist, j):
         if cclass == '1' or cclass == '-1' or cclass == '2' or cclass == 'm' or cclass == '2/m' or cclass == '222' or cclass == 'mm2' or cclass == '2mm' or cclass == 'mm' or cclass == 'mmm' or cclass == '4' or cclass == '-4' or cclass == '4/m' or cclass == '4mm' or cclass == '422' or cclass == '42' or cclass == '-42m' or cclass == '4/mmm':
             Cij[index, 5] = 0.5 * calc_cij(stress_p, stress_n, 5, dist[1])
 
-        #	Completing the tensor
+            #	Completing the tensor
     k = 1
     for i in range(0, 6):
         for j in range(k, 6):
@@ -423,7 +437,7 @@ def create_ph_input(name):
             if lines_ph[i].startswith('nq3'):
                 nq3 = lines_ph[i].split(':')[1].rstrip().lstrip()
 
-    fh = open(name, 'w')
+    fh = open(name, 'w')  # ph.in
     fh.write('Phonon\n')
     fh.write('&inputph\n')
     fh.write('prefix = %s\n' % pre)
@@ -500,7 +514,7 @@ def read_stress(file_name):
     except FileNotFoundError:
         print('Stress Output file not found (File name: %s' % file_name)
         quit()
-    #	stress_tensor = np.array([(sigma11, sigma12, sigma13), (sigma12, sigma22, sigma23), (sigma13, sigma23, sigma33)])
+    # stress_tensor = np.array([(sigma11, sigma12, sigma13), (sigma12, sigma22, sigma23), (sigma13, sigma23, sigma33)])
     return stress_tensor
 
 
@@ -523,5 +537,5 @@ def print_cij(cij_file, Cij):
 def print_cij_thermo(fname, Cij, vol):
     cij_f = open(fname, 'a')
     cij_f.write('%8.3f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n' % (
-    Cij[0, 0], Cij[1, 1], Cij[2, 2], Cij[0, 1], Cij[0, 2], Cij[1, 2], Cij[3, 3], Cij[4, 4], Cij[5, 5]))
+        Cij[0, 0], Cij[1, 1], Cij[2, 2], Cij[0, 1], Cij[0, 2], Cij[1, 2], Cij[3, 3], Cij[4, 4], Cij[5, 5]))
     cij_f.close()

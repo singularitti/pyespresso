@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Jul 21, 2017 12:30 by Nil-Zil
+# created at Jul 21, 2017 12:30 by Qi Zhang
 """
 This will do crude guess and vc-relax simulation automatically.
 """

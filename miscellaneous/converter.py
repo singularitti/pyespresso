@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Aug 7, 2017 2:22 PM by Nil-Zil
+# created at Aug 7, 2017 2:22 PM by Qi Zhang
 
 from typing import *
 
@@ -174,5 +174,5 @@ def call_simple_converter(physical_quantity: str, numeric: Union[int, float, Lis
 
 if __name__ == "__main__":
     # print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
-    # print(call_simple_converter('v', 8.67*2, 'a3', 'b3'))
-    print(call_simple_converter('e', 0.02533, 'ry', 'K'))
+    # print(call_simple_converter('v', 86.58576018255923 / 2, 'b3', 'a3'))
+    print(call_simple_converter('e', 0.03, 'ry', 'K'))
