@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 from miscellaneous.compute import *
-from output.generate_test import *
+from output.read_file import *
 
 
 class PlotPWscfOutput:
@@ -215,6 +215,9 @@ class PlotPHononOutput:
             ax.set_xlabel("electron-volt", fontsize=12)
         elif freq_unit == 'cm-1':
             ax.set_xlabel("frequency (cm$^{-1})$", fontsize=12)
+        elif freq_unit == 'thz':
+            frequency_list = list(map(lambda x: x * 0.02998, frequency_list))
+            ax.set_xlabel("frequency (THz)", fontsize=12)
         else:
             raise ValueError('Unknown frequency unit!')
 
@@ -233,7 +236,14 @@ class PlotPHononOutput:
 
 
 class PlotElasticityOutput:
+    def __init__(self):
+        self.reo = ReadElasticityOutput()
+
     def plot_cij_vs_pressures(self, inp: str):
-        data = 
+        data = self.reo.read_cij_vs_pressures(inp)
         fig, ax = plt.subplots()
-        
+        for i, p in enumerate(zip(data.keys(), data.values())):
+            for pp in zip([float(p[0])] * len(p[1]), p[1]):
+                print(*pp)
+                ax.scatter(*pp, label="value" + str(i))
+        return fig, ax

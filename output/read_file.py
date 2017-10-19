@@ -394,7 +394,7 @@ class ReadPHononOutput(SimpleRead):
 
 
 class ReadElasticityOutput(SimpleRead):
-    def read_cij_vs_pressures(self, inp: str):
+    def read_cij_vs_pressures(self, inp: str) -> Dict[str, List[float]]:
         """
         Read first column as pressures, then the second to the last column as the compliance of the crystal at
         corresponding pressure.
