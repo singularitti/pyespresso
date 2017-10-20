@@ -6,7 +6,7 @@ from numpy.linalg import inv
 from read_file.read_file import *
 
 
-class Elasticity:
+class ComputeElasticity:
     def __init__(self, filename):
         self.reo = ReadElasticityOutput()
         self.pressure_list, self.elastic_tensor_list = self.reo.read_elastic_tensor(filename)

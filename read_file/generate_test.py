@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Jul 23, 2017 10:26 PM by Nil-Zil
+# created at Jul 23, 2017 10:26 PM by Qi Zhang
 """
 Quickly generate testing cases for plotting.
 """

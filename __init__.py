@@ -6,5 +6,3 @@ import sys
 python_version = sys.executable
 if 'python3' not in python_version:
     print('Please use Python 3 and above!')
-
-__all__ = ['input', 'output', 'miscellaneous']
