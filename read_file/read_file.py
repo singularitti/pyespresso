@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 15:00 by Qi Zhang
 """
-This module will only deal with output files reading processes.
+This module will only deal with read_file files reading processes.
 """
 
 import collections

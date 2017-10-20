@@ -8,7 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from output.read_file import *
+from read_file.read_file import *
 
 
 class TestReadPHononOutput(unittest.TestCase):

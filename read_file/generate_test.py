@@ -4,7 +4,7 @@
 Quickly generate testing cases for plotting.
 """
 
-from output.read_file import *
+from read_file.read_file import *
 
 
 class GenerateTest:

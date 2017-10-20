@@ -125,7 +125,7 @@ while signal_cg:  # If cg_ exist, skip this part and goes to vc-relax optimizati
         job_status = subprocess.Popen(['squeue', '-j', str(job_id)],
                                       stdout=subprocess.PIPE)  # request SLURM queue information
         outqueue = job_status.stdout.read().split()
-        if output not in outqueue:  # output is a string that contains the Job ID. If it is not in the queue information, the job is done
+        if output not in outqueue:  # read_file is a string that contains the Job ID. If it is not in the queue information, the job is done
             print("Crude guess is done! Continuing calculation... I hope your coffee was good!")
             signal_job_cg = False
         else:  # If it is, sleeps a litle bit and request queue information again.
@@ -147,8 +147,8 @@ for i in press:
         try:
             with open(file_path) as qe_out:
                 qe_lines = qe_out.readlines()
-        except FileNotFoundError:  # Check if output files exist.
-            print('The output file for P = %d was not found. Removing it from list and continuing calculation.' % i)
+        except FileNotFoundError:  # Check if read_file files exist.
+            print('The read_file file for P = %d was not found. Removing it from list and continuing calculation.' % i)
             index_list = index_list + [cont]
             Number_error_files = Number_error_files + 1  # Counts number of files that wasn't found
             pass

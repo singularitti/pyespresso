@@ -3,7 +3,7 @@
 
 from numpy.linalg import inv
 
-from output.read_file import *
+from read_file.read_file import *
 
 
 class Elasticity:

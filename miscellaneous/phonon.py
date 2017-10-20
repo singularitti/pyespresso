@@ -3,7 +3,7 @@
 
 import miscellaneous.maths as mm
 from miscellaneous.converter import *
-from output.read_file import *
+from read_file.read_file import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
@@ -62,7 +62,7 @@ class ReciprocalPathGenerator(PathGenerator):
             K	0.3333333333	0.3333333333	0.0000000000
             L	0.5000000000	0.0000000000	0.5000000000
             M	0.5000000000	0.0000000000	0.0000000000
-        See output.read_file.SimpleRead._read_reciprocal_points for more information.
+        See read_file.read_file.SimpleRead._read_reciprocal_points for more information.
 
         :param inp: As explained above.
         :param reci_path:  A specific q-path you are interested in, like 'GM->M->K->GM->A->K'.
@@ -127,7 +127,7 @@ class ReciprocalPathGenerator(PathGenerator):
         Write the above result to file `out`.
 
         :param coords: As explained above.
-        :param out: output filename.
+        :param out: read_file filename.
         :return: None
         """
         with open(out, 'wb') as f:
@@ -145,7 +145,7 @@ class ComputePHonon:
     @staticmethod
     def frequency_to_ev(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
         """
-        This method converts the frequency read from density of states calculation output to electron-volt.
+        This method converts the frequency read from density of states calculation read_file to electron-volt.
 
         :return: energy in unit of electron-volt
         """
@@ -154,7 +154,7 @@ class ComputePHonon:
     @staticmethod
     def frequency_to_hertz(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
         """
-        This method converts the frequency read from density of states calculation output to hertz.
+        This method converts the frequency read from density of states calculation read_file to hertz.
         
         :param frequency_list: 
         :return: energy in unit of hertz
