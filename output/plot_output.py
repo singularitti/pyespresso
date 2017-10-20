@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-from miscellaneous.compute import *
+from miscellaneous.phonon import *
 from output.read_file import *
 
 
