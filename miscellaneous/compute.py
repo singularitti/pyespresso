@@ -9,26 +9,6 @@ from output.read_file import *
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class ComputeVCRelax:
-    def __init__(self):
-        self.ro = ReadVCRelaxOutput()
-
-    def c_over_a(self, filename: str) -> Tuple[List[float], List[float]]:
-        """
-        This is only used for hexagonal cell.
-
-        :param filename: str
-        :return:
-        """
-        c_over_a_list = []
-        p_list, cp_list = self.ro.read_final_cell(filename)
-        for cp in cp_list:
-            a = cp[0][0]
-            c = cp[2][2]
-            c_over_a_list.append(c / a)
-        return p_list, c_over_a_list
-
-
 class PathGenerator:
     @staticmethod
     def linspace_3d(point1: List[float], point2: List[float], dens: int, **option) -> np.ndarray:
