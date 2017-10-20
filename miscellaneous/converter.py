@@ -8,20 +8,22 @@ import numpy as np
 
 class UnitConverter:
     """
-    This is a basic unit converter.
-    Input a number and 2 different units,
-    it will automatically transform the first in terms of the second one.
+    This is a basic unit converter. It will be handful if you implement further classes based on this.
     """
 
     @staticmethod
-    def simplest_converter(scale, num, from_unit, to_unit):
+    def simplest_converter(scale: Dict[str, float], num: Union[int, float], from_unit: str, to_unit: str) -> float:
         """
-        This is the basic logic of unit-conversion. It will be handful if you implement further methods based on this.
-        :param scale:
-        :param num:
-        :param from_unit:
-        :param to_unit:
-        :return:
+        This is the basic logic of unit-conversion.
+        Input a number and 2 different units, it will automatically transform the number from the first to the second
+        unit.
+
+        :param scale: a dictionary that has units (string) as one key, and a scaling number from a unit to SI unit as
+            the corresponding value.
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
         normalized_num = num * scale.get(from_unit)
         return normalized_num / scale.get(to_unit)
@@ -29,75 +31,87 @@ class UnitConverter:
 
 class LengthConverter(UnitConverter):
     """
+    A converter which converts one-dimensional length.
     """
 
     def __init__(self):
+        """
+        Define some constants as scaling numbers.
+        """
         self.bohr_radius = 5.2917721067e-11
 
-    def simple_converter(self, num, from_unit='a', to_unit='b'):
+    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the input first to meter, then converts it to desired unit.
-        :param num: float
-        :param from_unit: str
-        :param to_unit: str
-        :return: float
+        This function converts the input first to meter, then converts it in desired unit.
+
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
-        scale = dict.fromkeys(['m', 'meter', 'metre', 'SI'],
-                              1)  # Meter is the standard unit.
+        scale: Dict[str, float] = dict.fromkeys(['m', 'meter', 'metre', 'SI'], 1)  # Meter is the standard unit.
         scale.update(dict.fromkeys(['a', 'angstrom', 'A'], 1e-10))
         scale.update(dict.fromkeys(['cm', 'centimeter'], 1e-2))
         scale.update(dict.fromkeys(['nm', 'nanometer'], 1e-9))
-        scale.update(dict.fromkeys(
-            ['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
+        scale.update(dict.fromkeys(['b', 'bohr', 'au', 'atomic'], self.bohr_radius))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 
 class VolumeConverter(UnitConverter):
     """
+    A converter which converts three-dimensional volume.
     """
 
     def __init__(self):
+        """
+        Define some constants as scaling numbers.
+        """
         self.bohr_radius = 5.2917721067e-11
 
     def simple_converter(self, num, from_unit='a3', to_unit='b3'):
         """
-        This function converts the input first to cubic meter, then converts it to desired unit.
-        :param num:
-        :param from_unit:
-        :param to_unit:
-        :return:
+        This function converts the input first to cubic meter, then converts it in desired unit.
+
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
-        scale = dict.fromkeys(['m3', 'cubicmeter'], 1)
+        scale: Dict[str, float] = dict.fromkeys(['m3', 'cubicmeter'], 1)
         scale.update(dict.fromkeys(['cm3', 'cubiccentimeter'], 1e-6))
         scale.update(dict.fromkeys(['nm3', 'cubicnanometer'], 1e-27))
         scale.update(dict.fromkeys(['a3', 'cubicangstrom'], 1e-30))
-        scale.update(dict.fromkeys(
-            ['b3', 'cubicbohr', 'au3', 'cubicatomic'], self.bohr_radius ** 3))
+        scale.update(dict.fromkeys(['b3', 'cubicbohr', 'au3', 'cubicatomic'], self.bohr_radius ** 3))
         return self.simplest_converter(scale, num, from_unit, to_unit)
 
 
 class EnergyConverter(UnitConverter):
+    """
+    A converter converts energy in different units.
+    """
+
     def __init__(self):
+        """
+        Define some constants as scaling numbers.
+        """
         self.hartree_energy = 4.359744650e-18
         self.electron_volt = 1.602176565e-19
         self.boltzmann_const = 1.38064852e-23
         self.freq_to_joule = 1.98630e-23
         self.hertz_to_joule = 6.62561e-34
 
-    def simple_converter(self, num, from_unit='ha', to_unit='ry'):
+    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str):
         """
         This function converts the input first to Joule, then converts it to desired unit.
-        :param num:
-        :param from_unit:
-        :param to_unit:
-        :return:
+
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
-        scale = dict.fromkeys(['J', 'Joule', 'SI'],
-                              1)  # Joule is the standard unit.
-        scale.update(dict.fromkeys(
-            ['h', 'ha', 'hartree'], self.hartree_energy))
-        scale.update(dict.fromkeys(
-            ['ev', 'eV', 'electronvolt'], self.electron_volt))
+        scale: Dict[str, float] = dict.fromkeys(['J', 'Joule', 'SI'], 1)  # Joule is the standard unit.
+        scale.update(dict.fromkeys(['h', 'ha', 'hartree'], self.hartree_energy))
+        scale.update(dict.fromkeys(['ev', 'eV', 'electronvolt'], self.electron_volt))
         scale.update(dict.fromkeys(['ry', 'rydberg'], self.hartree_energy / 2))
         scale.update(dict.fromkeys(['K'], self.boltzmann_const))
         scale.update(dict.fromkeys(['cm-1'], self.freq_to_joule))
@@ -107,18 +121,19 @@ class EnergyConverter(UnitConverter):
 
 class PressureConverter(UnitConverter):
     """
+    A converter converts pressure in different units.
     """
 
-    def simple_converter(self, num, from_unit='gpa', to_unit='mbar'):
+    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str):
         """
-        This function converts the input first to pascal, then converts it to desired unit.
-        :param num: float
-        :param from_unit: str
-        :param to_unit: str
-        :return: float
+        This function converts the input first to pascal, then converts it in desired unit.
+
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
-        scale = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'],
-                              1)  # Pa is the standard unit.
+        scale: Dict[str, float] = dict.fromkeys(['pa', 'pascal', 'Pa', 'SI'], 1)  # Pa is the standard unit.
         scale.update(dict.fromkeys(['gpa', 'GPa'], 1e9))
         scale.update(dict.fromkeys(['bar'], 1e5))
         scale.update(dict.fromkeys(['mbar', 'Mbar'], 1e11))
@@ -127,20 +142,25 @@ class PressureConverter(UnitConverter):
 
 class MoleConverter(UnitConverter):
     """
+    A converter than convert if there is an unit of form x/mole.
     """
 
     def __init__(self):
+        """
+        Define some constants as scaling numbers.
+        """
         self.avogadro_const = 6.022140857e23
 
-    def converter(self, option, num, from_unit, to_unit):
+    def converter(self, num: Union[float, int], from_unit: str, to_unit: str, option: str):
         """
         Sometimes we meet a quantity with xx/mol, this converts it to the physical quantity of only one such quantity.
         Supported options: {'length', 'volume', 'energy', 'pressure'}
+
         :param option: str
-        :param num: float
-        :param from_unit: str
-        :param to_unit: str
-        :return: float
+        :param num: the number to be converted
+        :param from_unit: the unit to be converted from
+        :param to_unit: the unit to be converted to
+        :return: the resulted number
         """
         options = {'l': LengthConverter, 'v': VolumeConverter, 'e': EnergyConverter,
                    'p': PressureConverter}
@@ -170,9 +190,3 @@ def call_simple_converter(physical_quantity: str, numeric: Union[int, float, Lis
         return converter.simple_converter(numeric, from_unit, to_unit)
     else:
         raise TypeError('Unknown data type' + str(type(numeric)))
-
-
-if __name__ == "__main__":
-    # print(call_simple_converter('l', 1.41, 'angstrom', 'bohr'))
-    # print(call_simple_converter('v', 8.67 * 2, 'a3', 'b3'))
-    print(call_simple_converter('e', 0.0001, 'ry', 'K'))
