@@ -273,7 +273,7 @@ class ReadVCRelaxOutput:
         with open(inp, 'r') as f:
             for line in f:
                 # If a line starts with '#', it will be regarded as a comment,
-                # we do not parse it.
+                # we do not parse this line.
                 fields = shlex.split(line, comments=True)
                 if not fields:
                     continue
@@ -394,12 +394,48 @@ class ReadPHononOutput(SimpleRead):
 
 
 class ReadElasticityOutput(SimpleRead):
-    def read_cij_vs_pressures(self, inp: str) -> Dict[str, List[float]]:
+    @staticmethod
+    def read_elastic_tensor(filename: str) -> Tuple[List[float], List[np.ndarray]]:
+        """
+        Read c_ij file, which looks like:
+            Calculated tensor for each pressure:
+
+            P = -10.0
+             322.000    123.400    102.250      0.000      0.000      0.000
+             123.400    322.000    102.250      0.000      0.000      0.000
+             102.250    102.250    307.600      0.000      0.000      0.000
+               0.000      0.000      0.000     72.175      0.000      0.000
+               0.000      0.000      0.000      0.000     72.175      0.000
+               0.000      0.000      0.000      0.000      0.000     99.300
+
+            P = 0.0
+             ...
+
+        :param filename: file that stores c_ij matrices
+        :return: A list of pressure and a list of 6 by 6 numpy arrays
+        """
+        pressure_list = []
+        elastic_tensor_list = []
+        with open(filename, 'r') as f:
+            for line in f:
+                if not line.strip():  # Ignore blank lines
+                    continue
+                if 'Calculated tensor for each pressure' in line:
+                    f.readline()
+                if 'P' in line:
+                    pressure_list.append(float(line.split('=')[1]))
+                    elastic_tensor = np.empty([6, 6], dtype=np.float64)
+                    for i in range(6):
+                        elastic_tensor[i] = list(map(float, f.readline().split()))
+                    elastic_tensor_list.append(elastic_tensor)
+        return pressure_list, elastic_tensor_list
+
+    def read_cij_vs_pressures(self, filename: str) -> Dict[str, List[float]]:
         """
         Read first column as pressures, then the second to the last column as the compliance of the crystal at
         corresponding pressure.
 
-        :param inp:
+        :param filename:
         :return:
         """
-        return self.read_one_column_as_keys(inp, 0, lambda x: list(map(float, x)))
+        return self.read_one_column_as_keys(filename, 0, lambda x: list(map(float, x)))

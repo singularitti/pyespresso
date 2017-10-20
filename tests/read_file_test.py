@@ -17,14 +17,23 @@ class TestReadPHononOutput(unittest.TestCase):
         self.rph = ReadPHononOutput()
         # self.q_dict = self.test_read_q_points()
 
-    def test_read_k_mesh(self):
-        print(self.rpw.read_k_mesh('pw_data/eg0.in'))
+        # def test_read_k_mesh(self):
+        #     print(self.rpw.read_k_mesh('pw_data/eg0.in'))
 
-    # def test_read_q_points(self):
-    #     return self.rph.read_q_points('phonon_data/high_sym_q')
-    #
-    # def test_read_phonon_dispersion(self):
-    #     self.rph.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
+        # def test_read_q_points(self):
+        #     return self.rph.read_q_points('phonon_data/high_sym_q')
+        #
+        # def test_read_phonon_dispersion(self):
+        #     self.rph.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
+
+
+class TestReadElasticityOutput(unittest.TestCase):
+    def setUp(self):
+        self.reo = ReadElasticityOutput()
+
+    def test_read_elastic_tensor(self):
+        p_list, c_list = self.reo.read_elastic_tensor('cij_data/Cij_file.dat')
+        print(p_list, c_list)
 
 
 if __name__ == "__main__":
