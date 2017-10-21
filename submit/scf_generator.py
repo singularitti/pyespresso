@@ -2,7 +2,7 @@
 # created at Jul 21, 2017 12:29 by Qi Zhang
 
 from typing import *
-from input.pw_paramlist import *
+from submit.pw_paramlist import *
 
 
 class SCFGenerator:
@@ -13,7 +13,7 @@ class SCFGenerator:
     @staticmethod
     def readfile(file) -> Dict:
         """
-        This method reads input from a given template file. Each line in the file is of form:
+        This method reads submit from a given template file. Each line in the file is of form:
             key: value
         or
             key: [value1, value2, ...]

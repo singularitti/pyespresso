@@ -24,12 +24,12 @@ if signal_exist:
         'Folders with vc-relax calculations were not found. You need to optimize the structure at each pressure before the phonon calculation. Exiting.')
     quit()
 
-with open('input.dat') as input_params:
+with open('submit.dat') as input_params:
     lines_input = input_params.readlines()
 
 press = np.array(lines_input[0].split(), dtype=float)
 npress = len(press)
-# Reads numnber of atoms and number of atomic types from input
+# Reads numnber of atoms and number of atomic types from submit
 with open('qe_input_data', 'r') as in_data:
     lines = in_data.readlines()
     for i in range(0, len(lines)):
@@ -108,9 +108,9 @@ for i in press:
     dir_name = 'scf_' + str(i)
     phon_name = dir_name + '-ph.in'
     if os.path.exists(dir_name):
-        print('scf folder for P = %d exists. Skiping qe input generation and creating phonon files.' % i)
+        print('scf folder for P = %d exists. Skiping qe submit generation and creating phonon files.' % i)
     else:
-        print('scf folder for P = %d does not exist. Creating input files for pw and ph.' % i)
+        print('scf folder for P = %d does not exist. Creating submit files for pw and ph.' % i)
         functions.create_scf_files(vectors, alat, dir_name, int(i), atom_pos)
     if os.path.exists(dir_name + '/' + dir_name + '.out'):
         print('Scf out files exist. Skiping scf calculation')

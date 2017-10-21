@@ -22,7 +22,7 @@ nstrain = func_cij.define_cij(cclass)
 number_dists = len(dist) - 1
 print('You need %d strains.' % nstrain)
 
-with open('input.dat') as input_params:
+with open('submit.dat') as input_params:
     lines_input = input_params.readlines()
 
 press = np.array(lines_input[0].split(), dtype=float)
@@ -45,7 +45,7 @@ else:
     print('Not all pressures have their Cij folder. Preparing files for the missing ones')
 
 
-# Reads numnber of atoms and number of atomic types from input
+# Reads numnber of atoms and number of atomic types from submit
 with open('qe_input_data', 'r') as in_data:
     lines = in_data.readlines()
     for i in range(0, len(lines)):
@@ -119,11 +119,11 @@ if not calculate_tensor:
         vectors = np.array([a1, a2, a3])
         if os.path.exists(dir_name):
             print(
-                'Scf folder for P = %d exists. Skiping qe input generation and creating Cij files.' % i)
+                'Scf folder for P = %d exists. Skiping qe submit generation and creating Cij files.' % i)
             signal_scf = False
         else:
             print(
-                'Scf folder for P = %d does not exist. Creating input files for pw and Cij.' % i)
+                'Scf folder for P = %d does not exist. Creating submit files for pw and Cij.' % i)
             functions.create_scf_files(
                 vectors, alat, dir_name, int(i), atom_pos)
         cij_dir_name = 'cij'

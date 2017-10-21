@@ -19,7 +19,7 @@ print('Starting workflow calculations.')
 
 class VCRelax:
     def __init__(self):
-        self.input_dat = 'input.dat'
+        self.input_dat = 'submit.dat'
         self.job_header = 'job_header'
         self.job_lines, self.schedule, self.modules, self.num_nodes, self.num_processors = self.read_job_header(
             self.job_header)
@@ -32,7 +32,7 @@ class VCRelax:
     @staticmethod
     def read_input_params(filename: str) -> tuple:
         """
-        input.dat has information on the calculation:
+        submit.dat has information on the calculation:
         The pressures to be calculated,
         the initial guess for V0, K0 and K0',
         and the lattice vectors, necessary to calculate the lattice parameter with the volume.
@@ -48,7 +48,7 @@ class VCRelax:
         if num_pressures < 7:
             print('You have' + str(num_pressures) + 'pressure points!')
             print(
-                'At least 7 are necessary for a good quality EOS fitting, please, modify your input files.')
+                'At least 7 are necessary for a good quality EOS fitting, please, modify your submit files.')
         else:
             print('You have' + str(num_pressures) +
                   'pressure points, more than 7! You are a smart user!')
@@ -209,7 +209,7 @@ class VCRelax:
 
     def _fit_crude_guess(self) -> tuple:
         """
-        This will use the input V0, K0, and K0', as well as the list of P and V from read_crude_guess_output,
+        This will use the submit V0, K0, and K0', as well as the list of P and V from read_crude_guess_output,
         to fit the Vinet equation of state.
         eos_opt are the returned V0, K0, and K0' for Vinet EOS.
         eos_cov are the estimated covariance of eos_opt.
@@ -348,7 +348,7 @@ class VCRelax:
 
     def _fit_vc_relax(self):
         """
-        This will use the input V0, K0, and K0', as well as the list of P and V from read_vc_relax_output,
+        This will use the submit V0, K0, and K0', as well as the list of P and V from read_vc_relax_output,
         to fit the Vinet equation of state.
         eos_opt are the returned V0, K0, and K0' for Vinet EOS.
         eos_cov are the estimated covariance of eos_opt.

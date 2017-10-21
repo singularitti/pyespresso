@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
-import matplotlib.pyplot as plt
-
-from miscellaneous.phonon import *
-from read_file.read_file import *
+from plot.plot_basic import *
+from read_file.elasticity import *
 
 
-class PlotVCRelaxOutput:
+class PlotVCRelaxOutput(SingleAxes):
     def __init__(self):
+        super().__init__()
         self.ro = ReadVCRelaxOutput()
-        self.cmap = plt.get_cmap('nipy_spectral')
-
-    def parse_filenames(self, filename_list):
-        pass
+        self.cmap = self.choose_colormap('nipy_spectral')
 
     def plot_p_vs_v(self, files: list):
         colors = self.cmap(np.linspace(0, 1, len(files)))

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-# Reading input
+# Reading submit
 
 import os
 import re
@@ -17,13 +17,13 @@ working_dir = os.getcwd()
 
 print('Starting workflow calculations.\n')
 
-# Read input files
+# Read submit files
 
 # Input.dat has information on the calculation:
 # The pressures to be calculated, the initial guess for V0, K0 and Kp
 # and the lattice vectors, necessary to calculate the lattice parameter with the volume
 
-with open('input.dat', 'r') as input_params:
+with open('submit.dat', 'r') as input_params:
     lines = input_params.readlines()
 
 # job_param is a file with the parameters of the job to be submitted:
@@ -50,7 +50,7 @@ npress = len(press)
 
 if npress < 7:
     print(
-        'You have %d pressure points. At least 7 are necessary for a good quality EoS fitting, please, modify your input files.' % npress)
+        'You have %d pressure points. At least 7 are necessary for a good quality EoS fitting, please, modify your submit files.' % npress)
 else:
     print('You have %d pressure points, more than 7! You are a smart user!' % npress)
 
@@ -185,7 +185,7 @@ P = np.array(Paux)
 V = np.array(Vaux)
 param1 = np.array(param_aux)
 
-# Fits the Equation of State with the input parameters as a guess
+# Fits the Equation of State with the submit parameters as a guess
 eosPar, eosCov = curve_fit(functions.vinet, V, P, param1)
 std = np.sqrt(np.diag(eosCov))
 

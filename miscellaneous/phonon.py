@@ -3,7 +3,7 @@
 
 import miscellaneous.maths as mm
 from miscellaneous.converter import *
-from read_file.read_file import *
+from read_file.elasticity import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 12:52 AM by Qi Zhang
 
-from read_file.read_file import *
+from read_file.elasticity import *
 
 
 class PlotPWscfOutput:

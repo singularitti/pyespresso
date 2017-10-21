@@ -42,7 +42,7 @@ class LengthConverter(UnitConverter):
 
     def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the input first to meter, then converts it in desired unit.
+        This function converts the submit first to meter, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -68,9 +68,9 @@ class VolumeConverter(UnitConverter):
         """
         self.bohr_radius = 5.2917721067e-11
 
-    def simple_converter(self, num, from_unit='a3', to_unit='b3'):
+    def simple_converter(self, num, from_unit='a3', to_unit='b3') -> float:
         """
-        This function converts the input first to cubic meter, then converts it in desired unit.
+        This function converts the submit first to cubic meter, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -102,7 +102,7 @@ class EnergyConverter(UnitConverter):
 
     def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str):
         """
-        This function converts the input first to Joule, then converts it to desired unit.
+        This function converts the submit first to Joule, then converts it to desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -124,9 +124,9 @@ class PressureConverter(UnitConverter):
     A converter converts pressure in different units.
     """
 
-    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str):
+    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the input first to pascal, then converts it in desired unit.
+        This function converts the submit first to pascal, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -151,7 +151,7 @@ class MoleConverter(UnitConverter):
         """
         self.avogadro_const = 6.022140857e23
 
-    def converter(self, num: Union[float, int], from_unit: str, to_unit: str, option: str):
+    def converter(self, num: Union[float, int], from_unit: str, to_unit: str, option: str) -> float:
         """
         Sometimes we meet a quantity with xx/mol, this converts it to the physical quantity of only one such quantity.
         Supported options: {'length', 'volume', 'energy', 'pressure'}
@@ -164,7 +164,7 @@ class MoleConverter(UnitConverter):
         """
         options = {'l': LengthConverter, 'v': VolumeConverter, 'e': EnergyConverter,
                    'p': PressureConverter}
-        return options[option](num / self.avogadro_const, from_unit, to_unit)
+        return options[option]().simple_converter(num / self.avogadro_const, from_unit, to_unit)
 
 
 def call_simple_converter(physical_quantity: str, numeric: Union[int, float, List, np.ndarray], from_unit: str,

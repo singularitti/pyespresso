@@ -3,13 +3,14 @@
 
 from numpy.linalg import inv
 
-from read_file.read_file import *
+from read_file.elasticity import *
 
 
-class ComputeElasticity:
-    def __init__(self, filename):
-        self.reo = ReadElasticityOutput()
-        self.pressure_list, self.elastic_tensor_list = self.reo.read_elastic_tensor(filename)
+class ElasticityCalculator:
+    def __init__(self, file):
+        eor = ElasticityOutputReader(file)
+        self.pressures, self.elastic_tensors = eor.read_elastic_tensor()
+        self.compliance_tensors = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
 
     @staticmethod
     def create_compliance_tensor(elastic_tensor: np.ndarray) -> np.ndarray:
@@ -21,75 +22,55 @@ class ComputeElasticity:
         return inv(elastic_tensor)
 
     @staticmethod
-    def bulk_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:
+    def derive_bulk_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:
         """
         This method gives the Voigt average of bulk modulus, which is the upper bound on K for polycrystalline material.
 
         :return: Voigt average of Bulk modulus
         """
-        c11 = elastic_tensor[0, 0]
-        c22 = elastic_tensor[1, 1]
-        c33 = elastic_tensor[2, 2]
-        c12 = elastic_tensor[0, 1]
-        c23 = elastic_tensor[1, 2]
-        c31 = elastic_tensor[2, 0]
+        c11, c22, c33, c12, c23, c31 = _get_values_by_indices(elastic_tensor,
+                                                              [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0)])
         return 1 / 9 * (c11 + c22 + c33 + 2 * (c12 + c23 + c31))
 
     @staticmethod
-    def bulk_modulus_reuss_average(compliance_tensor: np.ndarray) -> float:
+    def derive_bulk_modulus_reuss_average(compliance_tensor: np.ndarray) -> float:
         """
         This method gives the Reuss average of bulk modulus, which is the lower bound on K for polycrystalline material,
 
         :param compliance_tensor:
-        :return:
+        :return: Reuss average of bulk modulus
         """
-        s11 = compliance_tensor[0, 0]
-        s22 = compliance_tensor[1, 1]
-        s33 = compliance_tensor[2, 2]
-        s12 = compliance_tensor[0, 1]
-        s23 = compliance_tensor[1, 2]
-        s31 = compliance_tensor[2, 0]
+        s11, s22, s33, s12, s23, s31 = _get_values_by_indices(compliance_tensor,
+                                                              [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2), (2, 0)])
         return 1 / (s11 + s22 + s33 + 2 * (s12 + s23 + s31))
 
     @staticmethod
-    def shear_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:
+    def derive_shear_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:
         """
         This method gives the Voigt average of shear modulus, which is the upper bound on G for polycrystalline material.
 
         :param elastic_tensor:
-        :return:
+        :return: Voigt average of shear modulus
         """
-        c11 = elastic_tensor[0, 0]
-        c22 = elastic_tensor[1, 1]
-        c33 = elastic_tensor[2, 2]
-        c12 = elastic_tensor[0, 1]
-        c23 = elastic_tensor[1, 2]
-        c31 = elastic_tensor[2, 0]
-        c44 = elastic_tensor[3, 3]
-        c55 = elastic_tensor[4, 4]
-        c66 = elastic_tensor[5, 5]
+        c11, c22, c33, c12, c23, c31, c44, c55, c66 = _get_values_by_indices(elastic_tensor,
+                                                                             [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2),
+                                                                              (2, 0), (3, 3), (4, 4), (5, 5)])
         return 1 / 15 * (c11 + c22 + c33 - c12 - c23 - c31 + 3 * (c44 + c55 + c66))
 
     @staticmethod
-    def shear_modulus_reuss_average(compliance_tensor: np.ndarray) -> float:
+    def derive_shear_modulus_reuss_average(compliance_tensor: np.ndarray) -> float:
         """
         This method gives the Reuss average of shear modulus, which is the lower bound on G for polycrystalline material.
 
         :param compliance_tensor:
-        :return:
+        :return: Reuss average of shear modulus
         """
-        s11 = compliance_tensor[0, 0]
-        s22 = compliance_tensor[1, 1]
-        s33 = compliance_tensor[2, 2]
-        s12 = compliance_tensor[0, 1]
-        s23 = compliance_tensor[1, 2]
-        s31 = compliance_tensor[2, 0]
-        s44 = compliance_tensor[3, 3]
-        s55 = compliance_tensor[4, 4]
-        s66 = compliance_tensor[5, 5]
+        s11, s22, s33, s12, s23, s31, s44, s55, s66 = _get_values_by_indices(compliance_tensor,
+                                                                             [(0, 0), (1, 1), (2, 2), (0, 1), (1, 2),
+                                                                              (2, 0), (3, 3), (4, 4), (5, 5)])
         return 15 / (4 * (s11 + s22 + s33 - 4 * (s12 + s23 + s31) + 3 * (s44 + s55 + s66)))
 
-    def bulk_modulus_vrh_average(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
+    def derive_bulk_modulus_vrh_average(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
         """
         Voigt--Reuss--Hill average of bulk modulus.
 
@@ -97,11 +78,11 @@ class ComputeElasticity:
         :param compliance_tensor:
         :return: Voigt--Reuss--Hill average of bulk modulus
         """
-        kv = self.bulk_modulus_voigt_average(elastic_tensor)
-        kr = self.bulk_modulus_reuss_average(compliance_tensor)
+        kv = self.derive_bulk_modulus_voigt_average(elastic_tensor)
+        kr = self.derive_bulk_modulus_reuss_average(compliance_tensor)
         return (kv + kr) / 2
 
-    def shear_modulus_vrh_average(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
+    def derive_shear_modulus_vrh_average(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
         """
         Voigt--Reuss--Hill average of shear modulus.
 
@@ -109,18 +90,30 @@ class ComputeElasticity:
         :param compliance_tensor:
         :return: Voigt--Reuss--Hill average of shear modulus
         """
-        gv = self.shear_modulus_voigt_average(elastic_tensor)
-        gr = self.shear_modulus_reuss_average(compliance_tensor)
+        gv = self.derive_shear_modulus_voigt_average(elastic_tensor)
+        gr = self.derive_shear_modulus_reuss_average(compliance_tensor)
         return (gv + gr) / 2
 
-    def isotropic_poisson_ratio(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
+    def derive_isotropic_poisson_ratio(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
         """
         A number describing lateral response to loading.
 
         :param elastic_tensor:
         :param compliance_tensor:
-        :return:
+        :return: isotropic Poisson ratio
         """
-        kvrh = self.bulk_modulus_vrh_average(elastic_tensor, compliance_tensor)
-        gvrh = self.shear_modulus_vrh_average(elastic_tensor, compliance_tensor)
+        kvrh = self.derive_bulk_modulus_vrh_average(elastic_tensor, compliance_tensor)
+        gvrh = self.derive_shear_modulus_vrh_average(elastic_tensor, compliance_tensor)
         return (3 * kvrh - 2 * gvrh) / (6 * kvrh + 2 * gvrh)
+
+
+def _get_values_by_indices(matrix: np.ndarray, indices: List[Tuple[int, int]]) -> List:
+    """
+    Given a 2-dimensional matrix $m$, and a list of indices $(i, j)$ where $i$, $j$ denote the index for the
+    0th and 1st axis, respectively. Then return a list of values $m(i, j)$.
+
+    :param matrix: a numpy array of floats, integers, etc.
+    :param indices: a list of 2-tuple-integers
+    :return: a list of values corresponding to those indices.
+    """
+    return [matrix[index] for index in indices]
