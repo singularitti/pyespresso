@@ -8,7 +8,6 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from read_file.elasticity import *
 from read_file.phonon import *
 from read_file.pwscf import *
 
@@ -25,17 +24,8 @@ class TestReadPHononOutput(unittest.TestCase):
     def test_read_q_points(self):
         return self.rph.read_q_points('phonon_data/high_sym_q')
 
-    # def test_read_phonon_dispersion(self):
+        # def test_read_phonon_dispersion(self):
         # self.rph.read_phonon_dispersion('phonon_data/freq.out', 'Γ->M->K->Γ->A->K')
-
-
-class TestReadElasticityOutput(unittest.TestCase):
-    def setUp(self):
-        self.reo = ElasticityOutputReader('cij_data/Cij_file.dat')
-
-    def test_read_elastic_tensor(self):
-        p_list, c_list = self.reo.read_elastic_tensor()
-        print(p_list, c_list)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from miscellaneous.elasticity import *
 from plot.plot_basic import *
 
 
-class PlotElasticityOutput(SingleAxes):
+class ElasticityOutputPlotter(SingleAxes):
     def __init__(self, filename: str):
         super().__init__()
         self.reo = ElasticityOutputReader(filename)

@@ -8,9 +8,15 @@ from read_file.elasticity import *
 
 class ElasticityCalculator:
     def __init__(self, file):
+        """
+        Usually we know elastic tensors, which are calculated by Quantum ESPRESSO, add we need to calculate
+        corresponding compliance tensors as well as other important values manually.
+
+        :param file: a file giving an 6x6 elastic tensor under each pressure.
+        """
         eor = ElasticityOutputReader(file)
         self.pressures, self.elastic_tensors = eor.read_elastic_tensor()
-        self.compliance_tensors = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
+        self.compliance_tensors: List[np.ndarray] = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
 
     @staticmethod
     def create_compliance_tensor(elastic_tensor: np.ndarray) -> np.ndarray:
@@ -105,6 +111,19 @@ class ElasticityCalculator:
         kvrh = self.derive_bulk_modulus_vrh_average(elastic_tensor, compliance_tensor)
         gvrh = self.derive_shear_modulus_vrh_average(elastic_tensor, compliance_tensor)
         return (3 * kvrh - 2 * gvrh) / (6 * kvrh + 2 * gvrh)
+
+    def derive_universal_elastic_anisotropy(self, elastic_tensor: np.ndarray, compliance_tensor: np.ndarray) -> float:
+        """
+
+        :param elastic_tensor:
+        :param compliance_tensor:
+        :return:
+        """
+        kv = self.derive_bulk_modulus_voigt_average(elastic_tensor)
+        kr = self.derive_bulk_modulus_reuss_average(compliance_tensor)
+        gv = self.derive_shear_modulus_voigt_average(elastic_tensor)
+        gr = self.derive_shear_modulus_reuss_average(compliance_tensor)
+        return 5 * (gv / gr) + (kv / kr) - 6
 
 
 def _get_values_by_indices(matrix: np.ndarray, indices: List[Tuple[int, int]]) -> List:
