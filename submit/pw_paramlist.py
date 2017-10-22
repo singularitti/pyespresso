@@ -3,8 +3,10 @@
 """
 Parameters of pw.x that controls the whole calculation.
 Here I construct different sets of parameters, for consideration of performance.
-Since finding element in list is O(N) but in set is O(1).
+Since finding an element in a list is O(N) but in a set is O(1).
 """
+
+from miscellaneous.dictionary import merge_dicts
 
 CONTROL = {'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
            'dt', 'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr',
@@ -34,3 +36,14 @@ IONS = {'ion_dynamics', 'ion_positions', 'pot_extrapolation', 'wfc_extrapolation
         'trust_radius_max', 'trust_radius_min', 'trust_radius_ini', 'w_1', 'w_2'}
 
 CELL = {'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree'}
+
+default_control = {'restart_mode': 'from_scratch',
+                   'tstress': '.true.',
+                   'tprnfor': '.true.',
+                   'verbosity': 'high'}
+
+default_system = {'ibrav': '0'}
+
+default_electrons = {'diagonalization': 'david'}
+
+default_parameters = merge_dicts(default_control, default_system, default_electrons)

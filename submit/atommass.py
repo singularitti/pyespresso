@@ -2,10 +2,10 @@
 # created at Aug 9, 2017 12:46 PM by Qi Zhang
 
 # Dictionary of atomic weights
-atom_weight = {'H': 1.0080000,
-               'He': 4.0026020,
-               'Li': 6.9400000,
-               'Be': 9.0121831,
+atom_weight = {'H': 1.00800000,
+               'He': 4.00260200,
+               'Li': 6.94000000,
+               'Be': 9.01218310,
                'B': 10.8100000,
                'C': 12.0110000,
                'N': 14.0070000,

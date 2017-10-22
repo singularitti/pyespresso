@@ -10,7 +10,7 @@ import numpy as np
 from read_file.read_basic import *
 
 
-class ReadVCRelaxOutput:
+class VCRelaxOutputReader:
     @staticmethod
     def read_pv(inp: str) -> Tuple[List[float], List[float]]:
         """

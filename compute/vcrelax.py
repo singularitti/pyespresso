@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # created at Oct 19, 2017 11:40 PM by Qi Zhang
 
-from read_file.elasticity import *
+from read_file.vcrelax import *
 
 
 class ComputeVCRelax:
     def __init__(self):
-        self.ro = ReadVCRelaxOutput()
+        self.ro = VCRelaxOutputReader()
 
     def c_over_a(self, filename: str) -> Tuple[List[float], List[float]]:
         """
