@@ -64,11 +64,12 @@ class ElasticityOutputPlotter(SingleAxes):
         """
         This is a generic method that can be used to implement the following methods.
 
-        :param f: a function takes one or more arguments. If it takes more than one arguments,
-            an item will be a tuple, and need to be distinguished from the case where it only takes one argument,
-            where an item is just a numpy array. This is because "tuple parameter unpacking" is removed from Python 3.x.
+        :param f: a function takes one or more arguments.
         :param items: can be a list or zip object
         :return: a line that were added to plot
         """
+        # If `f` takes more than one arguments, an item will be a tuple, and need to be distinguished from the case
+        # where it only takes one argument, where an item is just a numpy array.
+        # This is because "tuple parameter unpacking" is removed from Python 3.x.
         line, = plt.plot(self.ec.pressures, [f(*item) if isinstance(item, tuple) else f(item) for item in items])
         return line
