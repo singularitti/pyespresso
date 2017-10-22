@@ -15,7 +15,7 @@ class SingleAxes:
 
     @staticmethod
     def set_legend(lines: Tuple, labels: Tuple):
-        plt.legend(lines, labels)
+        plt.legend(lines, labels, loc="best")
 
 
 class MultipleAxes:

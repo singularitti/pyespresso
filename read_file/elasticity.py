@@ -36,8 +36,8 @@ class ElasticityOutputReader(SimpleRead):
 
         :return: A list of pressure and a list of 6 by 6 numpy arrays
         """
-        pressure_list = []
-        elastic_tensor_list = []
+        pressures = []
+        elastic_tensors = []
         with open(self.filename, 'r') as f:
             for line in f:
                 if not line.strip():  # Ignore blank lines
@@ -45,12 +45,17 @@ class ElasticityOutputReader(SimpleRead):
                 if 'Calculated tensor for each pressure' in line:
                     f.readline()
                 if 'P = ' in line:
-                    pressure_list.append(float(line.split('=')[1]))
+                    pressures.append(float(line.split('=')[1]))
                     elastic_tensor = np.empty([6, 6], dtype=np.float64)  # Elastic tensor is a 6x6 matrix.
                     for i in range(6):
                         elastic_tensor[i] = list(map(float, f.readline().split()))
-                    elastic_tensor_list.append(elastic_tensor)
-        return pressure_list, elastic_tensor_list
+                    elastic_tensors.append(elastic_tensor)
+        if len(pressures) == len(elastic_tensors):
+            return pressures, elastic_tensors
+        else:
+            raise ValueError(
+                'There are {0} pressures, but {1} elastic tensors. Something went wrong, check your input file!'.format(
+                    len(pressures), len(elastic_tensors)))
 
     def read_cij_vs_pressures(self) -> Dict[str, List[float]]:
         """
