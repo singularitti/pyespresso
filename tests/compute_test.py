@@ -10,7 +10,7 @@ import unittest
 
 import numpy as np
 
-import miscellaneous.phonon as mc
+import compute.phonon as mc
 
 
 class TestCompute(unittest.TestCase):

@@ -7,12 +7,15 @@ from typing import *
 
 class SingleAxes:
     def __init__(self):
-        self.fig, self.ax = plt.subplots()
         self.colormap = self.choose_colormap('viridis')
 
     @staticmethod
     def choose_colormap(cmap: Optional[str] = 'viridis'):
         return plt.get_cmap(cmap)
+
+    @staticmethod
+    def set_legend(lines: Tuple, labels: Tuple):
+        plt.legend(lines, labels)
 
 
 class MultipleAxes:

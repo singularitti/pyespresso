@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
-import miscellaneous.maths as mm
-from miscellaneous.converter import *
+import compute.maths as mm
+from compute.converter import *
 from read_file.elasticity import *
 
 # Type aliases

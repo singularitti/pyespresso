@@ -6,7 +6,7 @@ If all tests are OK, it does not mean that the program has no bug.
 But if unittest does not pass, there must be bug(s) in the program.
 """
 
-from miscellaneous.elasticity import *
+from compute.elasticity import *
 
 import unittest
 

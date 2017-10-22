@@ -11,7 +11,7 @@ from read_file.read_basic import *
 
 class ElasticityOutputReader(SimpleRead):
     def __init__(self, file: str):
-        """
+        """`
         Create an object for each file with `file` as its path plus name.
 
         :param file: a file that stores elastic tensor matrices

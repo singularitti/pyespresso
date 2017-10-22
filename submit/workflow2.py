@@ -101,8 +101,7 @@ class VCRelax:
             print('Therefore, I will consider' +
                   str(div) + 'processors per pressure.')
         else:
-            raise TypeError(
-                'Number of processors not divided by number of pressures!')
+            raise TypeError('Number of processors not divided by number of pressures!')
 
         return int(div)
 

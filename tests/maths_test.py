@@ -8,7 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-import miscellaneous.maths as mm
+import compute.maths as mm
 
 
 class TestMath(unittest.TestCase):

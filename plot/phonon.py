@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-from miscellaneous.phonon import *
+from compute.phonon import *
 from read_file.elasticity import *
 
 
