@@ -16,7 +16,7 @@ class ElasticityCalculator:
         """
         eor = ElasticityOutputReader(file)
         self.pressures, self.elastic_tensors = eor.read_elastic_tensor()
-        self.compliance_tensors: List[np.ndarray] = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
+        self.compliance_tensors = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
 
     @staticmethod
     def create_compliance_tensor(elastic_tensor: np.ndarray) -> np.ndarray:

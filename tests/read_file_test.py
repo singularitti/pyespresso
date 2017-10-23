@@ -14,7 +14,7 @@ from read_file.pwscf import *
 
 class TestReadPHononOutput(unittest.TestCase):
     def setUp(self):
-        self.rpw = ReadPWscfOutput()
+        self.rpw = PWscfOutputReader()
         self.rph = ReadPHononOutput()
         self.q_dict = self.test_read_q_points()
 
