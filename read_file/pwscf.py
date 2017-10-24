@@ -6,51 +6,44 @@ import os
 
 from read_file.read_basic import *
 
+# Type alias
+KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
-class PWscfOutputReader:
-    @staticmethod
-    def read_total_energy(inp: str):
+
+class PWscfOutputReader(SimpleReader):
+    def read_total_energy(self) -> float:
+        """
+        Read total energy from the output file.
+
+        :return: total energy
+        """
+        with open(self.in_file, 'r') as f:
+            match = re.findall("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
+        return float(match[0])
+
+    def read_cell_volume(self) -> float:
+        """
+        Read the unit-cell volume, which is given at the beginning of the file.
+
+        :return: unit-cell volume
+        """
+        with open(self.in_file, 'r') as f:
+            match = re.findall("unit-cell volume\s+=\s+(\d+\.\d+)", f.read())
+        return float(match[0])
+
+    def read_pressure(self) -> float:
+        """
+        Read the pressure, which is at the bottom of the file.
+
+        :return: pressure at this volume
         """
 
-        :param inp:
-        :return:
-        """
-        with open(inp, 'r') as f:
-            match = re.findall(
-                "!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
-        return str_list_to_float_list(match)
-
-    KMesh = NamedTuple(
-        'KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
-
-    @staticmethod
-    def read_k_mesh(inp: str) -> KMesh:
-        """
-
-        :param inp:
-        :return:
-        """
-        with open(inp, 'r') as f:
-            for line in f:
-                if re.search('K_POINTS', line, re.IGNORECASE):
-                    sp = f.readline().split()
-                    k_grid = str_list_to_float_list(sp[0:3])
-                    k_shift = str_list_to_float_list(sp[3:7])
-                    k_mesh = collections.namedtuple(
-                        'k_mesh', ['k_grid', 'k_shift'])
-                    return k_mesh(k_grid, k_shift)
-                else:
-                    raise ValueError(
-                        "'K_POINTS' not found in your submit! Please check!")
-
-    @staticmethod
-    def read_k_coordinates(in_file: str, out_file: str, coordinate_system: Optional[str] = 'crystal'):
+    def read_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
         """
         This method can be used to read how many k-points are involved in a PWscf calculation from a file
         outputted by pw.x. Here regular expression is used. Different version of Quantum ESPRESSO may need different
         version of regular expression. If you find a bug, please contact the author at qz2280@columbia.edu.
 
-        :param in_file: input file, where the data will be read from
         :param out_file: output file, where the data read
         :param coordinate_system: Can be 'Cartesian' at any case (upper, lower, etc.); or 'crystal' at any case.
         :return: None
@@ -67,7 +60,7 @@ class PWscfOutputReader:
             raise ValueError(
                 "Unknown coordinate system type! It can be either 'Cartesian' or 'crystal'!")
 
-        with open(in_file, 'r') as f, open(out_file, 'w') as g:
+        with open(self.in_file, 'r') as f, open(out_file, 'w') as g:
             flag = False  # If flag is true, read line and match pattern, if not true, no need to match pattern
             k_count = 0  # Count how many k-points have been read
             k_num = None  # How many k-points in total, given by Quantum ESPRESSO
@@ -92,3 +85,22 @@ class PWscfOutputReader:
 
                     k_count += 1
         print('Reading done! File is stored at "{0}"'.format(os.path.abspath(out_file)))
+
+
+class PWscfInputReader(SimpleReader):
+    def read_k_mesh(self) -> KMesh:
+        """
+
+        :return: a named tuple defined above
+        """
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if re.search('K_POINTS', line, re.IGNORECASE):
+                    sp = f.readline().split()
+                    k_grid = str_list_to_float_list(sp[0:3])
+                    k_shift = str_list_to_float_list(sp[3:7])
+                    k_mesh = collections.namedtuple(
+                        'k_mesh', ['k_grid', 'k_shift'])
+                    return k_mesh(k_grid, k_shift)
+                else:
+                    raise ValueError("'K_POINTS' not found in your submit! Please check!")

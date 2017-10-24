@@ -9,15 +9,7 @@ import numpy as np
 from read_file.read_basic import *
 
 
-class ElasticityOutputReader(SimpleRead):
-    def __init__(self, file: str):
-        """
-        Create an object for each file with `file` as its path plus name.
-
-        :param file: a file that stores elastic tensor matrices
-        """
-        self.filename = file
-
+class ElasticityOutputReader(SimpleReader):
     def read_elastic_tensor(self) -> Tuple[List[float], List[np.ndarray]]:
         """
         Read c_ij file, which looks like:
@@ -38,7 +30,7 @@ class ElasticityOutputReader(SimpleRead):
         """
         pressures = []
         elastic_tensors = []
-        with open(self.filename, 'r') as f:
+        with open(self.in_file, 'r') as f:
             for line in f:
                 if not line.strip():  # Ignore blank lines
                     continue
@@ -65,4 +57,4 @@ class ElasticityOutputReader(SimpleRead):
         :return: a dictionary that contains pressure as one key, and a list of different elastic tensor's components as
             corresponding value.
         """
-        return self.read_one_column_as_keys(self.filename, 0, lambda x: list(map(float, x)))
+        return self.read_one_column_as_keys(0, lambda x: list(map(float, x)))

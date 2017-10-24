@@ -5,32 +5,48 @@ import re
 from typing import *
 
 
-class SimpleRead:
-    @staticmethod
-    def read_each_line(file: str) -> List[str]:
+class SimpleReader:
+    def __init__(self, in_file: str):
+        """
+        For each file, you need to generate a `SimpleRead` class to read them.
+
+        :param in_file:
+        """
+        self.in_file = in_file
+
+    def _match_only_once(self, pattern: str, wrapper: Callable):
+        """
+        This method matches a pattern which exists only once in a file.
+
+        :param pattern: a regular expression that you want to match
+        :param wrapper: a wrapper function which determines the returned type of value
+        :return: Determined by the `wrapper`, the value you want to grep out from the file.
+        """
+        with open(self.in_file, 'r') as f:
+            match = re.findall(pattern, f.read())
+        return wrapper(match[0])
+
+    def read_each_line(self) -> List[str]:
         """
         This method reads each line simply from a file, and discard the '\n' character.
 
-        :param file: A single file that is to be read.
         :return: A list contains all the lines of the file.
         """
         line_list = []
-        with open(file, 'r') as f:
+        with open(self.in_file, 'r') as f:
             for line in f:
                 line_list.append(re.split('\n', line)[0])
         return line_list
 
-    @staticmethod
-    def read_two_columns(file: str) -> Tuple[List[str], List[str]]:
+    def read_two_columns(self) -> Tuple[List[str], List[str]]:
         """
         This method reads 2 columns from a file.
 
-        :param file: A single file that is to be read.
         :return: two columns of the file
         """
         col1_list = []
         col2_list = []
-        with open(file, 'r') as f:
+        with open(self.in_file, 'r') as f:
             for line in f:
                 if not line.split():
                     f.readline()
@@ -40,13 +56,11 @@ class SimpleRead:
                     col2_list.append(sp[1])
         return col1_list, col2_list
 
-    @staticmethod
-    def read_one_column_as_keys(file: str, col_index: int, wrapper: Callable[[List[str]], Any]) -> Dict[str, Any]:
+    def read_one_column_as_keys(self, col_index: int, wrapper: Callable[[List[str]], Any]) -> Dict[str, Any]:
         """
         This method read the one of the columns of a file as keys,
         the combination of rest columns are values to corresponding keys.
 
-        :param file: A single file that is to be read.
         :param col_index: the index of the column that you want to make it as keys.
         :param wrapper: A function that can process the values to the form that you want.
         :return: A dictionary that could contain anything as its values, but with strings as its keys.
@@ -54,7 +68,7 @@ class SimpleRead:
         key_list = []
         value_list = []
         # Add utf-8 support because we may use special characters.
-        with open(file, 'r', encoding='utf-8') as f:
+        with open(self.in_file, 'r', encoding='utf-8') as f:
             for line in f:
                 sp = line.split()
                 key_list.append(sp[col_index])
@@ -62,7 +76,7 @@ class SimpleRead:
                 value_list.append(wrapper(sp))
         return dict(zip(key_list, value_list))
 
-    def _read_reciprocal_points(self, file: str) -> Dict[str, List[float]]:
+    def _read_reciprocal_points(self) -> Dict[str, List[float]]:
         """
         Suppose you have a file like this:
             A	0.0000000000	0.0000000000	0.5000000000
@@ -76,10 +90,9 @@ class SimpleRead:
         This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
         its value, forms a dictionary.
 
-        :param file: file you want to specify your k-points
         :return: a dictionary
         """
-        return self.read_one_column_as_keys(file, 0, lambda x: list(map(float, x)))
+        return self.read_one_column_as_keys(0, lambda x: list(map(float, x)))
 
 
 def _str_list_to(inp: List[str], to_type) -> List:

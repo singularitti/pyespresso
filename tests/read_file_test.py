@@ -15,7 +15,7 @@ from read_file.pwscf import *
 class TestReadPHononOutput(unittest.TestCase):
     def setUp(self):
         self.rpw = PWscfOutputReader()
-        self.rph = ReadPHononOutput()
+        self.rph = PHononOutputReader()
         self.q_dict = self.test_read_q_points()
 
     def test_read_k_mesh(self):

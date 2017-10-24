@@ -9,7 +9,7 @@ from read_file.elasticity import *
 
 class GenerateTest:
     def __init__(self):
-        self.sr = SimpleRead()
+        self.sr = SimpleReader()
 
     def generate_from_ls(self, test_filename) -> list:
         return self.sr.read_each_line(test_filename)
