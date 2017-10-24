@@ -17,9 +17,7 @@ class PWscfOutputReader(SimpleReader):
 
         :return: total energy
         """
-        with open(self.in_file, 'r') as f:
-            match = re.findall("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", f.read())
-        return float(match[0])
+        return self._match_only_once("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float)
 
     def read_cell_volume(self) -> float:
         """
@@ -27,9 +25,7 @@ class PWscfOutputReader(SimpleReader):
 
         :return: unit-cell volume
         """
-        with open(self.in_file, 'r') as f:
-            match = re.findall("unit-cell volume\s+=\s+(\d+\.\d+)", f.read())
-        return float(match[0])
+        return self._match_only_once("unit-cell volume\s+=\s+(\d+\.\d+)", float)
 
     def read_pressure(self) -> float:
         """
@@ -37,6 +33,7 @@ class PWscfOutputReader(SimpleReader):
 
         :return: pressure at this volume
         """
+        return self._match_only_once("P=\s+(-?\d+\.\d+)", float)
 
     def read_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
         """
