@@ -8,8 +8,8 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from read_file.phonon import *
-from read_file.pwscf import *
+from readers.phonon import *
+from readers.pwscf import *
 
 
 class TestReadPHononOutput(unittest.TestCase):

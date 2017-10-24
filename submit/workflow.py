@@ -148,7 +148,7 @@ for i in press:
             with open(file_path) as qe_out:
                 qe_lines = qe_out.readlines()
         except FileNotFoundError:  # Check if read_file files exist.
-            print('The read_file file for P = %d was not found. Removing it from list and continuing calculation.' % i)
+            print('The readers file for P = %d was not found. Removing it from list and continuing calculation.' % i)
             index_list = index_list + [cont]
             Number_error_files = Number_error_files + 1  # Counts number of files that wasn't found
             pass

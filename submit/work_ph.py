@@ -91,7 +91,7 @@ for i in press:
                 vc_lines = vc_out.readlines()
         except FileNotFoundError:  # Check if vc output file exists
             print(
-                'The read_file file for P = %d was not found. Removing it from pressure list and continuing calculation.' % i)
+                'The readers file for P = %d was not found. Removing it from pressure list and continuing calculation.' % i)
             p_not_found_list = p_not_found_list + [cont]
             number_err_files = number_err_files + 1  # counts the number of files that wasn't found
             pass

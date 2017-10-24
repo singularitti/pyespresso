@@ -153,7 +153,7 @@ class VCRelax:
                 job_status = subprocess.Popen(['squeue', '-j', str(job_id)],
                                               stdout=subprocess.PIPE)  # request SLURM queue information
                 outqueue = job_status.stdout.read().split()
-                # read_file is a string that contains the job ID. If it is not in the queue information, the job is done.
+                # readers is a string that contains the job ID. If it is not in the queue information, the job is done.
                 if output not in outqueue:
                     print(
                         "Crude guess is done! Continuing calculation... I hope your coffee was good!")
@@ -182,8 +182,8 @@ class VCRelax:
                 try:
                     with open(output_file, 'r') as cg_out:
                         lines = cg_out.readlines()
-                except FileNotFoundError:  # Check if read_file files exist.
-                    print('The read_file file for P =' + str(p) +
+                except FileNotFoundError:  # Check if readers files exist.
+                    print('The readers file for P =' + str(p) +
                           'was not found. Removing it from list and continuing calculation.')
                     num_error_files += 1
                 else:
@@ -330,8 +330,8 @@ class VCRelax:
                 try:
                     with open(output_file, 'r') as vc_out:
                         lines = vc_out.readlines()
-                except FileNotFoundError:  # Check if read_file files exist.
-                    print('The read_file file for P =' + str(p) +
+                except FileNotFoundError:  # Check if readers files exist.
+                    print('The readers file for P =' + str(p) +
                           'was not found. Removing it from list and continuing calculation.')  # This is a bug because you have less than 6 but it still works.
                     num_error_files += 1
                 else:

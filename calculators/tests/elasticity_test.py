@@ -6,14 +6,14 @@ If all tests are OK, it does not mean that the program has no bug.
 But if unittest does not pass, there must be bug(s) in the program.
 """
 
-from compute.elasticity import *
+from calculators.elasticity import *
 
 import unittest
 
 
 class ElasticityCalculationTester(unittest.TestCase):
     def setUp(self):
-        self.ec = ElasticityCalculator('../../read_file/tests/Cij_file.dat')
+        self.ec = ElasticityCalculator('../../readers/tests/Cij_file.dat')
 
     def test_create_compliance_tensor(self):
         print(self.ec.compliance_tensors[0])

@@ -7,7 +7,7 @@ from operator import itemgetter
 
 import numpy as np
 
-from read_file.read_basic import *
+from readers.read_basic import *
 
 
 class VCRelaxOutputReader:
@@ -111,7 +111,7 @@ class VCRelaxOutputReader:
     @staticmethod
     def read_final_cell(inp: str) -> Tuple[List[float], List[np.ndarray]]:
         """
-        This method reads result from 'finalcell' file, and collect the data, prepare them for plot.
+        This method reads result from 'finalcell' file, and collect the data, prepare them for plotters.
 
         :param inp: A single file that is to be read.
         :return: ([float], [float])

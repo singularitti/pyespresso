@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
-from plot.plot_basic import *
-from read_file.elasticity import *
+from plotters.plot_basic import *
+from readers.elasticity import *
 
 
 class PlotVCRelaxOutput(SingleAxes):

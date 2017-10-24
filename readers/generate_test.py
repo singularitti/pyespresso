@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # created at Jul 23, 2017 10:26 PM by Qi Zhang
 """
-Quickly generate testing cases for plot.
+Quickly generate testing cases for plotters.
 """
 
-from read_file.elasticity import *
+from readers.elasticity import *
 
 
 class GenerateTest:

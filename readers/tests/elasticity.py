@@ -3,7 +3,7 @@
 
 import unittest
 
-from read_file.elasticity import *
+from readers.elasticity import *
 
 
 class TestReadElasticityOutput(unittest.TestCase):

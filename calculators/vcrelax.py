@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Oct 19, 2017 11:40 PM by Qi Zhang
 
-from read_file.vcrelax import *
+from readers.vcrelax import *
 
 
 class ComputeVCRelax:

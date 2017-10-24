@@ -8,7 +8,7 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from compute.eos import EOS
+from calculators.eos import EOS
 
 
 class TestEOS(unittest.TestCase):

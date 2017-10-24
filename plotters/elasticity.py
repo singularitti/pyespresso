@@ -2,8 +2,8 @@
 # created at Oct 20, 2017 12:49 AM by Qi Zhang
 
 from matplotlib.lines import Line2D
-from compute.elasticity import *
-from plot.plot_basic import *
+from calculators.elasticity import *
+from plotters.plot_basic import *
 
 
 class ElasticityOutputPlotter(SingleAxes):
@@ -24,7 +24,7 @@ class ElasticityOutputPlotter(SingleAxes):
         This method plots the Voigt average calculated by method `derive_bulk_modulus_voigt_average` versus
         corresponding pressure.
 
-        :return: a line that were added to plot
+        :return: a line that were added to plotters
         """
         return self._plot_f_vs_pressure(self.ec.derive_bulk_modulus_voigt_average, self.ec.elastic_tensors)
 
@@ -33,7 +33,7 @@ class ElasticityOutputPlotter(SingleAxes):
         This method plots the Reuss average calculated by method `derive_bulk_modulus_reuss_average` versus
         corresponding pressure.
 
-        :return: a line that were added to plot
+        :return: a line that were added to plotters
         """
         return self._plot_f_vs_pressure(self.ec.derive_bulk_modulus_reuss_average, self.ec.compliance_tensors)
 
@@ -66,7 +66,7 @@ class ElasticityOutputPlotter(SingleAxes):
 
         :param f: a function takes one or more arguments.
         :param items: can be a list or zip object
-        :return: a line that were added to plot
+        :return: a line that were added to plotters
         """
         # If `f` takes more than one arguments, an item will be a tuple, and need to be distinguished from the case
         # where it only takes one argument, where an item is just a numpy array.

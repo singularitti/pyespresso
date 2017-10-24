@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from read_file.read_basic import *
+from readers.read_basic import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
