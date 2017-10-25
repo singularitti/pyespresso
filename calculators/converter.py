@@ -100,7 +100,7 @@ class EnergyConverter(UnitConverter):
         self.freq_to_joule = 1.98630e-23
         self.hertz_to_joule = 6.62561e-34
 
-    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str):
+    def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
         This function converts the submit first to Joule, then converts it to desired unit.
 

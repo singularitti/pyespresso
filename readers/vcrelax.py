@@ -132,7 +132,7 @@ class VCRelaxOutputReader:
                     cell_params = np.zeros((3, 3))
                     for i in range(3):
                         sp = f.readline().split()
-                        cell_params[i] = str_list_to_float_list(sp)
+                        cell_params[i] = strs_to_floats(sp)
                     cell_params_list.append(cell_params)
         return p_list, cell_params_list
 

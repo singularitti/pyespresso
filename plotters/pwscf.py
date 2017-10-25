@@ -5,9 +5,3 @@ from readers.elasticity import *
 
 
 class PlotPWscfOutput:
-    def __init__(self):
-        self.rpw = ReadPWscfOutput()
-
-    def plot_e_vs_k_num(self, filename: str):
-        e_list = self.rpw.read_total_energy(filename)
-        pass

@@ -59,4 +59,4 @@ class ElasticityOutputReader(SimpleReader):
         :return: a dictionary that contains pressure as one key, and a list of different elastic tensor's components as
             corresponding value.
         """
-        return self.read_one_column_as_keys(0, lambda x: list(map(float, x)))
+        return self._read_one_column_as_keys(0, lambda x: list(map(float, x)))

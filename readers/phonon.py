@@ -33,7 +33,7 @@ class PHononOutputReader(SimpleReader):
         :return: ([float], [float])
         """
         frequency_list, dos_list = self.read_two_columns()  # Tuple[List[str], List[str]]
-        return str_list_to_float_list(frequency_list), str_list_to_float_list(dos_list)
+        return strs_to_floats(frequency_list), strs_to_floats(dos_list)
 
     def read_phonon_dispersion(self, density: IntArray) -> Tuple[np.ndarray, np.ndarray]:
         """

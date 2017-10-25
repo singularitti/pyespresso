@@ -8,15 +8,15 @@ from typing import *
 class SimpleReader:
     def __init__(self, in_file: str):
         """
-        For each file, you need to generate a `SimpleRead` class to read them.
+        In our implementation, for each file, you need to generate a `SimpleRead` class to read it.
 
-        :param in_file:
+        :param in_file: the exact one input file for this class
         """
         self.in_file = in_file
 
     def _match_only_once(self, pattern: str, wrapper: Callable):
         """
-        This method matches a pattern which exists only once in a file.
+        This method matches a pattern which exists only once in the file.
 
         :param pattern: a regular expression that you want to match
         :param wrapper: a wrapper function which determines the returned type of value
@@ -26,11 +26,11 @@ class SimpleReader:
             match = re.findall(pattern, f.read())
         return wrapper(match[0])
 
-    def read_each_line(self) -> List[str]:
+    def read_line_by_line(self) -> List[str]:
         """
-        This method reads each line simply from a file, and discard the '\n' character.
+        This method reads each line simply from a file, and discards the '\n' character on the line end.
 
-        :return: A list contains all the lines of the file.
+        :return: a list contains all the lines of the file
         """
         line_list = []
         with open(self.in_file, 'r') as f:
@@ -38,43 +38,54 @@ class SimpleReader:
                 line_list.append(re.split('\n', line)[0])
         return line_list
 
-    def read_two_columns(self) -> Tuple[List[str], List[str]]:
+    def _read_n_columns(self, n: int) -> List[List[str]]:
         """
-        This method reads 2 columns from a file.
+        Read any number of columns (if exists) separated by spaces.
 
-        :return: two columns of the file
+        :param n: an integer specifies the number of columns you want to read
+        :return: a list of `n` columns that contain the contents of each column
         """
-        col1_list = []
-        col2_list = []
+        n_columns = [[] for i in range(n)]
         with open(self.in_file, 'r') as f:
             for line in f:
-                if not line.split():
+                if not line.split():  # If line is ''
                     f.readline()
                 else:
                     sp = line.split()
-                    col1_list.append(sp[0])
-                    col2_list.append(sp[1])
-        return col1_list, col2_list
+                    try:
+                        for i, column in enumerate(n_columns):
+                            column.append(sp[i])
+                    except IndexError:
+                        print('You want more columns than you have! Check your file at line {0}!'.format(line))
+        return n_columns
 
-    def read_one_column_as_keys(self, col_index: int, wrapper: Callable[[List[str]], Any]) -> Dict[str, Any]:
+    def read_two_columns(self) -> List[List[str]]:
+        """
+        This method reads 2 columns from a file. The are specified by spaces.
+
+        :return: two columns of the file
+        """
+        return self._read_n_columns(2)
+
+    def _read_one_column_as_keys(self, col_index: int, func: Callable[[List[str]], Any]) -> Dict[str, Any]:
         """
         This method read the one of the columns of a file as keys,
         the combination of rest columns are values to corresponding keys.
 
         :param col_index: the index of the column that you want to make it as keys.
-        :param wrapper: A function that can process the values to the form that you want.
+        :param func: A function that can process the values to the form that you want.
         :return: A dictionary that could contain anything as its values, but with strings as its keys.
         """
-        key_list = []
-        value_list = []
+        keys = []
+        values = []
         # Add utf-8 support because we may use special characters.
         with open(self.in_file, 'r', encoding='utf-8') as f:
             for line in f:
                 sp = line.split()
-                key_list.append(sp[col_index])
+                keys.append(sp[col_index])
                 del sp[col_index]  # Remove the indexing column
-                value_list.append(wrapper(sp))
-        return dict(zip(key_list, value_list))
+                values.append(func(sp))
+        return dict(zip(keys, values))
 
     def _read_reciprocal_points(self) -> Dict[str, List[float]]:
         """
@@ -92,16 +103,35 @@ class SimpleReader:
 
         :return: a dictionary
         """
-        return self.read_one_column_as_keys(0, lambda x: list(map(float, x)))
+        return self._read_one_column_as_keys(0, lambda x: list(map(float, x)))
 
 
-def _str_list_to(inp: List[str], to_type) -> List:
-    return list(map(to_type, inp))
+def _strs_to_(strs: List[str], to_type: type) -> List:
+    """
+    Convert a list of strings to a list of certain type, specified by `to_type`.
+
+    :param strs: a list of string
+    :param to_type: the type you want to convert your strings to
+    :return: type undefined, but specified by `to_type`
+    """
+    return list(map(to_type, strs))
 
 
-def str_list_to_int_list(inp: List[str]) -> List[int]:
-    return _str_list_to(inp, int)
+def strs_to_ints(strs: List[str]) -> List[int]:
+    """
+    Convert a list of strings to a list of integers.
+
+    :param strs: a list of string
+    :return: a list of converted integers
+    """
+    return _strs_to_(strs, int)
 
 
-def str_list_to_float_list(inp: List[str]) -> List[float]:
-    return _str_list_to(inp, float)
+def strs_to_floats(strs: List[str]) -> List[float]:
+    """
+    Convert a list of strings to a list of floats.
+
+    :param strs: a list of string
+    :return: a list of converted floats
+    """
+    return _strs_to_(strs, float)
