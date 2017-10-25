@@ -7,7 +7,7 @@ from operator import itemgetter
 
 import numpy as np
 
-from readers.read_basic import *
+from readers.simple_reader import *
 
 
 class VCRelaxOutputReader:

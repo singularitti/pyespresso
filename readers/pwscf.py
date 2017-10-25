@@ -5,13 +5,13 @@ import collections
 import os
 import numpy as np
 
-from readers.read_basic import *
+from readers.simple_reader import *
 
 # Type alias
 KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
 
-class PWscfOutputReader(SimpleReader):
+class PWscfOutputReader(SingleFileReader):
     def read_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.
@@ -207,7 +207,7 @@ class PWscfOutputReader(SimpleReader):
         return stress
 
 
-class PWscfInputReader(SimpleReader):
+class PWscfInputReader(SingleFileReader):
     def read_k_mesh(self) -> KMesh:
         """
 

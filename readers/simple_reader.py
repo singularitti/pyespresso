@@ -5,7 +5,7 @@ import re
 from typing import *
 
 
-class SimpleReader:
+class SingleFileReader:
     def __init__(self, in_file: str):
         """
         In our implementation, for each file, you need to generate a `SimpleRead` class to read it.

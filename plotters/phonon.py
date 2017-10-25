@@ -45,7 +45,7 @@ class PhononPlotData:
         :return:
         """
         path_num = len(density)
-        qs, bands = self.rph.read_phonon_dispersion(filename, density)
+        qs, bands = self.rph.read_dispersion_relation(filename, density)
         lens = self.cph.q_path_len_list(path_num, qs)
         return qs, bands, lens
 

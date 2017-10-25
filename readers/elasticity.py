@@ -6,10 +6,10 @@ This module will only deal with elastic files reading processes.
 
 import numpy as np
 
-from readers.read_basic import *
+from readers.simple_reader import *
 
 
-class ElasticityOutputReader(SimpleReader):
+class ElasticityOutputReader(SingleFileReader):
     def read_elastic_tensor(self) -> Tuple[List[float], List[np.ndarray]]:
         """
         Read c_ij file, which looks like:
