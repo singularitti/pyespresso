@@ -12,12 +12,13 @@ class ElasticityOutputPlotter(SingleAxes):
         self.reo = ElasticityOutputReader(file)
         self.ec = ElasticityCalculator(file)
 
-    def plot_cij_vs_pressures(self):
-        data = self.reo.read_cij_vs_pressures()
-        for i, p in enumerate(zip(data.keys(), data.values())):
-            for pp in zip([float(p[0])] * len(p[1]), p[1]):
-                print(*pp)
-                plt.scatter(*pp, label="value" + str(i))
+    def plot_cij_vs_pressures(self, crystal_class):
+        vs = np.empty(5)
+        for i, p in enumerate(self.ec.pressures):
+            vs = np.vstack((vs, self.ec.grab_independent_tensor_values(self.ec.elastic_tensors[i], crystal_class)))
+        vs = vs.transpose()
+        for i in range(5):
+            plt.plot(self.ec.pressures, vs[i][1:], label=crystal_classes[crystal_class]['names'][i])
 
     def plot_bulk_modulus_voigt_average_vs_pressure(self) -> Line2D:
         """

@@ -36,6 +36,7 @@ class VCRelax:
         The pressures to be calculated,
         the initial guess for V0, K0 and K0',
         and the lattice vectors, necessary to calculate the lattice parameter with the volume.
+
         :param filename: str
         :return: (np.ndarray, float, float, float)
         """
@@ -71,6 +72,7 @@ class VCRelax:
         wall time,
         number of nodes,
         number of processors,
+
         :param filename: str
         :return: tuple
         """
@@ -91,6 +93,7 @@ class VCRelax:
     def _distribute_task(self):
         """
         Distribute calculations on different pressures evenly to all processors you have.
+
         :return: int
         """
         print('You have' + str(self.num_pressures) + 'pressures and' + str(self.num_processors * self.num_nodes) +
@@ -109,6 +112,7 @@ class VCRelax:
         """
         This subroutine creates 'cg_' folders, and then starts each crude guess defined in each 'cg_' folders,
         and monitor it with a job_id.
+
         :return:
         """
         cg_found = []
@@ -166,6 +170,7 @@ class VCRelax:
         """
         When crude guess step is done, we check if there are 'CRASH' files in the folder.
         And then we read the '.out' file from scf calculation, gain a list of P and a list of V.
+
         :return: (list, list)
         """
         num_error_files = 0
@@ -212,6 +217,7 @@ class VCRelax:
         to fit the Vinet equation of state.
         eos_opt are the returned V0, K0, and K0' for Vinet EOS.
         eos_cov are the estimated covariance of eos_opt.
+
         :return: (list, list, np.ndarray, np.ndarray)
         """
         ps, vs = self.read_crude_guess_output()
@@ -223,6 +229,7 @@ class VCRelax:
         """
         This subroutine creates a file named 'Initial_PxV.dat', and then writes the results fitted from the crude guess
         step.
+
         :return:
         """
         print('The initial volumes and pressures were written in the file Initial_PxV.dat')
@@ -256,6 +263,7 @@ class VCRelax:
         """
         This subroutine creates 'vc_' folders, and then starts each vc-relaxation defined in each 'vc_' folders,
         and monitor it with a job_id.
+
         :return:
         """
         ps, vs, eos_opt, eos_cov = self._fit_crude_guess()
@@ -314,6 +322,7 @@ class VCRelax:
         """
         When vc-relax step is done, we check if there are 'CRASH' files in the folder.
         And then we read the '.out' file from vc-relax calculation, gain a list of final P and a list of V.
+
         :return: (list, list)
         """
         num_error_files = 0
@@ -351,6 +360,7 @@ class VCRelax:
         to fit the Vinet equation of state.
         eos_opt are the returned V0, K0, and K0' for Vinet EOS.
         eos_cov are the estimated covariance of eos_opt.
+
         :return: (list, list, np.ndarray, np.ndarray)
         """
         ps, vs = self.read_vc_relax_output()

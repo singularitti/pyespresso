@@ -26,7 +26,8 @@ class ElasticityOutputReader(SimpleReader):
             P = 0.0
              ...
 
-        :return: A list of pressure and a list of 6 by 6 numpy arrays
+        :return: A list of pressure and a list of 6 by 6 numpy arrays, each pressure corresponds to an array (tensor
+            matrix).
         """
         pressures = []
         elastic_tensors = []
@@ -42,7 +43,8 @@ class ElasticityOutputReader(SimpleReader):
                     for i in range(6):
                         elastic_tensor[i] = list(map(float, f.readline().split()))
                     elastic_tensors.append(elastic_tensor)
-        if len(pressures) == len(elastic_tensors):
+
+        if len(pressures) == len(elastic_tensors):  # For each pressure there should be one elastic tensor
             return pressures, elastic_tensors
         else:
             raise ValueError(

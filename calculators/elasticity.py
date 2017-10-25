@@ -4,6 +4,7 @@
 from numpy.linalg import inv
 
 from readers.elasticity import *
+from calculators.tensors import *
 
 
 class ElasticityCalculator:
@@ -125,14 +126,27 @@ class ElasticityCalculator:
         gr = self.derive_shear_modulus_reuss_average(compliance_tensor)
         return 5 * (gv / gr) + (kv / kr) - 6
 
+    @staticmethod
+    def grab_independent_tensor_values(tensor: np.ndarray, crystal_class: str) -> np.ndarray:
+        """
+        Grab unique values for a 6x6 (elastic/compliance) tensor (matrix).
+        For hexagonal cell, there should be at most 5 unique values.
 
-def _get_values_by_indices(matrix: np.ndarray, indices: List[Tuple[int, int]]) -> List:
+        :param tensor:
+        :param crystal_class:
+        :return: an 1-dimensional array of unique values
+        """
+        indices = crystal_classes[crystal_class]['indices']
+        return _get_values_by_indices(tensor, indices)
+
+
+def _get_values_by_indices(matrix: np.ndarray, indices: List[Tuple[int, int]]) -> np.ndarray:
     """
     Given a 2-dimensional matrix $m$, and a list of indices $(i, j)$ where $i$, $j$ denote the index for the
     0th and 1st axis, respectively. Then return a list of values $m(i, j)$.
 
     :param matrix: a numpy array of floats, integers, etc.
     :param indices: a list of 2-tuple-integers
-    :return: a list of values corresponding to those indices.
+    :return: an array of values corresponding to those indices.
     """
-    return [matrix[index] for index in indices]
+    return np.array([matrix[index] for index in indices])
