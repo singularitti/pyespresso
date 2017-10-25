@@ -12,6 +12,15 @@ KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
 
 class PWscfOutputReader(SimpleReader):
+    def read_lattice_parameter(self) -> float:
+        """
+        Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.
+
+        :return: a scaling number that multiplies `CELL_PARAMETERS` is the read Cartesian coordinates of the primitive
+            vectors of a crystal.
+        """
+        return self._match_only_once("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float)
+
     def read_total_energy(self) -> float:
         """
         Read total energy from the output file.
@@ -39,24 +48,30 @@ class PWscfOutputReader(SimpleReader):
         """
         return self._match_only_once("P=\s+(-?\d+\.\d+)", float)
 
-    def read_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
+    def read_kinetic_energy_cutoff(self) -> float:
         """
-        Read the total stress, in 2 units, from the bottom of the output file.
+        Read kinetic-energy cutoff, at the beginning of the file.
 
-        :param unit: There are 2 options, 'atomic' and 'kbar', where 'atomic' is the default one.
-        :return: a 3x3 numpy array which contains the stress tensor
+        :return: kinetic-energy cutoff, $E_\text{cut}$
         """
-        stress_atomic = np.zeros((3, 3))
-        stress_kbar = np.zeros((3, 3))
-        stress = {'atomic': stress_atomic, 'kbar': stress_kbar}
-        with open(self.in_file, 'r') as f:
-            for line in f:
-                if 'total   stress' in line:
-                    for i in range(3):  # Read a 3x3 matrix
-                        line = f.readline()
-                        stress_atomic[i][:] = list(map(float, line.split()))[0:3]
-                        stress_kbar[i][:] = list(map(float, line.split()))[3:6]
-        return stress[unit]
+        return self._match_only_once("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float)
+
+    def read_charge_density_cutoff(self) -> float:
+        """
+        Read charge density cutoff, at the beginning of the file.
+
+        :return: charge density cutoff, $\rho_\text{cut}$
+        """
+        return self._match_only_once("charge density cutoff\s+=\s*(-?\d+\.\d+)", float)
+
+    def read_atoms_num_per_cell(self) -> int:
+        return self._match_only_once("number of atoms\/cell\s+=\s*(\d+)", int)
+
+    def read_atoms_types_num(self) -> int:
+        return self._match_only_once("number of atomic types\s+=\s*(\d+)", int)
+
+    def read_nstep(self) -> int:
+        return self._match_only_once("nstep\s+=\s*(\d+)", int)
 
     def read_kinetic_stress(self) -> np.ndarray:
         return self._read_stress('kinetic')
@@ -93,6 +108,25 @@ class PWscfOutputReader(SimpleReader):
 
     def read_ts_vdw_stress(self) -> np.ndarray:
         return self._read_stress('TS-vdW')
+
+    def read_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
+        """
+        Read the total stress, in 2 units, from the bottom of the output file.
+
+        :param unit: There are 2 options, 'atomic' and 'kbar', where 'atomic' is the default one.
+        :return: a 3x3 numpy array which contains the stress tensor
+        """
+        stress_atomic = np.zeros((3, 3))
+        stress_kbar = np.zeros((3, 3))
+        stress = {'atomic': stress_atomic, 'kbar': stress_kbar}
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if 'total   stress' in line:
+                    for i in range(3):  # Read a 3x3 matrix
+                        line = f.readline()
+                        stress_atomic[i][:] = list(map(float, line.split()))[0:3]
+                        stress_kbar[i][:] = list(map(float, line.split()))[3:6]
+        return stress[unit]
 
     def read_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
         """

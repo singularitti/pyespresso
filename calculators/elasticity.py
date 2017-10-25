@@ -26,7 +26,11 @@ class ElasticityCalculator:
 
         :return: compliance tensor
         """
-        return inv(elastic_tensor)
+        try:
+            return inv(elastic_tensor)
+        except np.linalg.LinAlgError:
+            print("Your matrix {0} is a singular matrix, we cannot find an inverse!".format(elastic_tensor))
+            quit()
 
     @staticmethod
     def derive_bulk_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:

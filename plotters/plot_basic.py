@@ -11,7 +11,7 @@ class SingleAxes:
 
     @staticmethod
     def choose_colormap(cmap: Optional[str] = 'viridis'):
-        return plt.get_cmap(cmap)
+        return plt.set_cmap(cmap)
 
     @staticmethod
     def set_legend(lines: Tuple, labels: Tuple):

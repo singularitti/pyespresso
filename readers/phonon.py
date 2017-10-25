@@ -14,7 +14,6 @@ class PHononOutputReader(SimpleReader):
         """
         Read in coordinates and energy information, and the collect them as an array.
 
-        :param inp: A single file that is to be read.
         :return: ([[float]], [[float]])
         """
         coordinates_list = []
@@ -41,7 +40,6 @@ class PHononOutputReader(SimpleReader):
         This method reads phonon dispersion relation returned by matdyn.x.
         This only works for 3-dimensional q-points grid.
 
-        :param inp: filename
         :param density: Number of points on each path.
         :return: q-points array and bands array.
         """
