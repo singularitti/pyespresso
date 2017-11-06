@@ -5,3 +5,5 @@ from readers.elasticity import *
 
 
 class PlotPWscfOutput:
+    def __init__(self):
+        pass

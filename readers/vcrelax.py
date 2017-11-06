@@ -10,7 +10,7 @@ import numpy as np
 from readers.simple_reader import *
 
 
-class VCRelaxOutputReader:
+class VCRelaxOutfileReader:
     @staticmethod
     def read_pv(inp: str) -> Tuple[List[float], List[float]]:
         """

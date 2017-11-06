@@ -4,6 +4,7 @@
 import calculators.maths as mm
 from calculators.converter import *
 from readers.elasticity import *
+from readers.phonon import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
@@ -50,7 +51,7 @@ class PathGenerator:
 
 
 class ReciprocalPathGenerator(PathGenerator):
-    def __init__(self, inp: str, reci_path: str):
+    def __init__(self, in_file: str, reci_path: str):
         """
         If you give a path like 'Γ->M->K->Γ->A->K', then this method will automatically generate---according
         to your file given, which records each q-points' coordinate---the coordinate of each point in your path.
@@ -64,29 +65,14 @@ class ReciprocalPathGenerator(PathGenerator):
             M	0.5000000000	0.0000000000	0.0000000000
         See readers.readers.SimpleRead._read_reciprocal_points for more information.
 
-        :param inp: As explained above.
+        :param in_file: As explained above.
         :param reci_path:  A specific q-path you are interested in, like 'GM->M->K->GM->A->K'.
             Each q-point should be separated by a '->' character, spaces are allow, other characters are not allowed.
             Special character, like 'Γ' in utf-8 is allowed.
             Note that if you use 'Γ' in your `inp` file, you should also use 'Γ' in `reci_path`!
         """
-        self.rph = ReadPHononOutput()
-        self.reci_dict: Dict[str, List[float]] = self.rph.read_q_points(inp)
+        self.reci_dict: Dict[str, List[float]] = PhononOutputReader(in_file).read_q_points()
         self.reci_path: List[str] = reci_path.upper().replace(' ', '').split('->')
-
-    def generate_k_path(self, density: Optional[IntArray], out: str) -> np.ndarray:
-        """
-        This is just a wrapper for `generate_reciprocal_path`, with writing to file function.
-
-        :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
-            the method will automatically generate an array filled with same value. If it is already an array or list,
-            the length of them should be the number of q-points minus 1. The default value is 100.
-        :param out: filename you want to write to. The coordinates of the k-points on the path will be written.
-        :return: the coordinates of the k-points on the path.
-        """
-        coords = self._generate_reciprocal_path(density)
-        self._write_path_to_file(coords, out)
-        return coords
 
     def generate_q_path(self, density: Optional[IntArray], out: str) -> np.ndarray:
         """
@@ -98,9 +84,9 @@ class ReciprocalPathGenerator(PathGenerator):
         :param out: filename you want to write to. The coordinates of the q-points on the path will be written.
         :return: the coordinates of the q-points on the path.
         """
-        coords = self._generate_reciprocal_path(density)
-        self._write_path_to_file(coords, out)
-        return coords
+        coordinates = self._generate_reciprocal_path(density)
+        self._write_path_to_file(coordinates, out)
+        return coordinates
 
     def _generate_reciprocal_path(self, density: Optional[IntArray]) -> np.ndarray:
         """
@@ -137,34 +123,33 @@ class ReciprocalPathGenerator(PathGenerator):
             for row in coords:
                 np.savetxt(f, row)
 
-
-class ComputePHonon:
-    def __init__(self):
-        self.rpb = ReadPHononOutput()
-
-    @staticmethod
-    def frequency_to_ev(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
-        """
-        This method converts the frequency read from density of states calculation readers to electron-volt.
-
-        :return: energy in unit of electron-volt
-        """
-        return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
-
-    @staticmethod
-    def frequency_to_hertz(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
-        """
-        This method converts the frequency read from density of states calculation readers to hertz.
-        
-        :param frequency_list: 
-        :return: energy in unit of hertz
-        """
-        return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
-
-    @staticmethod
-    def q_path_len_list(path_num, q_list):
-        q_path_len_list = []
-        for i in range(path_num):
-            q_path_len_list.append(
-                mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
-        return q_path_len_list
+                # class ComputePHonon:
+                # def __init__(self):
+                #     self.rpb = ReadPHononOutput()
+                #
+                # @staticmethod
+                # def frequency_to_ev(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
+                #     """
+                #     This method converts the frequency read from density of states calculation readers to electron-volt.
+                #
+                #     :return: energy in unit of electron-volt
+                #     """
+                #     return call_simple_converter('e', frequency_list, 'cm-1', 'ev')
+                #
+                # @staticmethod
+                # def frequency_to_hertz(frequency_list: Union[int, float, List, np.ndarray]) -> np.ndarray:
+                #     """
+                #     This method converts the frequency read from density of states calculation readers to hertz.
+                #
+                #     :param frequency_list:
+                #     :return: energy in unit of hertz
+                #     """
+                #     return call_simple_converter('e', frequency_list, 'cm-1', 'hz')
+                #
+                # @staticmethod
+                # def q_path_len_list(path_num, q_list):
+                #     q_path_len_list = []
+                #     for i in range(path_num):
+                #         q_path_len_list.append(
+                #             mm.compute_3d_distance(q_list[i][0], q_list[i][-1]))
+                #     return q_path_len_list

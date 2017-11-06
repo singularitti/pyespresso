@@ -6,7 +6,7 @@ from readers.vcrelax import *
 
 class ComputeVCRelax:
     def __init__(self):
-        self.ro = VCRelaxOutputReader()
+        self.ro = VCRelaxOutfileReader()
 
     def c_over_a(self, filename: str) -> Tuple[List[float], List[float]]:
         """
