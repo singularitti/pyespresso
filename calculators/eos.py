@@ -7,16 +7,33 @@ import numpy as np
 from scipy.optimize import fsolve
 
 
-class EOS:
-    def vinet(self, v: float, v0: float, k0: float, k0p: float) -> float:
+class Vinet:
+    @staticmethod
+    def f_vs_v(v: float, v0: float, k0: float, k0p: float) -> float:
         """
-        Vinet EOS takes 3 parameters to form a function P of V.
+        The Helmholtz free energy form of Vinet EoS, which takes 3 parameters to form a function P of V.
 
-        :param v: float
-        :param v0: float
-        :param k0: float
-        :param k0p: float
-        :return: float
+        :param v: the variable
+        :param v0: zero pressure volume of a system
+        :param k0: zero pressure bulk modulus of a system
+        :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
+        :return: Helmholtz free energy as a function of V
+        """
+        r = (v / v0) ** (1 / 3)
+        xi = 3 / 2 * (k0p - 1)
+        return 9 * k0 * v0 / xi ** 2 * (1 + (xi * (1 - r) - 1) * np.exp(xi * (1 - r)))
+
+    @staticmethod
+    def p_vs_v(v: float, v0: float, k0: float, k0p: float) -> float:
+        """
+        The pressure form of Vinet EoS, which is the first derivative of Helmholtz free energy form with respect to V.
+        It takes 3 parameters to form a function P of V.
+
+        :param v: the variable
+        :param v0: zero pressure volume of a system
+        :param k0: zero pressure bulk modulus of a system
+        :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
+        :return: pressure as a function of V
         """
         r = (v / v0) ** (1 / 3)
         return 3 * k0 * r ** (-2) * (1 - r) * np.exp(3 / 2 * (k0p - 1) * (1 - r))
@@ -28,18 +45,13 @@ class EOS:
         This function will return a numpy array containing the volume.
 
         :param p:
-        :param v0: float
-        :param k0: float
-        :param k0p: float
+        :param v0: zero pressure volume of a system
+        :param k0: zero pressure bulk modulus of a system
+        :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
         :return:
         """
+
         def func(v):
-            return self.vinet(v, v0, k0, k0p) - p
+            return self.p_vs_v(v, v0, k0, k0p) - p
 
         return fsolve(func, np.array([100]))
-
-
-if __name__ == "__main__":
-    eos = EOS()
-    print(eos.vinet(100, 137.6852, 283.29, 4.86))
-    print(eos.solve_vinet(50, 137.6852, 283.29, 4.86))
