@@ -13,7 +13,7 @@ from func_cij import Ekl, apply_strain
 
 
 def create_qe_input(alat, lat_vec, calc_type, name, pres, tmp_folder, atom_pos=''):
-    """ Function to create an submit file for quantum espresso pw.x"""
+    """ Function to create an submitters file for quantum espresso pw.x"""
     a = float(alat)
     fp = open(name, 'w')
     with open('qe_input_data') as qe_in:
@@ -159,8 +159,8 @@ def create_job_cij(job_head, pressures, d, job_name, dir_name, cclass, nstrain, 
 
 
 # def create_job(nd, prc, d, time, pressures, job_name, dir_name, prog='pw'):
-#	"""Funtion to create a job to be submit in a Slurm scheduler"""
-## Construct qe submit
+#	"""Funtion to create a job to be submitters in a Slurm scheduler"""
+## Construct qe submitters
 #	jb = open(job_name,'w')
 #	jb.write('#!/bin/sh\n')
 #	jb.write('#SBATCH -A mphys\n')
@@ -412,7 +412,7 @@ def relates_strain(cclass):
 
 
 def create_ph_input(name):
-    """ Creates submit files for phonons calculations."""
+    """ Creates submitters files for phonons calculations."""
     with open('qe_input_data') as qe_in:
         lines_qe = qe_in.readlines()
         for i in range(0, len(lines_qe)):

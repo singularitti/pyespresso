@@ -5,4 +5,11 @@ import sys
 
 python_version = sys.executable
 if 'python3' not in python_version:
-    print('Please use Python 3 and above!')
+    raise EnvironmentError('Please use Python executable higher than version 3.3!')
+
+__author__ = {'Michel Lacerda': 'mld2189@columbia.edu', 'Qi Zhang': 'qz2280@columbia.edu',
+              'Zhen Zhang': 'zz2427@columbia.edu'}
+__copyright__ = 'Copyright 2017, Renata group'
+__maintainer__ = 'Qi Zhang'
+__credits__ = {'Renata M. M. Wentzcovitch': 'rmw2150@columbia.edu'}
+__date__ = 'Nov 15, 2017'

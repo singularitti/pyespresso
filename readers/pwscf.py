@@ -223,4 +223,4 @@ class PWscfInputReader(SingleFileReader):
                         'k_mesh', ['k_grid', 'k_shift'])
                     return k_mesh(k_grid, k_shift)
                 else:
-                    raise ValueError("'K_POINTS' not found in your submit! Please check!")
+                    raise ValueError("'K_POINTS' not found in your submitters! Please check!")

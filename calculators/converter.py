@@ -42,7 +42,7 @@ class LengthConverter(UnitConverter):
 
     def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the submit first to meter, then converts it in desired unit.
+        This function converts the submitters first to meter, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -70,7 +70,7 @@ class VolumeConverter(UnitConverter):
 
     def simple_converter(self, num, from_unit='a3', to_unit='b3') -> float:
         """
-        This function converts the submit first to cubic meter, then converts it in desired unit.
+        This function converts the submitters first to cubic meter, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -102,7 +102,7 @@ class EnergyConverter(UnitConverter):
 
     def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the submit first to Joule, then converts it to desired unit.
+        This function converts the submitters first to Joule, then converts it to desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
@@ -126,7 +126,7 @@ class PressureConverter(UnitConverter):
 
     def simple_converter(self, num: Union[float, int], from_unit: str, to_unit: str) -> float:
         """
-        This function converts the submit first to pascal, then converts it in desired unit.
+        This function converts the submitters first to pascal, then converts it in desired unit.
 
         :param num: the number to be converted
         :param from_unit: the unit to be converted from
