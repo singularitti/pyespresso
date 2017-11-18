@@ -1,14 +1,173 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
-import collections
 import os
+from collections import namedtuple
+
 import numpy as np
 
+from miscellaneous.pwscf_params import *
 from readers.simple_reader import *
 
 # Type alias
 KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
+
+
+class PWscfInputReader(SingleFileReader):
+    """
+    This class read the pwscf input file in, and parse it to be a tree.
+    """
+
+    @staticmethod
+    def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator:
+        """
+        Search in file for the contents between 2 patterns. Referenced from
+        [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
+
+        :param file: file to be read
+        :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
+            ignored
+        :param end_pattern: the pattern labels where the content is to an end
+        :return: an iterator that can read the file
+        """
+        section_flag = False
+        for line in file:
+            if re.match(start_pattern, line, re.IGNORECASE):
+                section_flag = True
+                line = file.readline()  # If the line is the `start_pattern` itself, we do not parse this line
+            if line.startswith(end_pattern):
+                section_flag = False
+            if section_flag:
+                yield line
+
+    def _read_card(self, card_name) -> Dict[str, str]:
+        """
+        A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
+
+        :param card_name: the card's name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
+        :return: a dictionary that stores the inputted information of the intended card
+        """
+        card = {}
+        start_pattern = '&' + card_name.upper()
+
+        with open(self.in_file, 'r') as f:
+            generator = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each card.
+            for line in generator:
+                stripped_line = line.strip()
+                # Use '=' as the delimiter, split the line into key and value.
+                key, value = stripped_line.split('=', maxsplit=1)
+                key: str = key.strip()
+                value: str = value.strip().rstrip(',')  # Ignore trailing comma
+                if key in pw_parameters_tree[card_name]:
+                    card.update({key: value})
+                else:
+                    raise KeyError("{0} is not a valid parameter for '{1}' card!".format(key, card_name))
+
+        return card
+
+    def read_control_card(self) -> Dict[str, str]:
+        """
+        Read everything that falls within 'CONTROL' card.
+
+        :return: a dictionary that stores the inputted information of 'CONTROL' card
+        """
+        return self._read_card('CONTROL')
+
+    def read_system_card(self) -> Dict[str, str]:
+        """
+        Read everything that falls within 'SYSTEM' card.
+
+        :return: a dictionary that stores the inputted information of 'CONTROL' card
+        """
+        return self._read_card('SYSTEM')
+
+    def read_electrons_card(self) -> Dict[str, str]:
+        """
+        Read everything that falls within 'ELECTRONS' card.
+
+        :return: a dictionary that stores the inputted information of 'ELECTRONS' card
+        """
+        return self._read_card('ELECTRONS')
+
+    def read_cell_parameters(self) -> np.ndarray:
+        """
+        Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
+        the real cell parameters.
+
+        :return: a numpy array that stores the cell parameters
+        """
+        cell_param = np.zeros((3, 3))
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if 'CELL_PARAMETERS' in line.upper():
+                    for i in range(3):
+                        sp = f.readline().split()
+                        cell_param[i] = strs_to_floats(sp)
+        return cell_param
+
+    def read_k_mesh(self) -> KMesh:
+        """
+        Find 'K_POINTS' line in the file, and read the k-mesh.
+        If there is no 'K_POINTS' in file, it will read to end, and raise an error.
+
+        :return: a named tuple defined above
+        """
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if re.match('K_POINTS', line, re.IGNORECASE):
+                    sp = f.readline().split()
+                    grid = strs_to_ints(sp[0:3])
+                    shift = strs_to_ints(sp[3:7])
+                    k_mesh = namedtuple('k_mesh', ['grid', 'shift'])
+                    return k_mesh(grid, shift)
+                else:
+                    continue
+            # Read to EOF
+            raise ValueError("'K_POINTS' not found in your input file! Please check!")
+
+    def build_pwscf_input_tree(self) -> Dict[str, Dict[str, Union[str, float, int, NamedTuple, np.ndarray]]]:
+        """
+        This method combines everything cards, and others in the input file.
+
+        :return: a dictionary that stores every information of the input file
+        """
+        return {'CONTROL': self.read_control_card(),
+                'SYSTEM': self.read_system_card(),
+                'ELECTRONS': self.read_electrons_card(),
+                'CELL_PARAMETERS': self.read_cell_parameters(),
+                'K_POINTS': self.read_k_mesh()}
+
+    def __call__(self) -> dict:
+        """
+        A method specifies how the class will behave when being called as a function.
+
+        :return: a tree defined by `build_pwscf_input_tree`
+        """
+        return self.tree
+
+    def __getattr__(self, item):
+        """
+        This lazily build a `tree` attribute for the class, other attribute except existing ones will be regarded as
+        illegal.
+
+        :param item: the attribute user want to get, the only legal one is `tree`
+        :return: If the attribute is `tree`, it will return a tree defined by `build_pwscf_input_tree`.
+        """
+        if item == 'tree':
+            self.__dict__['tree'] = self.build_pwscf_input_tree()
+            return self.tree
+        else:
+            raise AttributeError("'{0}' object has no attribute {1}!".format(object, item))
+
+    def __str__(self) -> str:
+        """
+        A method specifies how the class will behave when being printed to standard output (REPL).
+
+        :return:
+        """
+        return "The class has a tree like:\n {0}".format(self.tree)
+
+    __repr__ = __str__
 
 
 class PWscfOutputReader(SingleFileReader):
@@ -195,32 +354,11 @@ class PWscfOutputReader(SingleFileReader):
                     try:
                         stress[0][:] = list(map(float, re.findall(name + reg1, line)[0][:]))
                     except IndexError:
-                        print(error_message)
-                        exit()
+                        raise IndexError(error_message)
                     try:
                         for i in range(1, 3):  # Read the rest 2 lines of matrix
                             line = f.readline()
                             stress[i][:] = list(map(float, re.findall(reg2, line)[0][:]))
                     except IndexError:
-                        print(error_message)
-                        exit()
+                        raise IndexError(error_message)
         return stress
-
-
-class PWscfInputReader(SingleFileReader):
-    def read_k_mesh(self) -> KMesh:
-        """
-
-        :return: a named tuple defined above
-        """
-        with open(self.in_file, 'r') as f:
-            for line in f:
-                if re.search('K_POINTS', line, re.IGNORECASE):
-                    sp = f.readline().split()
-                    k_grid = strs_to_floats(sp[0:3])
-                    k_shift = strs_to_floats(sp[3:7])
-                    k_mesh = collections.namedtuple(
-                        'k_mesh', ['k_grid', 'k_shift'])
-                    return k_mesh(k_grid, k_shift)
-                else:
-                    raise ValueError("'K_POINTS' not found in your submitters! Please check!")

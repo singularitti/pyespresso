@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
-import re
-from typing import *
+from miscellaneous.string import *
 
 
 class SingleFileReader:
@@ -104,34 +103,3 @@ class SingleFileReader:
         :return: a dictionary
         """
         return self._read_one_column_as_keys(0, lambda x: list(map(float, x)))
-
-
-def _strs_to_(strs: List[str], to_type: type) -> List:
-    """
-    Convert a list of strings to a list of certain type, specified by `to_type`.
-
-    :param strs: a list of string
-    :param to_type: the type you want to convert your strings to
-    :return: type undefined, but specified by `to_type`
-    """
-    return list(map(to_type, strs))
-
-
-def strs_to_ints(strs: List[str]) -> List[int]:
-    """
-    Convert a list of strings to a list of integers.
-
-    :param strs: a list of string
-    :return: a list of converted integers
-    """
-    return _strs_to_(strs, int)
-
-
-def strs_to_floats(strs: List[str]) -> List[float]:
-    """
-    Convert a list of strings to a list of floats.
-
-    :param strs: a list of string
-    :return: a list of converted floats
-    """
-    return _strs_to_(strs, float)

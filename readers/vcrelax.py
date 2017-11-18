@@ -4,10 +4,28 @@
 import shlex
 from itertools import islice
 from operator import itemgetter
+from readers.pwscf import *
 
 import numpy as np
 
 from readers.simple_reader import *
+
+
+class VCRelaxInputfileReader(PWscfInputReader):
+    def read_ions_card(self) -> Dict[str, str]:
+        return self._read_card('IONS')
+
+    def read_cell_card(self) -> Dict[str, str]:
+        return self._read_card('CELL')
+
+    def build_vc_relax_input_tree(self):
+        return {'CONTROL': self.read_control_card(),
+                'SYSTEM': self.read_system_card(),
+                'ELECTRONS': self.read_electrons_card(),
+                'IONS': self.read_ions_card(),
+                'CELL': self.read_cell_card(),
+                'CELL_PARAMETERS': self.read_cell_parameters(),
+                'K_POINTS': self.read_k_mesh()}
 
 
 class VCRelaxOutfileReader:
