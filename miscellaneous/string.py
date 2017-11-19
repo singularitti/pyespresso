@@ -3,6 +3,7 @@
 
 import re
 from typing import *
+from functools import wraps, partial
 
 
 def _strs_to_(strs: List[str], wrapper: Callable) -> List:
@@ -88,3 +89,76 @@ def str_to_float(s: str) -> float:
             raise ValueError("The string '{0}' does not corresponds to a double precision number!".format(s))
     else:
         return float(s)
+
+
+def match_one_string(pattern: str, s: str, *args):
+    """
+    Make sure you know only none or one string will be matched! If you are not sure, use `match_one_pattern` instead.
+
+    >>> p = "\d+"
+    >>> s = "abc 123 def"
+    >>> match_one_string(p, s, int)
+    123
+    >>> print(match_one_string(p, "abc"))
+    Pattern "\d+" not found, or more than one found in string abc!
+    None
+    >>> print(match_one_string(p, "abc 123 def 456"))
+    Pattern "\d+" not found, or more than one found in string abc 123 def 456!
+    None
+
+    :param pattern:
+    :param s:
+    :param args:
+    :return:
+    """
+    try:
+        match, = re.findall(pattern, s)  # `match` is either an empty list or a list of string.
+        if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
+            return match
+        elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
+            wrapper, = args
+            return wrapper(match)
+        else:
+            raise TypeError('Multiple wrappers are given! Only one should be given!')
+    except ValueError:
+        print("Pattern \"{0}\" not found, or more than one found in string {1}!".format(pattern, s))
+
+
+def match_one_pattern(pattern: str, s: str, *args: Optional[Callable], **flags):
+    """
+    Find a pattern in a certain string. If found and a wrapper is given, then return the wrapped matched-string; if no
+    wrapper is given, return the pure matched string. If no match is found, return None.
+
+    >>> p = "\d+"
+    >>> s = "abc 123 def 456"
+    >>> match_one_pattern(p, s)
+    ['123', '456']
+    >>> match_one_pattern(p, s, int)
+    [123, 456]
+    >>> match_one_pattern(p, "abc 123 def")
+    ['123']
+    >>> print(match_one_pattern('s', 'abc'))
+    Pattern "s" not found in string abc!
+    None
+    >>> match_one_pattern('s', 'Ssa', flags=re.IGNORECASE)
+    ['S', 's']
+
+    :param pattern: a pattern, can be a string or a regular expression
+    :param s: a string
+    :param args: at most 1 argument can be given
+    :param flags: the same flags as `re.findall`'s
+    :return:
+    """
+    match: Optional[List[str]] = re.findall(pattern, s,
+                                            **flags)  # `match` is either an empty list or a list of strings.
+    if match:
+        if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
+            return match
+        elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
+            wrapper, = args
+            return [wrapper(m) for m in match]
+        else:
+            raise TypeError('Multiple wrappers are given! Only one should be given!')
+    else:  # If no match is found
+        print("Pattern \"{0}\" not found in string {1}!".format(pattern, s))
+        return None

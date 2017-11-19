@@ -13,17 +13,32 @@ class SingleFileReader:
         """
         self.in_file = in_file
 
-    def _match_only_once(self, pattern: str, wrapper: Callable):
+    def _match_one_string(self, pattern: str, *args):
+        pass
+
+    def _match_one_pattern(self, pattern: str, *args, **kwargs):
         """
         This method matches a pattern which exists only once in the file.
 
         :param pattern: a regular expression that you want to match
-        :param wrapper: a wrapper function which determines the returned type of value
+        :param args: a wrapper function which determines the returned type of value
         :return: Determined by the `wrapper`, the value you want to grep out from the file.
         """
         with open(self.in_file, 'r') as f:
-            match = re.findall(pattern, f.read())
-        return wrapper(match[0])
+            s = f.read()
+            match: Optional[List[str]] = re.findall(pattern, s,
+                                                    **kwargs)  # `match` is either an empty list or a list of strings.
+            if match:
+                if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
+                    return match
+                elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
+                    wrapper, = args
+                    return [wrapper(m) for m in match]
+                else:
+                    raise TypeError('Multiple wrappers are given! Only one should be given!')
+            else:  # If no match is found
+                print('Pattern {0} not found in string {1}!'.format(pattern, s))
+                return None
 
     def read_line_by_line(self) -> List[str]:
         """
@@ -44,7 +59,7 @@ class SingleFileReader:
         :param n: an integer specifies the number of columns you want to read
         :return: a list of `n` columns that contain the contents of each column
         """
-        n_columns = [[] for i in range(n)]
+        n_columns = [[] for _ in range(n)]
         with open(self.in_file, 'r') as f:
             for line in f:
                 if not line.split():  # If line is ''
@@ -86,20 +101,8 @@ class SingleFileReader:
                 values.append(func(sp))
         return dict(zip(keys, values))
 
-    def _read_reciprocal_points(self) -> Dict[str, List[float]]:
-        """
-        Suppose you have a file like this:
-            A	0.0000000000	0.0000000000	0.5000000000
-            Γ   0.0000000000	0.0000000000	0.0000000000
-            H	0.3333333333	0.3333333333	0.5000000000
-            H2	0.3333333333	0.3333333333   -0.5000000000
-            K	0.3333333333	0.3333333333	0.0000000000
-            L	0.5000000000	0.0000000000	0.5000000000
-            M	0.5000000000	0.0000000000	0.0000000000
-        These are the k-points you want to track through.
-        This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
-        its value, forms a dictionary.
 
-        :return: a dictionary
-        """
-        return self._read_one_column_as_keys(0, lambda x: list(map(float, x)))
+class MultipleFilesReader:
+    def __init__(self, files: List[str]):
+        # Construct a dictionary with file names as keys
+        self.files = {file: SingleFileReader(file) for file in files}

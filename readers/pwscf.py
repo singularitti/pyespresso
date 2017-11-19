@@ -157,7 +157,7 @@ class PWscfInputReader(SingleFileReader):
             self.__dict__['tree'] = self.build_pwscf_input_tree()
             return self.tree
         else:
-            raise AttributeError("'{0}' object has no attribute {1}!".format(object, item))
+            raise AttributeError("Object has no attribute {0}!".format(item))
 
     def __str__(self) -> str:
         """
@@ -178,16 +178,15 @@ class PWscfOutputReader(SingleFileReader):
         :return: a scaling number that multiplies `CELL_PARAMETERS` is the read Cartesian coordinates of the primitive
             vectors of a crystal.
         """
-        return self._match_only_once("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float)
+        return self._match_one_pattern("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float)
 
     def read_total_energy(self) -> float:
         """
-        Read total energy from the output file.
-        The default unit is Rydberg.
+        Read total energy from the output file. The default unit is Rydberg.
 
         :return: total energy
         """
-        return self._match_only_once("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float)
+        return self._match_one_pattern("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float)
 
     def read_cell_volume(self) -> float:
         """
@@ -196,7 +195,7 @@ class PWscfOutputReader(SingleFileReader):
 
         :return: unit-cell volume
         """
-        return self._match_only_once("unit-cell volume\s+=\s+(\d+\.\d+)", float)
+        return self._match_one_pattern("unit-cell volume\s+=\s+(\d+\.\d+)", float)
 
     def read_pressure(self) -> float:
         """
@@ -205,7 +204,7 @@ class PWscfOutputReader(SingleFileReader):
 
         :return: pressure at this volume
         """
-        return self._match_only_once("P=\s+(-?\d+\.\d+)", float)
+        return self._match_one_pattern("P=\s+(-?\d+\.\d+)", float)
 
     def read_kinetic_energy_cutoff(self) -> float:
         """
@@ -213,7 +212,7 @@ class PWscfOutputReader(SingleFileReader):
 
         :return: kinetic-energy cutoff, $E_\text{cut}$
         """
-        return self._match_only_once("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float)
+        return self._match_one_pattern("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float)
 
     def read_charge_density_cutoff(self) -> float:
         """
@@ -221,16 +220,29 @@ class PWscfOutputReader(SingleFileReader):
 
         :return: charge density cutoff, $\rho_\text{cut}$
         """
-        return self._match_only_once("charge density cutoff\s+=\s*(-?\d+\.\d+)", float)
+        return self._match_one_pattern("charge density cutoff\s+=\s*(-?\d+\.\d+)", float)
 
     def read_atoms_num_per_cell(self) -> int:
-        return self._match_only_once("number of atoms\/cell\s+=\s*(\d+)", int)
+        return self._match_one_pattern("number of atoms\/cell\s+=\s*(\d+)", int)
 
     def read_atoms_types_num(self) -> int:
-        return self._match_only_once("number of atomic types\s+=\s*(\d+)", int)
+        return self._match_one_pattern("number of atomic types\s+=\s*(\d+)", int)
+
+    def read_electrons_num(self) -> float:
+        return self._match_one_pattern("number of electrons\s+=\s*(-?\d+\.\d+)", float)
+
+    def read_mixing_beta(self) -> float:
+        return self._match_one_pattern("mixing beta\s+=\s*(-?\d*\.\d+)", float)
 
     def read_nstep(self) -> int:
-        return self._match_only_once("nstep\s+=\s*(\d+)", int)
+        return self._match_one_pattern("nstep\s+=\s*(\d+)", int)
+
+    def read_iteration_num(self) -> int:
+        """
+
+        :return: the number of iterations used to reach self-consistent convergence
+        """
+        return self._match_one_pattern("number of iterations used\s+=\s*(\d+)", int)
 
     def read_kinetic_stress(self) -> np.ndarray:
         return self._read_stress('kinetic')
@@ -362,3 +374,21 @@ class PWscfOutputReader(SingleFileReader):
                     except IndexError:
                         raise IndexError(error_message)
         return stress
+
+    def read_processors_num(self) -> int:
+        """
+        Read how many processors were used in this calculation, which is given at the beginning of the file.
+
+        :return: an integer denotes how many processors were used
+        """
+        return self._match_one_pattern("running on\s*(\d+)\s+", int)
+
+    def read_symmetry_operations_num(self) -> int:
+        return self._match_one_pattern("(\d+)\s+Sym\. Ops.*found", int)
+
+    def read_fft_dimensions(self) -> List[int]:
+        """
+
+        :return: a list contains 3 integers that denotes the FFT grid we use
+        """
+        return list(map(int, self._match_one_pattern("FFT dimensions:\s+\(\s*(\d+),\s*(\d+),\s*(\d+)\)")))

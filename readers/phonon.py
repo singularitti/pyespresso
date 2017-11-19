@@ -56,6 +56,24 @@ class PhononOutputReader(SingleFileReader):
         """
         return self._read_reciprocal_points()
 
+    def _read_reciprocal_points(self) -> Dict[str, List[float]]:
+        """
+        Suppose you have a file like this:
+            A	0.0000000000	0.0000000000	0.5000000000
+            Γ   0.0000000000	0.0000000000	0.0000000000
+            H	0.3333333333	0.3333333333	0.5000000000
+            H2	0.3333333333	0.3333333333   -0.5000000000
+            K	0.3333333333	0.3333333333	0.0000000000
+            L	0.5000000000	0.0000000000	0.5000000000
+            M	0.5000000000	0.0000000000	0.0000000000
+        These are the k-points you want to track through.
+        This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
+        its value, forms a dictionary.
+
+        :return: a dictionary
+        """
+        return self._read_one_column_as_keys(0, lambda x: list(map(float, x)))
+
 
 class PlotbandReader(SingleFileReader):
     def read_gunplot(self) -> Tuple[List[float], List[float]]:

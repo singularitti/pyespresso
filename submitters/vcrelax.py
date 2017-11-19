@@ -5,29 +5,32 @@ This will do crude guess and vc-relax simulation automatically.
 """
 
 import os
-import re
 import subprocess
 import time
 
 import numpy as np
 from scipy.optimize import curve_fit
 
+from readers.job_head import *
 from . import flow
 
-print('Starting workflow calculations.')
+print('Starting vc-relax calculations.')
 
 
-class VCRelax:
-    def __init__(self):
+class VCRelaxSubmitter:
+    def __init__(self, job_head: str):
         self.input_dat = 'submitters.dat'
-        self.job_header = 'job_header'
-        self.job_lines, self.schedule, self.modules, self.num_nodes, self.num_processors = self.read_job_header(
-            self.job_header)
         self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(
             self.input_dat)
-        self.num_pressures = self.pressures.size
+        self.pressures_num = self.pressures.size
         self.error = 'CRASH'
         self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self._fit_crude_guess()
+        # Scheduling
+        tree = JobHeadReader(job_head).tree
+        self.cores_num = tree['cores_num']
+        self.nodes_num = tree['nodes_num']
+        self.modules = tree['modules']
+        self.shell_shebang = tree['shell_shebang']
 
     @staticmethod
     def read_input_params(filename: str) -> tuple:
@@ -65,48 +68,21 @@ class VCRelax:
 
         return pressures, v0, k0, k0p, vecs, vol_sc
 
-    @staticmethod
-    def read_job_header(filename: str) -> tuple:
-        """
-        job_header is a file with the parameters of the job to be submitted:
-        wall time,
-        number of nodes,
-        number of processors,
-
-        :param filename: str
-        :return: tuple
-        """
-        with open(filename, 'r') as job_in:
-            lines = job_in.readlines()
-            for i in range(len(lines)):
-                if re.findall('^Scheduler', lines[i]):
-                    schedule = lines[i].split(':')[1].strip()
-                if re.findall('^Necessary modules to be', lines[i]):
-                    modules = lines[i].split(':')
-                if re.findall('Number of nodes', lines[i]):
-                    num_nodes = int(lines[i].split(':')[1].strip())
-                if re.findall('Number of processor', lines[i]):
-                    num_processors = int(lines[i].split(':')[1].strip())
-
-        return lines, schedule, modules, num_nodes, num_processors
-
-    def _distribute_task(self):
+    def _distribute_task(self) -> int:
         """
         Distribute calculations on different pressures evenly to all processors you have.
 
-        :return: int
+        :return: number of cores per pressure
         """
-        print('You have' + str(self.num_pressures) + 'pressures and' + str(self.num_processors * self.num_nodes) +
-              'processors.')
-        div = self.num_nodes * self.num_processors / self.num_pressures
+        print('You have {0} pressures and {1} cores.'.format(self.pressures_num, self.cores_num * self.nodes_num))
+        div = int(self.nodes_num * self.cores_num / self.pressures_num)
 
-        if (self.num_nodes * self.num_processors) % self.num_pressures == 0:
-            print('Therefore, I will consider' +
-                  str(div) + 'processors per pressure.')
+        if (self.nodes_num * self.cores_num) % self.pressures_num == 0:
+            print('Therefore, I will consider {0} cores per pressure.'.format(div))
         else:
-            raise TypeError('Number of processors not divided by number of pressures!')
+            raise TypeError('Number of cores is not divided by number of pressures!')
 
-        return int(div)
+        return div
 
     def crude_guess(self):
         """
@@ -124,13 +100,14 @@ class VCRelax:
                 cg_found.append(p)
 
         # Return the sorted, unique values in self.pressures that are not in cg_found.
-        uncalculated: np.ndarray = np.setdiff1d(self.pressures, cg_found)
+        not_calculated: np.ndarray = np.setdiff1d(self.pressures, cg_found)
+
         # If flag_cg is True, continuously calculate.
-        if uncalculated == np.array([]):
+        if not_calculated == np.array([]):
             print('All cg calculations exist. Proceeding to vc-relax calculation.')
             flag_cg = False
         else:
-            print('There are remaining pressures to be calculated.')
+            print('There are remaining pressures {0} to be calculated.'.format(not_calculated.tolist()))
             flag_cg = True
 
         while flag_cg:
@@ -139,17 +116,16 @@ class VCRelax:
             # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
             # accept one and loop against the array?
             print('Now I will generate the files for a crude guess scf calculation.')
-            flow.create_files(uncalculated, (self.v0, self.k0,
-                                             self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
-            flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
+            flow.create_files(not_calculated, (self.v0, self.k0,
+                                               self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
+            flow.create_job(self.job_lines, not_calculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
                             self.modules)
 
-            job_sub = subprocess.Popen(
-                ['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
+            job_sub = subprocess.Popen(['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
             output = job_sub.stdout.read().split()[-1]
             job_id = int(output)
-            print('Job submitted. The job ID is' + str(job_id))
-            print('Waiting calculation. This can take a while, you can grab a coffee!')
+            print('Job submitted. The job ID is {0}.'.format(job_id))
+            print('Waiting for calculation. This can take a while, you can grab a coffee!')
 
             # This part monitors the job execution.
             flag_job_cg = True
@@ -173,7 +149,7 @@ class VCRelax:
 
         :return: (list, list)
         """
-        num_error_files = 0
+        error_files_num = 0
         ps = []
         vs = []
 
@@ -188,9 +164,9 @@ class VCRelax:
                     with open(output_file, 'r') as cg_out:
                         lines = cg_out.readlines()
                 except FileNotFoundError:  # Check if readers files exist.
-                    print('The readers file for P =' + str(p) +
-                          'was not found. Removing it from list and continuing calculation.')
-                    num_error_files += 1
+                    print('The readers file for P ={0} was not found. \
+                        Removing it from list and continuing calculation.'.format(p))
+                    error_files_num += 1
                 else:
                     for i in range(len(lines)):
                         if re.findall('P=', lines[i]):
@@ -199,19 +175,17 @@ class VCRelax:
                         if re.findall('volume', lines[i]):
                             vs.append(float(lines[i].split()[-2].strip()))
 
-        if num_error_files > int(self.num_pressures / 2):
+        if error_files_num > int(self.pressures_num / 2):
             # If more that a half of the calculations are not found, stop the workflow.
-            raise ValueError(
-                'More than a half of pressures were not calculated.')
+            raise RuntimeError('More than a half of pressures were not calculated.')
 
         if set(ps) != set(self.pressures) or len(ps) != len(vs):
             # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
-            raise ValueError(
-                'ERROR: Some pressures were not found in the files. Please, review your data.')
+            raise RuntimeError('Some pressures were not found in the files. Please, review your data.')
 
         return ps, vs
 
-    def _fit_crude_guess(self) -> tuple:
+    def _fit_crude_guess(self) -> Tuple[List[float], List[float], np.ndarray, np.ndarray]:
         """
         This will use the submitters V0, K0, and K0', as well as the list of P and V from read_crude_guess_output,
         to fit the Vinet equation of state.
@@ -221,8 +195,7 @@ class VCRelax:
         :return: (list, list, np.ndarray, np.ndarray)
         """
         ps, vs = self.read_crude_guess_output()
-        eos_opt, eos_cov = curve_fit(
-            flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
+        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
         return ps, vs, eos_opt, eos_cov
 
     def write_crude_guess_result(self):
