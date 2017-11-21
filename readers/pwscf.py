@@ -95,8 +95,8 @@ class PWscfInputReader(CardReader):
         p.control_card = self.tree['CONTROL']
         p.system_card = self.tree['SYSTEM']
         p.electrons_card = self.tree['ELECTRONS']
-        p.cell_parameters = self.tree['CELL_PARAMETERS']
-        p.k_mesh = self.tree['K_POINTS']
+        p.cell_parameters = {'CELL_PARAMETERS': self.tree['CELL_PARAMETERS']}
+        p.k_mesh = {'K_POINTS': self.tree['K_POINTS']}
         return p
 
     def __call__(self) -> dict:
