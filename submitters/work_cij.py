@@ -45,7 +45,7 @@ else:
     print('Not all pressures have their Cij folder. Preparing files for the missing ones')
 
 
-# Reads numnber of atoms and number of atomic types from submitters
+# Reads numnber of atoms and number of atomic INPUTPH_types from submitters
 with open('qe_input_data', 'r') as in_data:
     lines = in_data.readlines()
     for i in range(0, len(lines)):

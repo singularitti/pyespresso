@@ -86,7 +86,7 @@ def create_qe_input(alat, lat_vec, calc_type, name, pres, tmp_folder, atom_pos='
     fp.write("%10.7f   %10.7f   %10.7f\n" % (lat_vec[2][0], lat_vec[2][1], lat_vec[2][2]))
     fp.write("ATOMIC_SPECIES\n")
     for i in range(0, int(
-            ntyp)):  # for each o the atomic types, sets th atom mass as 1.0 and writes the name of the pseudopotential file
+            ntyp)):  # for each o the atomic INPUTPH_types, sets th atom mass as 1.0 and writes the _name of the pseudopotential file
         atom = re.split('[. -]', lines[np + i])[0]  # Gets the atom
         fp.write("%3s   1.0   %s" % (atom, lines[np + i]))
     fp.write("ATOMIC_POSITIONS (crystal)\n")
@@ -512,7 +512,7 @@ def read_stress(file_name):
                     sigma33 = float(stress_lines[j + 3].split()[-1].rstrip().lstrip())
             stress_tensor = np.array([sigma11, sigma22, sigma33, sigma23, sigma13, sigma12])
     except FileNotFoundError:
-        print('Stress Output file not found (File name: %s' % file_name)
+        print('Stress Output file not found (File _name: %s' % file_name)
         quit()
     # stress_tensor = np.array([(sigma11, sigma12, sigma13), (sigma12, sigma22, sigma23), (sigma13, sigma23, sigma33)])
     return stress_tensor

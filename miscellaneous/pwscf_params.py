@@ -6,8 +6,8 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
-from typing import *
 from miscellaneous.dictionary import merge_dicts
+from miscellaneous.param import *
 
 # All official flags in QE's CONTROL card
 CONTROL = {'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
@@ -60,7 +60,7 @@ default_system = {'ibrav': '0'}
 #
 default_electrons = {'diagonalization': 'david'}
 
-# Note that `merge_dicts` will overwrite keys which have the same name, but we do not need to worry about that here.
+# Note that `merge_dicts` will overwrite keys which have the same _name, but we do not need to worry about that here.
 default_parameters: Dict = merge_dicts(default_control, default_system, default_electrons)
 
 # A non-flattened dictionary
@@ -71,7 +71,7 @@ default_parameters_tree: Dict[str, Dict[str, str]] = {'CONTROL': default_control
 pseudo_CONTROL = {'pseudopotential directory': 'pseudo_dir', 'scratch folder': 'outdir'}
 
 #
-pseudo_SYSTEM = {'number of atoms': 'nat', 'number of atomic types': 'ntyp', 'energy cutoff': 'ecutwfc',
+pseudo_SYSTEM = {'number of atoms': 'nat', 'number of atomic INPUTPH_types': 'ntyp', 'energy cutoff': 'ecutwfc',
                  'density cutoff': 'ecutrho', 'number of bands': 'nbnd'}
 
 #
@@ -82,3 +82,8 @@ pseudo_K_POINTS = {'k-points': [6, 6, 6], 'shift': [1, 1, 1]}
 
 #
 pseudo_parameters: dict = merge_dicts(pseudo_CONTROL, pseudo_SYSTEM, pseudo_ELECTRONS, pseudo_K_POINTS)
+
+
+class PWscfParam(Param):
+    def __init__(self, name: str, raw_val: str):
+        super().__init__(name, raw_val, {})

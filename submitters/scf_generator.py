@@ -10,9 +10,6 @@ import numpy as np
 from miscellaneous.pwscf_params import *
 from miscellaneous.string import *
 
-# Type aliasing
-Param = DefaultDict[str, List[str]]
-
 
 class UserFriendlySCFGenerator:
     def __init__(self):
@@ -78,7 +75,7 @@ class SCFGenerator:
 
         return raw_parameters
 
-    def _split_parameters(self) -> Tuple[Param, Param, Param, Param, Param]:
+    def _split_parameters(self) -> Tuple[DefaultDict[str, List[str]], ...]:
         """
         Split fixed parameters into 5 dictionaries.
 
@@ -86,7 +83,7 @@ class SCFGenerator:
         """
         # If the keys of `default_parameters` is a subset of that of `self.parameters`
         if default_parameters.keys() <= self.parameters.keys():
-            raise KeyError('Your given parameters less than default! The calculation cannot be done!')
+            raise KeyError('Your given parameters less than val! The calculation cannot be done!')
 
         # Repeat n times for a mutable object
         new_control, new_system, new_electrons, new_ions, new_cell = [defaultdict(str) for _ in range(5)]

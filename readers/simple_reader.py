@@ -106,3 +106,62 @@ class MultipleFilesReader:
     def __init__(self, files: List[str]):
         # Construct a dictionary with file names as keys
         self.files = {file: SingleFileReader(file) for file in files}
+
+
+class CardReader(SingleFileReader):
+    def __init__(self, in_file, tree):
+        """
+        Match card between card title and the following '/' character.
+
+        :param in_file:
+        :param tree: a tree of cards, each card has many names defined by Quantum ESPRESSO
+        """
+        super().__init__(in_file)
+        self.cards_tree: Dict[str, set] = tree
+
+    @staticmethod
+    def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator[str]:
+        """
+        Search in file for the contents between 2 patterns. Referenced from
+        [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
+
+        :param file: file to be read
+        :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
+            ignored
+        :param end_pattern: the pattern labels where the content is to an end
+        :return: an iterator that can read the file
+        """
+        section_flag = False
+        for line in file:
+            if re.match(start_pattern, line, re.IGNORECASE):
+                section_flag = True
+                line = file.readline()  # If the line is the `start_pattern` itself, we do not parse this line
+            if line.startswith(end_pattern):
+                section_flag = False
+            if section_flag:
+                yield line
+
+    def _read_card(self, card_name) -> Dict[str, str]:
+        """
+        A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
+
+        :param card_name: the card's _name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
+        :return: a dictionary that stores the inputted information of the intended card
+        """
+        card = {}
+        start_pattern = '&' + card_name.upper()
+
+        with open(self.in_file, 'r') as f:
+            generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each card.
+            for line in generator:
+                stripped_line = line.strip()
+                # Use '=' as the delimiter, split the line into key and value.
+                k, v = stripped_line.split('=', maxsplit=1)  # Split the input by '='
+                k: str = k.strip()
+                v: str = v.strip().rstrip(',')  # Ignore trailing comma
+                if k in self.cards_tree[card_name]:
+                    card.update({k: v})
+                else:
+                    raise KeyError("{0} is not a valid parameter for '{1}' card!".format(k, card_name))
+
+        return card

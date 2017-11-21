@@ -6,64 +6,16 @@ from collections import namedtuple
 
 import numpy as np
 
-from miscellaneous.pwscf_params import *
 from readers.simple_reader import *
 
 # Type alias
 KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
 
 
-class PWscfInputReader(SingleFileReader):
+class PWscfInputReader(CardReader):
     """
     This class read the pwscf input file in, and parse it to be a tree.
     """
-
-    @staticmethod
-    def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator:
-        """
-        Search in file for the contents between 2 patterns. Referenced from
-        [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
-
-        :param file: file to be read
-        :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
-            ignored
-        :param end_pattern: the pattern labels where the content is to an end
-        :return: an iterator that can read the file
-        """
-        section_flag = False
-        for line in file:
-            if re.match(start_pattern, line, re.IGNORECASE):
-                section_flag = True
-                line = file.readline()  # If the line is the `start_pattern` itself, we do not parse this line
-            if line.startswith(end_pattern):
-                section_flag = False
-            if section_flag:
-                yield line
-
-    def _read_card(self, card_name) -> Dict[str, str]:
-        """
-        A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
-
-        :param card_name: the card's name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
-        :return: a dictionary that stores the inputted information of the intended card
-        """
-        card = {}
-        start_pattern = '&' + card_name.upper()
-
-        with open(self.in_file, 'r') as f:
-            generator = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each card.
-            for line in generator:
-                stripped_line = line.strip()
-                # Use '=' as the delimiter, split the line into key and value.
-                key, value = stripped_line.split('=', maxsplit=1)
-                key: str = key.strip()
-                value: str = value.strip().rstrip(',')  # Ignore trailing comma
-                if key in pw_parameters_tree[card_name]:
-                    card.update({key: value})
-                else:
-                    raise KeyError("{0} is not a valid parameter for '{1}' card!".format(key, card_name))
-
-        return card
 
     def read_control_card(self) -> Dict[str, str]:
         """
@@ -182,7 +134,7 @@ class PWscfOutputReader(SingleFileReader):
 
     def read_total_energy(self) -> float:
         """
-        Read total energy from the output file. The default unit is Rydberg.
+        Read total energy from the output file. The val unit is Rydberg.
 
         :return: total energy
         """
@@ -191,7 +143,7 @@ class PWscfOutputReader(SingleFileReader):
     def read_cell_volume(self) -> float:
         """
         Read the unit-cell volume, which is given at the beginning of the file.
-        The default unit is $\text{bohr}^3$.
+        The val unit is $\text{bohr}^3$.
 
         :return: unit-cell volume
         """
@@ -200,7 +152,7 @@ class PWscfOutputReader(SingleFileReader):
     def read_pressure(self) -> float:
         """
         Read the pressure, which is at the bottom of the file.
-        The default unit is kbar.
+        The val unit is kbar.
 
         :return: pressure at this volume
         """
@@ -226,7 +178,7 @@ class PWscfOutputReader(SingleFileReader):
         return self._match_one_pattern("number of atoms\/cell\s+=\s*(\d+)", int)
 
     def read_atoms_types_num(self) -> int:
-        return self._match_one_pattern("number of atomic types\s+=\s*(\d+)", int)
+        return self._match_one_pattern("number of atomic INPUTPH_types\s+=\s*(\d+)", int)
 
     def read_electrons_num(self) -> float:
         return self._match_one_pattern("number of electrons\s+=\s*(-?\d+\.\d+)", float)
@@ -284,7 +236,7 @@ class PWscfOutputReader(SingleFileReader):
         """
         Read the total stress, in 2 units, from the bottom of the output file.
 
-        :param unit: There are 2 options, 'atomic' and 'kbar', where 'atomic' is the default one.
+        :param unit: There are 2 options, 'atomic' and 'kbar', where 'atomic' is the val one.
         :return: a 3x3 numpy array which contains the stress tensor
         """
         stress_atomic = np.zeros((3, 3))
@@ -349,9 +301,9 @@ class PWscfOutputReader(SingleFileReader):
 
     def _read_stress(self, name) -> np.ndarray:
         """
-        Read a stress specified by `name`.
+        Read a stress specified by `_name`.
 
-        :param name: specify a name of the stress
+        :param name: specify a _name of the stress
         :return: a 3x3 numpy array which contains the stress
         """
         reg1 = "\s+stress\s+\(kbar\)\s*(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)"

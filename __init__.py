@@ -3,13 +3,11 @@
 
 import sys
 
-python_version = sys.executable
-if 'python3' not in python_version:
-    raise EnvironmentError('Please use Python executable higher than version 3.3!')
+if 'python3' not in sys.executable:
+    raise EnvironmentError('Please use CPython interpreter higher than version 3.5!')
 
-__author__ = {'Michel Lacerda': 'mld2189@columbia.edu', 'Qi Zhang': 'qz2280@columbia.edu',
-              'Zhen Zhang': 'zz2427@columbia.edu'}
-__copyright__ = 'Copyright 2017, Renata group'
-__maintainer__ = 'Qi Zhang'
+__author__ = {'Michel Lacerda': 'mld2189@columbia.edu', 'Qi Zhang': 'qz2280@columbia.edu'}
+__copyright__ = 'Copyright (c) 2017, Renata group'
 __credits__ = {'Renata M. M. Wentzcovitch': 'rmw2150@columbia.edu'}
 __date__ = 'Nov 15, 2017'
+__maintainer__ = 'Qi Zhang'

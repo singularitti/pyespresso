@@ -21,7 +21,7 @@ class PathGenerator:
         :param dens: density, i.e., number of points between 2 given points. If option is endpoint=True,
             then dens includes the start point and the end point.
         :param option: It is the same as options for np.linspace. I suggest that you use endpoint=True,
-            which is the default for np.linspace.
+            which is the val for np.linspace.
         :return: a series of evenly-spaced points
         """
         dist: np.float64 = mm.compute_3d_distance(point1, point2)
@@ -80,7 +80,7 @@ class ReciprocalPathGenerator(PathGenerator):
 
         :param density: Used to specify number of points between each 2 neighbor q-points. If it is an integer,
             the method will automatically generate an array filled with same value. If it is already an array or list,
-            the length of them should be the number of q-points minus 1. The default value is 100.
+            the length of them should be the number of q-points minus 1. The val value is 100.
         :param out: filename you want to write to. The coordinates of the q-points on the path will be written.
         :return: the coordinates of the q-points on the path.
         """

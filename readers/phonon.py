@@ -4,9 +4,59 @@
 import numpy as np
 
 from readers.simple_reader import *
+from miscellaneous.phonon_params import INPUTPH_card
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
+
+
+class PhononInputReader(CardReader):
+    def __init__(self, in_file):
+        super().__init__(in_file, INPUTPH_card)
+
+    def read_inputph_card(self) -> Dict[str, str]:
+        return self._read_card('INPUTPH')
+
+    def read_line_of_input(self):
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if line.strip().startswith('/'):  # Find the end of 'INPUTPH' card
+                    line = f.readline()
+                    if len(line.strip().split()) == 3:
+                        if self.card['ldisp'] == '.false.' and self.card['qplot'] == '.false.':
+                            xq = list(map(float, line.split()))
+                            self.__dict__['xq'] = xq
+                            return xq
+                        else:
+                            raise ValueError('xq(1), xq(2), xq(3) are given but `ldisp=.true.` or `qplot=.true.`!')
+                    elif len(line.strip().split()) == 1:
+                        q_points = []
+                        if self.card['qplot'] == '.true.':
+                            q_points_num = int(line.strip().split()[0])
+                            for _ in range(q_points_num):
+                                line = f.readline()
+                                q_points.append(list(map(float, line.strip().split())))
+                                self.__dict__['q-points'] = q_points
+                                return q_points
+                        else:
+                            raise ValueError("Number of q-points is given but `qplot` is not '.true.'!")
+
+    def build_phono_input_tree(self):
+        tree = {'INPUTPH': self.read_inputph_card()}
+        if hasattr(self, 'xq'):
+            tree.update({'xq': self.xq})
+        if hasattr(self, 'q-points'):
+            tree.update({'q-points': self.q_points})
+        return tree
+
+    def __getattr__(self, item):
+        if item == 'card':
+            self.__dict__['card'] = self.read_inputph_card()
+            return self.card
+        elif item == 'tree':
+            return self.build_phono_input_tree()
+        else:
+            raise AttributeError('PhononInputReader instance has no attribute {0}'.format(item))
 
 
 class PhononOutputReader(SingleFileReader):
@@ -67,7 +117,7 @@ class PhononOutputReader(SingleFileReader):
             L	0.5000000000	0.0000000000	0.5000000000
             M	0.5000000000	0.0000000000	0.0000000000
         These are the k-points you want to track through.
-        This method reads through those names and numbers, and set each name as a key, each 3 k-coordinates as
+        This method reads through those names and numbers, and set each _name as a key, each 3 k-coordinates as
         its value, forms a dictionary.
 
         :return: a dictionary
