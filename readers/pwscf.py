@@ -2,10 +2,9 @@
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
 import os
-from collections import namedtuple
 
-import numpy as np
-
+from miscellaneous.pwscf_params import *
+from files.pwscf import *
 from readers.simple_reader import *
 
 # Type alias
@@ -16,6 +15,9 @@ class PWscfInputReader(CardReader):
     """
     This class read the pwscf input file in, and parse it to be a tree.
     """
+
+    def __init__(self, in_file):
+        super().__init__(in_file, pw_parameters_tree)
 
     def read_control_card(self) -> Dict[str, str]:
         """
@@ -29,7 +31,7 @@ class PWscfInputReader(CardReader):
         """
         Read everything that falls within 'SYSTEM' card.
 
-        :return: a dictionary that stores the inputted information of 'CONTROL' card
+        :return: a dictionary that stores the inputted information of 'SYSTEM' card
         """
         return self._read_card('SYSTEM')
 
@@ -70,7 +72,6 @@ class PWscfInputReader(CardReader):
                     sp = f.readline().split()
                     grid = strs_to_ints(sp[0:3])
                     shift = strs_to_ints(sp[3:7])
-                    k_mesh = namedtuple('k_mesh', ['grid', 'shift'])
                     return k_mesh(grid, shift)
                 else:
                     continue
@@ -88,6 +89,15 @@ class PWscfInputReader(CardReader):
                 'ELECTRONS': self.read_electrons_card(),
                 'CELL_PARAMETERS': self.read_cell_parameters(),
                 'K_POINTS': self.read_k_mesh()}
+
+    def build_pwscf_input_object(self) -> object:
+        p = PWscfStandardInput(self.in_file)
+        p.control_card = self.tree['CONTROL']
+        p.system_card = self.tree['SYSTEM']
+        p.electrons_card = self.tree['ELECTRONS']
+        p.cell_parameters = self.tree['CELL_PARAMETERS']
+        p.k_mesh = self.tree['K_POINTS']
+        return p
 
     def __call__(self) -> dict:
         """
@@ -301,9 +311,9 @@ class PWscfOutputReader(SingleFileReader):
 
     def _read_stress(self, name) -> np.ndarray:
         """
-        Read a stress specified by `_name`.
+        Read a stress specified by `name`.
 
-        :param name: specify a _name of the stress
+        :param name: specify a name of the stress
         :return: a 3x3 numpy array which contains the stress
         """
         reg1 = "\s+stress\s+\(kbar\)\s*(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)"

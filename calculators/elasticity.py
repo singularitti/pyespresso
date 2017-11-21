@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # created at Oct 19, 2017 11:21 PM by Qi Zhang
+"""
+This module calculates elastic tensor, compliance tensor, bulk modulus, shear modulus, etc., using different rules.
+"""
 
 from numpy.linalg import inv
 
@@ -29,8 +32,8 @@ class ElasticityCalculator:
         try:
             return inv(elastic_tensor)
         except np.linalg.LinAlgError:
-            print("Your matrix {0} is a singular matrix, we cannot find an inverse!".format(elastic_tensor))
-            quit()
+            raise np.linalg.LinAlgError(
+                "Your matrix {0} is a singular matrix, we cannot find an inverse!".format(elastic_tensor))
 
     @staticmethod
     def derive_bulk_modulus_voigt_average(elastic_tensor: np.ndarray) -> float:

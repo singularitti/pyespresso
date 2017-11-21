@@ -15,6 +15,9 @@ class TestPWscfInputReader(unittest.TestCase):
         self.assertTrue(hasattr(self.pir, 'tree'))
         print(self.pir.tree)
 
+    def test_build_PWscf_input_object(self):
+        print('The object is:\n{0}'.format(self.pir.build_pwscf_input_object()))
+
     def test__call__(self):
         print(self.pir())
 

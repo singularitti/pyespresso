@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # created at Aug 7, 2017 2:22 PM by Qi Zhang
+"""
+This module contains several unit-converters. You may find it helpful.
+"""
 
 from typing import *
 
