@@ -8,12 +8,14 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
+import numpy as np
+
 import calculators.maths as mm
 
 
-class TestMath(unittest.TestCase):
+class MathTester(unittest.TestCase):
     def test_compute_3d_distance(self):
-        print(type(mm.compute_3d_distance([0, 0, 0], [1, 2, 3])))
+        self.assertTrue(type(mm.compute_3d_distance([0, 0, 0], [1, 2, 3])) == np.float64)
         self.assertAlmostEqual(mm.compute_3d_distance([0, 0, 0], [1, 2, 3]), 3.7416573868)
 
 

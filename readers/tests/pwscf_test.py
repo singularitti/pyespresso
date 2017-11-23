@@ -9,14 +9,14 @@ from readers.vcrelax import *
 
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
-        self.pir = PWscfInputReader('Fe.in')
+        self.pir = SCFInputReader('Fe.in')
 
     def test_tree(self):
         self.assertTrue(hasattr(self.pir, 'tree'))
         print(self.pir.tree)
 
     def test_build_PWscf_input_object(self):
-        print('The object is:\n{0}'.format(self.pir.build_pwscf_input_object()))
+        print('The object is:\n{0}'.format(self.pir.build_scf_input_object()))
 
     def test__call__(self):
         print(self.pir())

@@ -11,7 +11,7 @@ import numpy as np
 from readers.simple_reader import *
 
 
-class VCRelaxInputfileReader(PWscfInputReader):
+class VCRelaxInputfileReader(SCFInputReader):
     def read_ions_card(self) -> Dict[str, str]:
         return self._read_card('IONS')
 
@@ -19,9 +19,9 @@ class VCRelaxInputfileReader(PWscfInputReader):
         return self._read_card('CELL')
 
     def build_vc_relax_input_tree(self):
-        return {'CONTROL': self.read_control_card(),
-                'SYSTEM': self.read_system_card(),
-                'ELECTRONS': self.read_electrons_card(),
+        return {'CONTROL': self.read_control_namelist(),
+                'SYSTEM': self.read_system_namelist(),
+                'ELECTRONS': self.read_electrons_namelist(),
                 'IONS': self.read_ions_card(),
                 'CELL': self.read_cell_card(),
                 'CELL_PARAMETERS': self.read_cell_parameters(),

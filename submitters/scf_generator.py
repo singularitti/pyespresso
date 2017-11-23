@@ -146,7 +146,6 @@ class SCFGenerator:
             f.write("&CONTROL\n")
             f.write("calculation = '{0}'\n".format(self.calc_type))
             for k, v in self.control.items():
-                print(k)
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n")
             f.write("&SYSTEM\n")

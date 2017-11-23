@@ -2,8 +2,7 @@
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
 import calculators.maths as mm
-from calculators.converter import *
-from readers.elasticity import *
+from miscellaneous.converter import *
 from readers.phonon import *
 
 # Type aliases

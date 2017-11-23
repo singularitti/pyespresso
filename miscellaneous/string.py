@@ -3,7 +3,6 @@
 
 import re
 from typing import *
-from functools import wraps, partial
 
 
 def _strs_to_(strs: List[str], wrapper: Callable) -> List:

@@ -38,7 +38,8 @@ class Vinet:
         r = (v / v0) ** (1 / 3)
         return 3 * k0 * r ** (-2) * (1 - r) * np.exp(3 / 2 * (k0p - 1) * (1 - r))
 
-    def solve_vinet(self, p: float, v0: float, k0: float, k0p: float) -> Tuple[np.ndarray, dict, int, str]:
+    def solve_p_vs_v(self, p: float, v0: float, k0: float, k0p: float, v0_guess: Optional[float] = 100) -> \
+            Tuple[np.ndarray, dict, int, str]:
         """
         Suppose you know a certain pressure,
         and you want to find out what is the corresponding volume under this pressure.
@@ -48,10 +49,11 @@ class Vinet:
         :param v0: zero pressure volume of a system
         :param k0: zero pressure bulk modulus of a system
         :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
+        :param v0_guess: an initial guess for $V_0$
         :return:
         """
 
         def func(v):
             return self.p_vs_v(v, v0, k0, k0p) - p
 
-        return fsolve(func, np.array([100]))
+        return fsolve(func, np.array([v0_guess]))

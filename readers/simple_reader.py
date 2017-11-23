@@ -108,16 +108,16 @@ class MultipleFilesReader:
         self.files = {file: SingleFileReader(file) for file in files}
 
 
-class CardReader(SingleFileReader):
-    def __init__(self, in_file, tree):
+class NamelistReader:
+    def __init__(self, in_file: str, namelist: set):
         """
         Match card between card title and the following '/' character.
 
         :param in_file:
-        :param tree: a tree of cards, each card has many names defined by Quantum ESPRESSO
+        :param namelist: a tree of cards, each card has many names defined by Quantum ESPRESSO
         """
-        super().__init__(in_file)
-        self.cards_tree: Dict[str, set] = tree
+        self.in_file = in_file
+        self.namelist = namelist
 
     @staticmethod
     def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator[str]:
@@ -141,27 +141,28 @@ class CardReader(SingleFileReader):
             if section_flag:
                 yield line
 
-    def _read_card(self, card_name) -> Dict[str, str]:
+    def read_namelist(self, namelist_name: str) -> Dict[str, str]:
         """
         A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
+        Note you cannot write more than one parameter in each line!
 
-        :param card_name: the card's _name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
+        :param namelist_name: the namelist's name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
         :return: a dictionary that stores the inputted information of the intended card
         """
-        card = {}
-        start_pattern = '&' + card_name.upper()
+        filled_namelist: dict = {}
+        start_pattern = '&' + namelist_name.upper()
 
         with open(self.in_file, 'r') as f:
-            generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each card.
-            for line in generator:
-                stripped_line = line.strip()
-                # Use '=' as the delimiter, split the line into key and value.
-                k, v = stripped_line.split('=', maxsplit=1)  # Split the input by '='
+            generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
+            for line in generator:  # Read each line in the namelist until '/'
+                s: str = line.strip()
+                # Use '=' as the delimiter, split the stripped line into a key and a value.
+                k, v = s.split('=', maxsplit=1)
                 k: str = k.strip()
-                v: str = v.strip().rstrip(',')  # Ignore trailing comma
-                if k in self.cards_tree[card_name]:
-                    card.update({k: v})
+                v: str = v.strip().rstrip(',')  # Ignore trailing comma of the line
+                if k in self.namelist:
+                    filled_namelist.update({k: v})
                 else:
-                    raise KeyError("{0} is not a valid parameter for '{1}' card!".format(k, card_name))
+                    raise KeyError("'{0}' is not a valid parameter for '{1}' namelist!".format(k, namelist_name))
 
-        return card
+        return filled_namelist

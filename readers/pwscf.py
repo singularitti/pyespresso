@@ -8,128 +8,86 @@ from files.pwscf import *
 from readers.simple_reader import *
 
 # Type alias
-KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float])])
+KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float]), ('option', str)])
 
 
-class PWscfInputReader(CardReader):
+class SCFInputReader(SingleFileReader):
     """
-    This class read the pwscf input file in, and parse it to be a tree.
+    This class read an scf input file in, and parse it to be a tree.
     """
 
-    def __init__(self, in_file):
-        super().__init__(in_file, pw_parameters_tree)
-
-    def read_control_card(self) -> Dict[str, str]:
+    def read_control_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' card.
 
         :return: a dictionary that stores the inputted information of 'CONTROL' card
         """
-        return self._read_card('CONTROL')
+        return NamelistReader(self.in_file, CONTROL).read_namelist('CONTROL')
 
-    def read_system_card(self) -> Dict[str, str]:
+    def read_system_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'SYSTEM' card.
 
         :return: a dictionary that stores the inputted information of 'SYSTEM' card
         """
-        return self._read_card('SYSTEM')
+        return NamelistReader(self.in_file, SYSTEM).read_namelist('SYSTEM')
 
-    def read_electrons_card(self) -> Dict[str, str]:
+    def read_electrons_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'ELECTRONS' card.
 
         :return: a dictionary that stores the inputted information of 'ELECTRONS' card
         """
-        return self._read_card('ELECTRONS')
+        return NamelistReader(self.in_file, ELECTRONS).read_namelist('ELECTRONS')
 
     def read_cell_parameters(self) -> np.ndarray:
         """
         Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
-        the real cell parameters.
+        the real cell parameters!
 
         :return: a numpy array that stores the cell parameters
         """
-        cell_param = np.zeros((3, 3))
+        cell_params = np.zeros((3, 3))
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'CELL_PARAMETERS' in line.upper():
                     for i in range(3):
-                        sp = f.readline().split()
-                        cell_param[i] = strs_to_floats(sp)
-        return cell_param
+                        cell_params[i] = np.array(strs_to_floats(f.readline().split()))
+        return cell_params
 
-    def read_k_mesh(self) -> KMesh:
+    def read_k_mesh(self) -> Optional[KMesh]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
         If there is no 'K_POINTS' in file, it will read to end, and raise an error.
+
+        We allow options and comments on the same line as 'K_POINTS':
+
+        >>> test_strs = ['K_POINTS { crystal }','K_POINTS {crystal}','K_POINTS  crystal','K_POINTScrystal',\
+        'K_POINTScrystal! This is a comment.','K_POINTS ! This is a comment.','K_POINTS']
+        >>> [re.match("K_POINTS\s*{?\s*(\w*)\s*}?", s, re.IGNORECASE).groups()[0] for s in test_strs]
+        ['crystal', 'crystal', 'crystal', 'crystal', 'crystal', '', '']
 
         :return: a named tuple defined above
         """
         with open(self.in_file, 'r') as f:
             for line in f:
-                if re.match('K_POINTS', line, re.IGNORECASE):
-                    sp = f.readline().split()
+                if 'K_POINTS' in line.upper():
+                    option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
+                    sp: List[str] = f.readline().split()
                     grid = strs_to_ints(sp[0:3])
                     shift = strs_to_ints(sp[3:7])
-                    return k_mesh(grid, shift)
+                    return k_mesh(grid, shift, option)
                 else:
                     continue
-            # Read to EOF
-            raise ValueError("'K_POINTS' not found in your input file! Please check!")
 
-    def build_pwscf_input_tree(self) -> Dict[str, Dict[str, Union[str, float, int, NamedTuple, np.ndarray]]]:
-        """
-        This method combines everything cards, and others in the input file.
-
-        :return: a dictionary that stores every information of the input file
-        """
-        return {'CONTROL': self.read_control_card(),
-                'SYSTEM': self.read_system_card(),
-                'ELECTRONS': self.read_electrons_card(),
-                'CELL_PARAMETERS': self.read_cell_parameters(),
-                'K_POINTS': self.read_k_mesh()}
-
-    def build_pwscf_input_object(self) -> object:
-        p = PWscfStandardInput(self.in_file)
-        p.control_card = self.tree['CONTROL']
-        p.system_card = self.tree['SYSTEM']
-        p.electrons_card = self.tree['ELECTRONS']
-        p.cell_parameters = {'CELL_PARAMETERS': self.tree['CELL_PARAMETERS']}
-        p.k_mesh = {'K_POINTS': self.tree['K_POINTS']}
-        return p
-
-    def __call__(self) -> dict:
-        """
-        A method specifies how the class will behave when being called as a function.
-
-        :return: a tree defined by `build_pwscf_input_tree`
-        """
-        return self.tree
-
-    def __getattr__(self, item):
-        """
-        This lazily build a `tree` attribute for the class, other attribute except existing ones will be regarded as
-        illegal.
-
-        :param item: the attribute user want to get, the only legal one is `tree`
-        :return: If the attribute is `tree`, it will return a tree defined by `build_pwscf_input_tree`.
-        """
-        if item == 'tree':
-            self.__dict__['tree'] = self.build_pwscf_input_tree()
-            return self.tree
-        else:
-            raise AttributeError("Object has no attribute {0}!".format(item))
-
-    def __str__(self) -> str:
-        """
-        A method specifies how the class will behave when being printed to standard output (REPL).
-
-        :return:
-        """
-        return "The class has a tree like:\n {0}".format(self.tree)
-
-    __repr__ = __str__
+    def build_scf_input_object(self) -> object:
+        ssi = SCFStandardInput(self.in_file)
+        ssi.control_card = self.read_control_namelist()
+        ssi.system_card = self.read_system_namelist()
+        ssi.electrons_card = self.read_electrons_namelist()
+        ssi.cell_parameters = {'CELL_PARAMETERS': self.read_cell_parameters()}
+        ssi.k_mesh = {'K_POINTS': self.read_k_mesh()}
+        return ssi
 
 
 class PWscfOutputReader(SingleFileReader):

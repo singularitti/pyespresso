@@ -9,10 +9,10 @@ import numpy as np
 from miscellaneous.dictionary import merge_dicts
 from miscellaneous.tree import Tree
 
-k_mesh = namedtuple('k_mesh', ['grid', 'shift'])
+k_mesh = namedtuple('k_mesh', ['grid', 'shift', 'option'])
 
 
-class PWscfStandardInput(Tree):
+class SCFStandardInput(Tree):
     def __init__(self, in_file):
         super().__init__()
         self.in_file = in_file
@@ -20,7 +20,7 @@ class PWscfStandardInput(Tree):
         self._system_card = {}
         self._electrons_card = {}
         self._cell_parameters: Dict[str, np.ndarray] = {'CELL_PARAMETERS': np.zeros((3, 3))}
-        self._k_mesh: Dict[str, NamedTuple] = {'K_POINTS': k_mesh(grid=(1, 1, 1), shift=(0, 0, 0))}
+        self._k_mesh: Dict[str, NamedTuple] = {'K_POINTS': k_mesh(grid=(1, 1, 1), shift=(0, 0, 0), option='')}
 
     @property
     def control_card(self) -> Dict:
@@ -67,6 +67,27 @@ class PWscfStandardInput(Tree):
         return merge_dicts(
             self._control_card, self._system_card, self._electrons_card, self._cell_parameters, self._k_mesh
         )
+
+    def write_to_file(self, out_file: str):
+        with open(out_file, 'w') as f:
+            f.write("&CONTROL\n")
+            for k, v in self._control_card.items():
+                f.write("{0} = {1}\n".format(k, v))
+            f.write("/\n")
+            f.write("&SYSTEM\n")
+            for k, v in self._system_card.items():
+                f.write("{0} = {1}\n".format(k, v))
+            f.write("/\n")
+            f.write("&ELECTRONS\n")
+            for k, v in self._electrons_card.items():
+                f.write("{0} = {1}\n".format(k, v))
+            f.write("/\n")
+            f.write("CELL_PARAMETERS\n")
+            f.write(np.array2string(self._cell_parameters['CELL_PARAMETERS']))
+            f.write("K_POINTS\n")
+            for k in self._k_mesh:
+                f.write(' '.join(map(str, k)))
+            f.write("\n")
 
     def __str__(self):
         return str(self.flattened_tree)

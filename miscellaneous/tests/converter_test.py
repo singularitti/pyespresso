@@ -8,27 +8,22 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from calculators.converter import *
+from miscellaneous.converter import *
 
 
 class TestConverter(unittest.TestCase):
     def test_length(self):
-        self.assertAlmostEqual(call_simple_converter(
-            'l', 7.4268, 'b', 'a'), 3.930093308203956)
+        self.assertAlmostEqual(call_simple_converter('l', 7.4268, 'b', 'a'), 3.930093308203956)
 
     def test_volume(self):
-        self.assertAlmostEqual(call_simple_converter(
-            'v', 11.176, 'a3', 'b3'), 75.41938641127665)
+        self.assertAlmostEqual(call_simple_converter('v', 11.176, 'a3', 'b3'), 75.41938641127665)
 
     def test_energy(self):
-        self.assertAlmostEqual(call_simple_converter(
-            'e', 0.02533, 'ry', 'K'), 3999.2920133105276)
+        self.assertAlmostEqual(call_simple_converter('e', 0.02533, 'ry', 'K'), 3999.2920133105276)
 
     def test_pressure(self):
-        self.assertAlmostEqual(call_simple_converter(
-            'p', 3, 'mbar', 'gpa'), 300.0)
-        self.assertTrue(call_simple_converter(
-            'p', [[1, 2], [3, 4]], 'mbar', 'gpa') == [[100, 200], [300, 400]])
+        self.assertAlmostEqual(call_simple_converter('p', 3, 'mbar', 'gpa'), 300.0)
+        self.assertTrue(call_simple_converter('p', [[1, 2], [3, 4]], 'mbar', 'gpa') == [[100, 200], [300, 400]])
         self.assertTrue(np.array_equal(
             call_simple_converter('p', np.array([[1, 2], [3, 4]]), 'mbar', 'gpa'),
             np.array([[100, 200], [300, 400]])

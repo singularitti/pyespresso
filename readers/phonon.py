@@ -10,12 +10,12 @@ from miscellaneous.phonon_params import INPUTPH_card
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class PhononInputReader(CardReader):
+class PhononInputReader(NamelistReader):
     def __init__(self, in_file):
         super().__init__(in_file, INPUTPH_card)
 
     def read_inputph_card(self) -> Dict[str, str]:
-        return self._read_card('INPUTPH')
+        return self.read_namelist('INPUTPH')
 
     def read_line_of_input(self):
         with open(self.in_file, 'r') as f:
