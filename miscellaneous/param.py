@@ -74,6 +74,6 @@ class Param:
 
         :return: a string showing `self.name` and `self.value`
         """
-        return '{0}: {1}'.format(self.name, self.value)
+        return "{0}: {1}".format(self.name, self.value)
 
     __repr__ = __str__

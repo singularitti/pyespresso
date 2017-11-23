@@ -5,7 +5,7 @@ import os
 
 from miscellaneous.pwscf_params import *
 from files.pwscf import *
-from readers.simple_reader import *
+from readers.simple import *
 
 # Type alias
 KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float]), ('option', str)])
@@ -80,13 +80,35 @@ class SCFInputReader(SingleFileReader):
                 else:
                     continue
 
-    def build_scf_input_object(self) -> object:
+    def read_atomic_species(self):
+        atmsp = []
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if 'ATOMIC_SPECIES' in line.upper():
+                    for _ in range(int(self.read_system_namelist()['ntyp'])):
+                        atmsp.append(f.readline().strip().split())
+        return atmsp
+
+    def read_atomic_positions(self):
+        atmpos = []
+        with open(self.in_file, 'r') as f:
+            for line in f:
+                if 'ATOMIC_POSITIONS' in line.upper():
+                    option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
+                    for _ in range(int(self.read_system_namelist()['nat'])):
+                        atmpos.append(f.readline().strip().split())
+        return {'ATOMIC_POSITIONS': atmpos, 'option': option}
+
+    def build_input_tree(self) -> Tree:
         ssi = SCFStandardInput(self.in_file)
         ssi.control_card = self.read_control_namelist()
         ssi.system_card = self.read_system_namelist()
         ssi.electrons_card = self.read_electrons_namelist()
         ssi.cell_parameters = {'CELL_PARAMETERS': self.read_cell_parameters()}
         ssi.k_mesh = {'K_POINTS': self.read_k_mesh()}
+        ssi.atomic_species = {'ATOMIC_SPECIES': self.read_atomic_species()}
+        ssi.atomic_positions = self.read_atomic_positions()
+        ssi.write_to_file('test')
         return ssi
 
 

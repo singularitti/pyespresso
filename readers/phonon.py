@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from readers.simple_reader import *
+from readers.simple import *
 from miscellaneous.phonon_params import INPUTPH_card
 
 # Type aliases

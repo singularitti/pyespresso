@@ -6,7 +6,7 @@ This module will only deal with elastic files reading processes.
 
 import numpy as np
 
-from readers.simple_reader import *
+from readers.simple import *
 
 
 class ElasticityOutputReader(SingleFileReader):

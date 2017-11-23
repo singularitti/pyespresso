@@ -9,25 +9,15 @@ from readers.vcrelax import *
 
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
-        self.pir = SCFInputReader('Fe.in')
+        self.pir = SCFInputReader('test')
 
-    def test_tree(self):
-        self.assertTrue(hasattr(self.pir, 'tree'))
-        print(self.pir.tree)
-
-    def test_build_PWscf_input_object(self):
-        print('The object is:\n{0}'.format(self.pir.build_scf_input_object()))
-
-    def test__call__(self):
-        print(self.pir())
-
-    def test__str__(self):
-        print(self.pir)
+    def test_build_input_object(self):
+        print('The object is:\n{0}'.format(self.pir.build_input_tree()))
 
 
-class TestVCRelaxInputReader(unittest.TestCase):
-    def setUp(self):
-        self.vir = VCRelaxInputfileReader('Fe.in')
-
-    def test_build_vc_relax_input_tree(self):
-        print(self.vir.build_vc_relax_input_tree())
+# class TestVCRelaxInputReader(unittest.TestCase):
+#     def setUp(self):
+#         self.vir = VCRelaxInputfileReader('Fe.in')
+#
+#     def test_build_vc_relax_input_tree(self):
+#         print(self.vir.build_input_tree())

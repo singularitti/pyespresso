@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Nov 18, 2017 9:13 PM by Qi Zhang
 
-from readers.simple_reader import *
+from readers.simple import *
 
 
 class JobHeadReader(SingleFileReader):
