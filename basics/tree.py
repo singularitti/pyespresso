@@ -2,6 +2,8 @@
 # created at Nov 21, 2017 4:31 PM by Qi Zhang
 """
 Referenced from [here](https://stackoverflow.com/a/43237270/3260253).
+This defines an object subclassed from `dict`, which can be easily added a key with a value.
+The value could be anything.
 """
 
 from typing import *

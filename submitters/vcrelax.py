@@ -52,7 +52,7 @@ class VCRelaxSubmitter:
         if num_pressures < 7:
             print('You have' + str(num_pressures) + 'pressure points!')
             print(
-                'At least 7 are necessary for a good quality EOS fitting, please, modify your submitters files.')
+                'At least 7 are necessary for a good quality EOS fitting, please, modify your submitters basics.')
         else:
             print('You have' + str(num_pressures) +
                   'pressure points, more than 7! You are a smart user!')
@@ -115,7 +115,7 @@ class VCRelaxSubmitter:
             # If all have been calculated, skip this part and goes to vc-relax optimization.
             # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
             # accept one and loop against the array?
-            print('Now I will generate the files for a crude guess scf calculation.')
+            print('Now I will generate the basics for a crude guess scf calculation.')
             flow.create_files(not_calculated, (self.v0, self.k0,
                                                self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
             flow.create_job(self.job_lines, not_calculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
@@ -144,7 +144,7 @@ class VCRelaxSubmitter:
 
     def read_crude_guess_output(self) -> tuple:
         """
-        When crude guess step is done, we check if there are 'CRASH' files in the folder.
+        When crude guess step is done, we check if there are 'CRASH' basics in the folder.
         And then we read the '.out' file from scf calculation, gain a list of P and a list of V.
 
         :return: (list, list)
@@ -155,15 +155,15 @@ class VCRelaxSubmitter:
 
         for p in self.pressures:
             if self.error in os.listdir('cg_' + str(p)):
-                # If 'CRASH' files exist, something went wrong. Stop the workflow.
+                # If 'CRASH' basics exist, something went wrong. Stop the workflow.
                 raise FileExistsError(
-                    'Something went wrong, CRASH files found. Check your cg outputs.')
+                    'Something went wrong, CRASH basics found. Check your cg outputs.')
             else:
                 output_file = 'cg_' + str(p) + '/' + 'cg_' + str(p) + '.out'
                 try:
                     with open(output_file, 'r') as cg_out:
                         lines = cg_out.readlines()
-                except FileNotFoundError:  # Check if readers files exist.
+                except FileNotFoundError:  # Check if readers basics exist.
                     print('The readers file for P ={0} was not found. \
                         Removing it from list and continuing calculation.'.format(p))
                     error_files_num += 1
@@ -181,7 +181,7 @@ class VCRelaxSubmitter:
 
         if set(ps) != set(self.pressures) or len(ps) != len(vs):
             # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
-            raise RuntimeError('Some pressures were not found in the files. Please, review your data.')
+            raise RuntimeError('Some pressures were not found in the basics. Please, review your data.')
 
         return ps, vs
 
@@ -259,9 +259,9 @@ class VCRelaxSubmitter:
             print('There are remaining pressures to be calculated.')
             flag_vc = True
 
-        # TODO: Here should be improved: If too many .out not found, do not rewrite .in, just use already existed files.
+        # TODO: Here should be improved: If too many .out not found, do not rewrite .in, just use already existed basics.
         while flag_vc:
-            print('Now I will generate the files for a vc-relax calculation.')
+            print('Now I will generate the basics for a vc-relax calculation.')
             flow.create_files(uncalculated, eos_opt, self.vecs,
                               self.vol_sc, 'vc_', 'vc-relax')
             flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-vc.sh', 'vc_', 'pw',
@@ -293,7 +293,7 @@ class VCRelaxSubmitter:
 
     def read_vc_relax_output(self) -> tuple:
         """
-        When vc-relax step is done, we check if there are 'CRASH' files in the folder.
+        When vc-relax step is done, we check if there are 'CRASH' basics in the folder.
         And then we read the '.out' file from vc-relax calculation, gain a list of final P and a list of V.
 
         :return: (list, list)
@@ -306,13 +306,13 @@ class VCRelaxSubmitter:
         for p in self.pressures:
             if self.error in os.listdir('vc_' + str(p)):
                 print(
-                    'CRASH file found. Something went wrong with the vc-relax calculation, check your files.')
+                    'CRASH file found. Something went wrong with the vc-relax calculation, check your basics.')
             else:
                 output_file = 'vc_' + str(p) + '/' + 'vc_' + str(p) + '.out'
                 try:
                     with open(output_file, 'r') as vc_out:
                         lines = vc_out.readlines()
-                except FileNotFoundError:  # Check if readers files exist.
+                except FileNotFoundError:  # Check if readers basics exist.
                     print('The readers file for P =' + str(p) +
                           'was not found. Removing it from list and continuing calculation.')  # This is a bug because you have less than 6 but it still works.
                     num_error_files += 1

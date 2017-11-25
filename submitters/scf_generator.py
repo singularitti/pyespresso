@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # created at Jul 21, 2017 12:29 by Qi Zhang
 
-import re
 from code import InteractiveConsole
 from collections import defaultdict
 
 import numpy as np
 
-from miscellaneous.pwscf_params import *
+from basics.pwscf_params import *
 from miscellaneous.string import *
 
 

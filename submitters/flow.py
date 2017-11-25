@@ -220,7 +220,7 @@ def create_job_cij(job_head, pressures, d, job_name, dir_name, cclass, nstrain, 
 #	jb.write('wait\n')
 
 def create_files(press, params_eos, vectors, volsc, file_n, calc):
-    """ This function creates the files at each pressure"""
+    """ This function creates the basics at each pressure"""
     with open('qe_input_data') as qe_in:
         lines = qe_in.readlines()
         for i in range(0, len(lines)):  # Find the number of the line with the scratch directory
@@ -240,7 +240,7 @@ def create_files(press, params_eos, vectors, volsc, file_n, calc):
 #		subprocess.call(["mv", file_name + '.in', file_name])
 
 def create_scf_files(vectors, alat, dir_scf, press, atom_pos):
-    """Creates scf files after a full vc-relax calculation"""
+    """Creates scf basics after a full vc-relax calculation"""
     with open('qe_input_data') as qe_in:
         lines = qe_in.readlines()
         for i in range(0, len(lines)):
@@ -412,7 +412,7 @@ def relates_strain(cclass):
 
 
 def create_ph_input(name):
-    """ Creates submitters files for phonons calculations."""
+    """ Creates submitters basics for phonons calculations."""
     with open('qe_input_data') as qe_in:
         lines_qe = qe_in.readlines()
         for i in range(0, len(lines_qe)):

@@ -17,7 +17,7 @@ working_dir = os.getcwd()
 
 print('Starting workflow calculations.\n')
 
-# Read submitters files
+# Read submitters basics
 
 # Input.dat has information on the calculation:
 # The pressures to be calculated, the initial guess for V0, K0 and Kp
@@ -50,7 +50,7 @@ npress = len(press)
 
 if npress < 7:
     print(
-        'You have %d pressure points. At least 7 are necessary for a good quality EoS fitting, please, modify your submitters files.' % npress)
+        'You have %d pressure points. At least 7 are necessary for a good quality EoS fitting, please, modify your submitters basics.' % npress)
 else:
     print('You have %d pressure points, more than 7! You are a smart user!' % npress)
 
@@ -140,17 +140,17 @@ Number_error_files = 0
 for i in press:
     if erro in os.listdir('cg_' + str(i)):
         print(
-            'Something went wrong, CRASH files found. Check your cg outputs.')  # If CRASH files exist, something went wrong. Stop the workflow
+            'Something went wrong, CRASH basics found. Check your cg outputs.')  # If CRASH basics exist, something went wrong. Stop the workflow
         quit()
     else:
         file_path = 'cg_' + str(i) + '/' + 'cg_' + str(i) + '.out'
         try:
             with open(file_path) as qe_out:
                 qe_lines = qe_out.readlines()
-        except FileNotFoundError:  # Check if read_file files exist.
+        except FileNotFoundError:  # Check if read_file basics exist.
             print('The readers file for P = %d was not found. Removing it from list and continuing calculation.' % i)
             index_list = index_list + [cont]
-            Number_error_files = Number_error_files + 1  # Counts number of files that wasn't found
+            Number_error_files = Number_error_files + 1  # Counts number of basics that wasn't found
             pass
         else:
             for j in range(0, len(qe_lines)):
@@ -169,7 +169,7 @@ press = np.delete(press, index_list)  # deletes the pressures that weren't found
 
 if len(press) != len(Paux) or len(Paux) != len(
         Vaux):  # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow
-    print('ERROR: Some pressures were not found in the files. Please, review your data.')
+    print('ERROR: Some pressures were not found in the basics. Please, review your data.')
     quit()
 
 print('The initial volumes and pressures were written in the file Initial_PxV.dat\n')
@@ -206,7 +206,7 @@ pv.write("Results for a Vinet EoS fitting:\n")
 pv.write("V0 = %6.4f    K0 = %4.2f    Kp = %4.2f\n" % (eosPar[0], eosPar[1], eosPar[2]))
 pv.close()
 
-# Generate new files for a vc-relax job
+# Generate new basics for a vc-relax job
 
 signal_vc = True
 
@@ -239,7 +239,7 @@ else:
     signal_vc = True
 
 while signal_vc:
-    print('Now I will generate the files for a vc-relax calculation')
+    print('Now I will generate the basics for a vc-relax calculation')
 
     time.sleep(1)
 
@@ -279,7 +279,7 @@ del index_list[:]
 cont = 0
 for i in press:
     if erro in os.listdir('vc_' + str(i)):
-        print('CRASH file found. Something went wrong with the vc-relax calcultion, check your files.')
+        print('CRASH file found. Something went wrong with the vc-relax calcultion, check your basics.')
         quit()
     else:
         file_path = 'vc_' + str(i) + '/' + 'vc_' + str(i) + '.out'

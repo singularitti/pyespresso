@@ -6,8 +6,8 @@ This module calculates elastic tensor, compliance tensor, bulk modulus, shear mo
 
 from numpy.linalg import inv
 
+from miscellaneous.tensors import *
 from readers.elasticity import *
-from calculators.tensors import *
 
 
 class ElasticityCalculator:

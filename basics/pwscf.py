@@ -7,8 +7,8 @@ from typing import *
 
 import numpy as np
 
+from basics.tree import Tree
 from miscellaneous.dictionary import merge_dicts
-from miscellaneous.tree import Tree
 
 k_mesh = namedtuple('k_mesh', ['grid', 'shift', 'option'])
 

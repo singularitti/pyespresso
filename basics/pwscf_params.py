@@ -6,8 +6,8 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
+from basics.param import *
 from miscellaneous.dictionary import merge_dicts
-from miscellaneous.param import *
 
 # All official flags in QE's CONTROL card
 CONTROL: set = {

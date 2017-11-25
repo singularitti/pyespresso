@@ -39,10 +39,10 @@ if number_cij == npress:
     print('All pressures have their Cij folder. Proceeding to the tensor calculation.')
     calculate_tensor = True
 elif number_cij == 0:
-    print('Cij folders do not exist. Preparing files for their calculation.')
+    print('Cij folders do not exist. Preparing basics for their calculation.')
     calculate_tensor = False
 else:
-    print('Not all pressures have their Cij folder. Preparing files for the missing ones')
+    print('Not all pressures have their Cij folder. Preparing basics for the missing ones')
 
 
 # Reads numnber of atoms and number of atomic INPUTPH_types from submitters
@@ -93,7 +93,7 @@ if not calculate_tensor:
         del atom_pos[:]
         dir_name = 'scf_' + str(i)
         if erro in os.listdir('vc_' + str(i)):
-            print('CRASH files found. Something went wrong with the vc-relax calculation for P = %s. Check your vc_ folders.' % str(i))
+            print('CRASH basics found. Something went wrong with the vc-relax calculation for P = %s. Check your vc_ folders.' % str(i))
             quit()
         else:
             file_path = 'vc_' + str(i) + '/' + 'vc_' + str(i) + '.out'
@@ -119,16 +119,16 @@ if not calculate_tensor:
         vectors = np.array([a1, a2, a3])
         if os.path.exists(dir_name):
             print(
-                'Scf folder for P = %d exists. Skiping qe submitters generation and creating Cij files.' % i)
+                'Scf folder for P = %d exists. Skiping qe submitters generation and creating Cij basics.' % i)
             signal_scf = False
         else:
             print(
-                'Scf folder for P = %d does not exist. Creating submitters files for pw and Cij.' % i)
+                'Scf folder for P = %d does not exist. Creating submitters basics for pw and Cij.' % i)
             functions.create_scf_files(
                 vectors, alat, dir_name, int(i), atom_pos)
         cij_dir_name = 'cij'
         if os.path.exists(dir_name + '/' + dir_name + '.out'):
-            print('Scf out files exist. Skiping scf calculation')
+            print('Scf out basics exist. Skiping scf calculation')
             signal_scf = False
         if os.path.exists(dir_name + '/' + cij_dir_name):
             print('Cij folder for pressure P = %s exists. ' % str(i))

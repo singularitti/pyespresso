@@ -3,8 +3,8 @@
 
 import os
 
-from miscellaneous.pwscf_params import *
-from files.pwscf import *
+from basics.pwscf import *
+from basics.pwscf_params import *
 from readers.simple import *
 
 # Type alias

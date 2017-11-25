@@ -57,3 +57,41 @@ class Vinet:
             return self.p_vs_v(v, v0, k0, k0p) - p
 
         return fsolve(func, np.array([v0_guess]))
+
+
+class BirchMurnaghan3rd:
+    """
+    The third-order Birch–Murnaghan isothermal equation of state
+    """
+
+    @staticmethod
+    def e_vs_v(v: float, v0: float, k0: float, k0p: float, *e0) -> float:
+        """
+
+
+        :param v: volume
+        :param v0: volume at zero pressure
+        :param k0: bulk modulus at zero pressure
+        :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
+        :param e0: internal energy at zero pressure
+        :return: internal energy
+        """
+        r = (v0 / v) ** (2 / 3)
+        if e0:  # If E_0 is given
+            e0, = e0
+            return e0 + 9 / 16 * v0 * k0 * ((r - 1) ** 3 * k0p + (r - 1) ** 2 * (6 - 4 * r))
+        else:
+            return 9 / 16 * v0 * k0 * ((r - 1) ** 3 * k0p + (r - 1) ** 2 * (6 - 4 * r))
+
+    @staticmethod
+    def p_vs_v(v: float, v0: float, k0: float, k0p: float) -> float:
+        """
+
+        :param v: volume
+        :param v0: volume at zero pressure
+        :param k0: bulk modulus at zero pressure
+        :param k0p: first derivative of bulk modulus with respect to pressure, evaluated at zero pressure
+        :return: pressure
+        """
+        r = (v0 / v) ** (2 / 3)
+        return 3 / 2 * k0 * (r ** (7 / 2) - r ** (5 / 2)) * (1 + 3 / 4 * (k0p - 4) * (r - 1))

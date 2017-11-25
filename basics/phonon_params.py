@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 
-from miscellaneous.param import *
+from basics.param import *
 
 # It has to be a list but not a set, or there will be alignment problem.
 INPUTPH_card = [

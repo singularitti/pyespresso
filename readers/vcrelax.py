@@ -90,7 +90,7 @@ class VCRelaxOutfileReader:
         This method defines the basic logic of the following 3 methods.
         This should not be called directly by users, but wrapped in other methods.
 
-        :param file_list: a list of files
+        :param file_list: a list of basics
         :param i: index option, {0: V0, 1: K0, 2: K0'}
         :return: a certain EOS parameter
         """
@@ -101,28 +101,28 @@ class VCRelaxOutfileReader:
 
     def read_v0_from_files(self, file_list: List[str]) -> List[float]:
         """
-        This method reads EOS parameters V0 from each file in a list of files, and collect them as a list.
+        This method reads EOS parameters V0 from each file in a list of basics, and collect them as a list.
 
-        :param file_list: a list of files
-        :return: a list of volumes read from those files
+        :param file_list: a list of basics
+        :return: a list of volumes read from those basics
         """
         return self._read_eos_from_multiple_files(file_list, 0)
 
     def read_k0_from_files(self, file_list: list) -> List[float]:
         """
-        This method reads EOS parameters K0 from each file in a list of files, and collect them as a list.
+        This method reads EOS parameters K0 from each file in a list of basics, and collect them as a list.
 
-        :param file_list: a list of files
-        :return: a list of bulk modulus read from those files
+        :param file_list: a list of basics
+        :return: a list of bulk modulus read from those basics
         """
         return self._read_eos_from_multiple_files(file_list, 1)
 
     def read_k0p_from_files(self, file_list: list) -> List[float]:
         """
-        This method reads EOS parameters K0' from each file in a list of files, and collect them as a list.
+        This method reads EOS parameters K0' from each file in a list of basics, and collect them as a list.
 
-        :param file_list: a list of files
-        :return: a list of bulk modulus' first derivatives read from those files
+        :param file_list: a list of basics
+        :return: a list of bulk modulus' first derivatives read from those basics
         """
         return self._read_eos_from_multiple_files(file_list, 2)
 

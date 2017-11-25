@@ -81,7 +81,7 @@ for i in press:
     del atom_pos[:]
     if erro in os.listdir('vc_' + str(i)):
         print(
-            'CRASH files found. Something went wrong with the vc-relax calculation for P = %s. Check your vc_ folders.' % str(
+            'CRASH basics found. Something went wrong with the vc-relax calculation for P = %s. Check your vc_ folders.' % str(
                 i))
         quit()
     else:
@@ -108,12 +108,12 @@ for i in press:
     dir_name = 'scf_' + str(i)
     phon_name = dir_name + '-ph.in'
     if os.path.exists(dir_name):
-        print('scf folder for P = %d exists. Skiping qe submitters generation and creating phonon files.' % i)
+        print('scf folder for P = %d exists. Skiping qe submitters generation and creating phonon basics.' % i)
     else:
-        print('scf folder for P = %d does not exist. Creating submitters files for pw and ph.' % i)
+        print('scf folder for P = %d does not exist. Creating submitters basics for pw and ph.' % i)
         functions.create_scf_files(vectors, alat, dir_name, int(i), atom_pos)
     if os.path.exists(dir_name + '/' + dir_name + '.out'):
-        print('Scf out files exist. Skiping scf calculation')
+        print('Scf out basics exist. Skiping scf calculation')
         signal_scf = False
     functions.create_ph_input(phon_name)
     shutil.move(phon_name, dir_name)
@@ -139,7 +139,7 @@ if signal_scf:
 
 for i in press:
     if erro in os.listdir('scf_' + str(i)):
-        print('CRASH files found. Check your scf calculations')
+        print('CRASH basics found. Check your scf calculations')
         quit()
 
 functions.create_job(job_lines, press, div, 'job-ph.sh', 'scf_', 'ph', modul)

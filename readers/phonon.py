@@ -3,8 +3,8 @@
 
 import numpy as np
 
+from basics.phonon_params import INPUTPH_card
 from readers.simple import *
-from miscellaneous.phonon_params import INPUTPH_card
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
