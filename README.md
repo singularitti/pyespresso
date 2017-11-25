@@ -17,3 +17,9 @@ Please read `PhononInputReader` in `readers.phonon` and `basics.phonon_params` a
 The `miscellaneous` subpackage should store something very useful but not crucial to our tasks.
 
 The `shell` subpackage store pure shell scripts and should be rewritten to Python, then discarded. 
+
+The `plotters` and `readers` subpackages defined a lot to plot and read files.
+
+The `calculator` subpackage is used for QE-related calculation.
+
+Every subpackage (what functions) should have a `__init__.py` file, but not the unit test folders.
