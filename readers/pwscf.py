@@ -52,6 +52,7 @@ class SCFInputReader(SingleFileReader):
             for line in f:
                 if 'CELL_PARAMETERS' in line.upper():
                     for i in range(3):
+                        # TODO: Consider if there are blank lines
                         cell_params[i] = np.array(strs_to_floats(f.readline().split()))
         return cell_params
 
@@ -85,6 +86,7 @@ class SCFInputReader(SingleFileReader):
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'ATOMIC_SPECIES' in line.upper():
+                    # TODO: Consider if there are blank lines
                     for _ in range(int(self.read_system_namelist()['ntyp'])):
                         atmsp.append(f.readline().strip().split())
         return atmsp
@@ -95,6 +97,7 @@ class SCFInputReader(SingleFileReader):
             for line in f:
                 if 'ATOMIC_POSITIONS' in line.upper():
                     option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
+                    # TODO: Consider if there are blank lines
                     for _ in range(int(self.read_system_namelist()['nat'])):
                         atmpos.append(f.readline().strip().split())
         return {'ATOMIC_POSITIONS': atmpos, 'option': option}
