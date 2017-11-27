@@ -100,19 +100,39 @@ class SCFInputReader(SingleFileReader):
                     # TODO: Consider if there are blank lines
                     for _ in range(int(self.read_system_namelist()['nat'])):
                         atmpos.append(f.readline().strip().split())
-        return {'ATOMIC_POSITIONS': atmpos, 'option': option}
+        if option:
+            return {'ATOMIC_POSITIONS': atmpos, 'option': option}
+        else:
+            return {'ATOMIC_POSITIONS': atmpos, 'option': ''}
 
-    def build_input_tree(self) -> Tree:
-        ssi = SCFStandardInput(self.in_file)
-        ssi.control_card = self.read_control_namelist()
-        ssi.system_card = self.read_system_namelist()
-        ssi.electrons_card = self.read_electrons_namelist()
-        ssi.cell_parameters = {'CELL_PARAMETERS': self.read_cell_parameters()}
-        ssi.k_mesh = {'K_POINTS': self.read_k_mesh()}
-        ssi.atomic_species = {'ATOMIC_SPECIES': self.read_atomic_species()}
-        ssi.atomic_positions = self.read_atomic_positions()
-        ssi.write_to_file('test')
-        return ssi
+    def __str__(self):
+        try:
+            from beeprint import pp
+            return str(pp(vars(self)))
+        except ModuleNotFoundError:
+            str(vars(self))
+
+    __repr__ = __str__
+
+
+def build_input_tree(file) -> Tree:
+    sir = SCFInputReader(file)
+    ssi = SCFStandardInput(sir.in_file)
+    ssi.control_card = sir.read_control_namelist()
+    ssi.system_card = sir.read_system_namelist()
+    ssi.electrons_card = sir.read_electrons_namelist()
+    ssi.cell_parameters = {'CELL_PARAMETERS': sir.read_cell_parameters()}
+    ssi.k_mesh = {'K_POINTS': sir.read_k_mesh()}
+    ssi.atomic_species = {'ATOMIC_SPECIES': sir.read_atomic_species()}
+    ssi.atomic_positions = sir.read_atomic_positions()
+    return ssi
+
+
+def write_to_file(obj: object, out_file: str):
+    if isinstance(obj, SCFStandardInput):
+        obj.write_to_file(out_file)
+    else:
+        print('Input object is not an {0}!'.format('SCFStandardInput'))
 
 
 class PWscfOutputReader(SingleFileReader):

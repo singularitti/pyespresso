@@ -7,7 +7,7 @@ from basics.param import *
 
 # It has to be a list but not a set, or there will be alignment problem.
 INPUTPH_card = [
-    'amass', 'outdir', 'prefix', 'niter_ph', 'tr2_ph', 'alpha_mix(niter)', 'nmix_ph', 'verbosity', 'reduce_io',
+    'amass', 'outdir', 'prefix', 'niter_ph', 'tr2_ph', 'alpha_mix', 'nmix_ph', 'verbosity', 'reduce_io',
     'max_seconds', 'fildyn', 'fildrho', 'fildvscf', 'epsil', 'lrpa', 'lnoloc', 'trans', 'lraman', 'eth_rps',
     'eth_ns', 'dek', 'recover', 'low_directory_check', 'only_init', 'qplot', 'q2d', 'q_in_band_form',
     'electron_phonon', 'lshift_q', 'zeu', 'zue', 'elop', 'fpol', 'ldisp', 'nogg', 'asr', 'ldiag', 'lqdir',

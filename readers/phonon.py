@@ -5,6 +5,7 @@ import numpy as np
 
 from basics.phonon_params import INPUTPH_card
 from readers.simple import *
+from basics.phonon_params import PhononParam
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
@@ -12,7 +13,7 @@ IntArray = Union[int, List[int], np.ndarray]
 
 class PhononInputReader(NamelistReader):
     def __init__(self, in_file):
-        super().__init__(in_file, INPUTPH_card)
+        super().__init__(in_file, INPUTPH_card, PhononParam)
 
     def read_inputph_card(self) -> Dict[str, str]:
         return self.read_namelist('INPUTPH')
@@ -41,7 +42,7 @@ class PhononInputReader(NamelistReader):
                         else:
                             raise ValueError("Number of q-points is given but `qplot` is not '.true.'!")
 
-    def build_phono_input_tree(self):
+    def build_input_tree(self):
         tree = {'INPUTPH': self.read_inputph_card()}
         if hasattr(self, 'xq'):
             tree.update({'xq': self.xq})
@@ -54,7 +55,12 @@ class PhononInputReader(NamelistReader):
             self.__dict__['card'] = self.read_inputph_card()
             return self.card
         elif item == 'tree':
-            return self.build_phono_input_tree()
+            # try:
+            #     from beeprint import pp
+            #     return pp(self.build_input_tree())
+            # except ModuleNotFoundError:
+            #     return self.build_input_tree()
+            return self.build_input_tree()
         else:
             raise AttributeError('PhononInputReader instance has no attribute {0}'.format(item))
 

@@ -109,7 +109,7 @@ class MultipleFilesReader:
 
 
 class NamelistReader:
-    def __init__(self, in_file: str, namelist: set):
+    def __init__(self, in_file: str, namelist: set, param: object):
         """
         Match card between card title and the following '/' character.
 
@@ -118,6 +118,7 @@ class NamelistReader:
         """
         self.in_file = in_file
         self.namelist = namelist
+        self.param = param
 
     @staticmethod
     def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator[str]:
@@ -159,7 +160,7 @@ class NamelistReader:
                 # Use '=' as the delimiter, split the stripped line into a key and a value.
                 k, v = s.split('=', maxsplit=1)
                 k: str = k.strip()
-                v: str = v.strip().rstrip(',')  # Ignore trailing comma of the line
+                v: str = v.strip().rstrip(',').strip()  # Ignore trailing comma of the line
                 if k in self.namelist:
                     filled_namelist.update({k: v})
                 else:

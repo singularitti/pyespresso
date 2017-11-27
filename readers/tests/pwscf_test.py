@@ -10,9 +10,10 @@ from readers.vcrelax import *
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
         self.pir = SCFInputReader('test')
+        self.ssi = SCFStandardInput('test')
 
     def test_build_input_object(self):
-        print('The object is:\n{0}'.format(self.pir.build_input_tree()))
+        print('The object is:\n{0}'.format(build_input_tree('test')))
 
 
 # class TestVCRelaxInputReader(unittest.TestCase):
