@@ -88,7 +88,7 @@ default_parameters_tree: Dict[str, Dict[str, str]] = {'CONTROL': default_control
 pseudo_CONTROL = {'pseudopotential directory': 'pseudo_dir', 'scratch folder': 'outdir'}
 
 #
-pseudo_SYSTEM = {'number of atoms': 'nat', 'number of atomic INPUTPH_types': 'ntyp', 'energy cutoff': 'ecutwfc',
+pseudo_SYSTEM = {'number of atoms': 'nat', 'number of atomic INPUTPH_param_types': 'ntyp', 'energy cutoff': 'ecutwfc',
                  'density cutoff': 'ecutrho', 'number of bands': 'nbnd'}
 
 #
@@ -102,5 +102,5 @@ pseudo_parameters: dict = merge_dicts(pseudo_CONTROL, pseudo_SYSTEM, pseudo_ELEC
 
 
 class PWscfParam(Param):
-    def __init__(self, name: str, raw_val: str):
-        super().__init__(name, raw_val, {})
+    def __init__(self, name: str, raw_value: str):
+        super().__init__(name, raw_value, {})

@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from basics.phonon_params import INPUTPH_card
+from basics.phonon_params import INPUTPH_names
 from readers.simple import *
 from basics.phonon_params import PhononParam
 
@@ -13,7 +13,7 @@ IntArray = Union[int, List[int], np.ndarray]
 
 class PhononInputReader(NamelistReader):
     def __init__(self, in_file):
-        super().__init__(in_file, INPUTPH_card, PhononParam)
+        super().__init__(in_file, INPUTPH_names, PhononParam)
 
     def read_inputph_card(self) -> Dict[str, str]:
         return self.read_namelist('INPUTPH')
