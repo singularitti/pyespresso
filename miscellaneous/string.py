@@ -20,6 +20,8 @@ def strs_to_ints(strs: List[str]) -> List[int]:
     """
     Convert a list of strings to a list of integers.
 
+    Examples
+    --------
     >>> strs_to_ints(['1', '1.0', '-0.2'])
     [1, 1, 0]
 
@@ -33,6 +35,8 @@ def strs_to_floats(strs: List[str]) -> List[float]:
     """
     Convert a list of strings to a list of floats.
 
+    Examples
+    --------
     >>> strs_to_floats(['1', '1.0', '-0.2'])
     [1.0, 1.0, -0.2]
 
@@ -42,18 +46,20 @@ def strs_to_floats(strs: List[str]) -> List[float]:
     return _strs_to_(strs, float)
 
 
-def str_to_double_scientific_float(s: str) -> float:
+def str_to_double_precision_float(s: str) -> float:
     """
     Double precision float in Fortran file will have form 'x.ydz' or 'x.yDz', this cannot be convert directly to float
     by Python `float` function, so I wrote this function to help conversion. For example,
 
-    >>> str_to_double_scientific_float('1d-82')
+    Examples
+    --------
+    >>> str_to_double_precision_float('1d-82')
     1e-82
-    >>> str_to_double_scientific_float('1.0D-82')
+    >>> str_to_double_precision_float('1.0D-82')
     1e-82
-    >>> str_to_double_scientific_float('0.8D234')
+    >>> str_to_double_precision_float('0.8D234')
     8e+233
-    >>> str_to_double_scientific_float('.8d234')
+    >>> str_to_double_precision_float('.8d234')
     8e+233
 
     :param s: a string denoting a double precision number
@@ -67,6 +73,8 @@ def str_to_float(s: str) -> float:
     """
     Convert a string to corresponding single or double precision scientific number.
 
+    Examples
+    --------
     >>> str_to_float('1.0D-5')
     1e-05
     >>> str_to_float('1Dx')
@@ -83,7 +91,7 @@ def str_to_float(s: str) -> float:
     """
     if 'D' in s.upper():  # Possible double precision number
         try:
-            return str_to_double_scientific_float(s)
+            return str_to_double_precision_float(s)
         except AttributeError:
             raise ValueError("The string '{0}' does not corresponds to a double precision number!".format(s))
     else:
@@ -94,6 +102,8 @@ def match_one_string(pattern: str, s: str, *args):
     """
     Make sure you know only none or one string will be matched! If you are not sure, use `match_one_pattern` instead.
 
+    Examples
+    --------
     >>> p = "\d+"
     >>> s = "abc 123 def"
     >>> match_one_string(p, s, int)
@@ -128,6 +138,8 @@ def match_one_pattern(pattern: str, s: str, *args: Optional[Callable], **flags):
     Find a pattern in a certain string. If found and a wrapper is given, then return the wrapped matched-string; if no
     wrapper is given, return the pure matched string. If no match is found, return None.
 
+    Examples
+    --------
     >>> p = "\d+"
     >>> s = "abc 123 def 456"
     >>> match_one_pattern(p, s)
@@ -161,3 +173,20 @@ def match_one_pattern(pattern: str, s: str, *args: Optional[Callable], **flags):
     else:  # If no match is found
         print("Pattern \"{0}\" not found in string {1}!".format(pattern, s))
         return None
+
+
+def is_string_like(obj: object) -> bool:
+    """
+    Check if the object is a string.
+
+    Examples
+    --------
+    >>> is_string_like("foo")
+    True
+    >>> is_string_like(1)
+    False
+
+    :param obj: The object to check.
+    :return: Whether `obj` is a string or not.
+    """
+    return isinstance(obj, str)

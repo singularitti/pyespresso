@@ -283,8 +283,7 @@ class PWscfOutputReader(SingleFileReader):
         elif coordinate_system.lower() in {'crystal', 'cryst.', 'cryst'}:
             system_type = cryst_flag
         else:
-            raise ValueError(
-                "Unknown coordinate system type! It can be either 'Cartesian' or 'crystal'!")
+            raise ValueError("Unknown coordinate system type! It can be either 'Cartesian' or 'crystal'!")
 
         with open(self.in_file, 'r') as f, open(out_file, 'w') as g:
             flag = False  # If flag is true, read line and match pattern, if not true, no need to match pattern
