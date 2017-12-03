@@ -2,10 +2,19 @@
 # created at Dec 2, 2017 5:25 PM by Qi Zhang
 
 
-_missing = object()
+class _Missing(object):
+
+    def __repr__(self):
+        return 'no value'
+
+    def __reduce__(self):
+        return '_missing'
 
 
-class CachedProperty(object):
+_missing = _Missing()
+
+
+class CachedProperty(property):
     """
     A decorator that converts a function into a lazy property.  The
     function wrapped is called the first time to retrieve the result

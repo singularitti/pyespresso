@@ -8,15 +8,47 @@ import spglib
 
 from basics.lazy import CachedProperty
 
-get_symmetry_from_database: Callable = spglib.get_symmetry_from_database
+get_symmetry_from_database: Callable[[int], Dict[str, np.ndarray]] = spglib.get_symmetry_from_database
 
-get_spacegroup_type: Callable = spglib.get_spacegroup_type
+get_spacegroup_type: Callable[[int], Dict[str, Union[str, int]]] = spglib.get_spacegroup_type
 
-get_hall_number_from_symmetry: Callable = spglib.get_hall_number_from_symmetry
+get_hall_number_from_symmetry: Callable[[np.ndarray, np.ndarray, float], int] = spglib.get_hall_number_from_symmetry
+
+
+def is_cell(obj: object) -> bool:
+    """
+    If an object has 3 attributes `lattice`, `positions`, and `numbers`, then it can be regarded as a cell.
+
+    :param obj: The object to be checked.
+    :return: Whether it is a cell.
+    """
+    if all(hasattr(obj, attr) for attr in ['lattice', 'positions', 'numbers']):
+        return True
+    else:
+        return False
+
+
+def print_cell(cell: object):
+    if is_cell(cell):
+        from beeprint import pp
+        pp(cell)
+    else:
+        raise TypeError('{0} is not a cell!'.format(cell))
+
+
+CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)
+
+
+def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue):
+    if any(type(x) == np.ndarray for x in (a, b)):
+        return np.array_equal(a, b)
+    else:
+        return a == b
 
 
 class Cell:
-    def __init__(self, lattice, positions, numbers, *args):
+    def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
+                 numbers: Union[List, np.ndarray], *args):
         """
         More detailed documentation see [here](https://atztogo.github.io/spglib/python-spglib.html#python-spglib).
 
@@ -29,67 +61,358 @@ class Cell:
             The collinear polarizations magmoms only work with `get_symmetry` and are given as a list of $N$ floating
             point values.
         """
-        self.lattice = lattice
-        self.positions = positions
-        self.numbers = numbers
+        # Why we need to convert all `lattice`, `positions`, `numbers` and `magmoms` (if given) to numpy arrays?
+        # Because in `refine_cell`, `find_primitive` and `standardize_cell` we generate new cells, and they are
+        # already numpy arrays according to spglib. So if we want to this will make people confused if the resulted
+        # attributes change type. And will cause ambiguity when comparing cells (using `__eq__` and `__ne__`).
+        self.lattice: np.ndarray = np.array(lattice)
+        self.positions: np.ndarray = np.array(positions)
+        self.numbers: np.ndarray = np.array(numbers)
         if len(args) == 0:
-            self.cell = (self.lattice, self.positions, self.numbers)
+            self.magmoms = None
+            self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers)
         elif len(args) == 1:
-            self.magmoms, = args
-            self.cell = (self.lattice, self.positions, self.numbers, self.magmoms)
+            self.magmoms: np.ndarray = np.array(args[0])
+            self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers, self.magmoms)
         else:
             raise TypeError(
-                'Only 1 optional positional argument `magmoms` is allowed, but {0} given!'.format(len(args)))
+                'Only 1 optional positional argument `magmoms` is allowed, but {0} are given!'.format(len(args)))
+        self._symprec: float = 1e-5
+        self._angle_tolerance: float = -1.0
+        self._symbol_type: int = 0
+        self._eps: float = 1e-5
+        self._silent = False
 
-    def get_spacegroup(self, symprec: float = 1e-5) -> str:
-        return spglib.get_spacegroup(self.cell, symprec)
+    # ============================== Code block belongs to some "hidden" values ==============================
+    @property
+    def symprec(self):
+        return self._symprec
 
-    def get_symmetry(self, symprec: float = 1e-5) -> Dict[str, np.array]:
-        return spglib.get_symmetry(self.cell, symprec)
+    @symprec.setter
+    def symprec(self, new_symprec: float):
+        if not self.silent:
+            print('Be careful, setting symprec may affect the values of some attributes!')
+        self._symprec = new_symprec
 
-    def refine_cell(self, symprec: float = 1e-5):
-        pass
+    @property
+    def angle_tolerance(self):
+        return self._angle_tolerance
 
-    def find_primitive(self, symprec: float = 1e-5):
-        return self.standardize_cell(to_primitive=True, no_idealize=False, symprec=symprec)
+    @angle_tolerance.setter
+    def angle_tolerance(self, new_angle_tolerance: float):
+        if not self.silent:
+            print('Be careful, setting angle_tolerance may affect the values of some attributes!')
+        self._angle_tolerance = new_angle_tolerance
 
-    def standardize_cell(self, to_primitive: bool = False, no_idealize: bool = False, symprec: float = 1e-5) -> \
-            Optional[object]:
+    @property
+    def symbol_type(self):
+        return self._symbol_type
+
+    @symbol_type.setter
+    def symbol_type(self, new_symbol_type: int):
+        if type(new_symbol_type) is not int:
+            raise TypeError('Symbol type should be an integer, but {0} given!'.format(type(new_symbol_type)))
+        if not self.silent:
+            print('Be careful, setting symbol_type may affect the values of some attributes!')
+        self._symbol_type = new_symbol_type
+
+    @property
+    def eps(self):
+        return self._eps
+
+    @eps.setter
+    def eps(self, new_eps: float):
+        if not self.silent:
+            print('Be careful, setting eps may affect the values of some attributes!')
+        self._eps = new_eps
+
+    @property
+    def silent(self):
+        return self._silent
+
+    @silent.setter
+    def silent(self, new_silent: bool):
+        self._silent = new_silent
+
+    # ============================== "hidden" values has ended ==============================
+
+    def get_spacegroup(self, symprec: float = 1e-5, angle_tolerance: float = -1.0, symbol_type: int = 0) -> str:
         """
-        Implemented using `spglib.standardize_cell`.
+
+        :param symprec:
+        :param angle_tolerance:
+        :param symbol_type:
+        :return:
+        """
+        return spglib.get_spacegroup(self.cell, symprec, angle_tolerance, symbol_type)
+
+    @CachedProperty
+    def spacegroup(self) -> str:
+        """
+        A property as a shorthand of `get_spacegroup`.
+
+        :return:
+        """
+        return self.get_spacegroup(symprec=self.symprec, angle_tolerance=self.angle_tolerance,
+                                   symbol_type=self.symbol_type)
+
+    def get_symmetry(self, symprec: float = 1e-5, angle_tolerance=-1.0) -> Dict[str, np.array]:
+        return spglib.get_symmetry(self.cell, symprec, angle_tolerance)
+
+    @CachedProperty
+    def symmetry(self) -> Dict[str, np.array]:
+        return self.get_symmetry(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
+
+    # ============================== Code block belongs to structure optimization ==============================
+
+    def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[object]:
+        """
+        This is just a wrapper for `spglib.refine_cell`.
+
+        :param symprec:
+        :param angle_tolerance:
+        :return:
+        """
+        search_result = spglib.refine_cell(self.cell, symprec, angle_tolerance)
+        if not search_result:  # If `search_result` is `None`
+            print('Refine cell failed!')
+        else:
+            lattice, scaled_positions, numbers = search_result
+            return Cell(lattice, scaled_positions, numbers)
+
+    def find_primitive(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[object]:
+        """
+        This is just a wrapper for `spglib.find_primitive`.
+
+        :param symprec:
+        :param angle_tolerance:
+        :return:
+        """
+        search_result = spglib.find_primitive(self.cell, symprec, angle_tolerance)
+        if not search_result:  # If `search_result` is `None`
+            print('Find primitive cell failed!')
+        else:
+            lattice, scaled_positions, numbers = search_result
+            return Cell(lattice, scaled_positions, numbers)
+
+    def standardize_cell(self, to_primitive: bool = False, no_idealize: bool = False, symprec: float = 1e-5,
+                         angle_tolerance=-1.0) -> Optional[object]:
+        """
+        This is just a wrapper for `spglib.standardize_cell`.
 
         :param to_primitive:
         :param no_idealize:
         :param symprec:
+        :param angle_tolerance:
         :return:
         """
-        standardized = spglib.standardize_cell(self.cell, to_primitive, no_idealize, symprec)
-        if not standardized:  # If `standardized` is `None`
+        search_result = spglib.standardize_cell(self.cell, to_primitive, no_idealize, symprec, angle_tolerance)
+        if not search_result:  # If `search_result` is `None`
             print('Standardized crystal structure search failed!')
         else:
-            lattice, scaled_positions, numbers = standardized
+            lattice, scaled_positions, numbers = search_result
             return Cell(lattice, scaled_positions, numbers, None)
 
-    def get_symmetry_dataset(self, symprec=1e-5, angle_tolerance=-1.0, hall_number=0) -> dict:
-        ds = spglib.get_symmetry_dataset(self.cell, symprec, angle_tolerance, hall_number)
-        if not ds:  # If `ds` is `None`
+    # ============================== structure optimization has ended ==============================
+
+    # ============================== Code block belongs to symmetry dataset ==============================
+    def get_symmetry_dataset(self, symprec=1e-5, angle_tolerance=-1.0, hall_number=0) -> Optional[dict]:
+        """
+
+        :param symprec:
+        :param angle_tolerance:
+        :param hall_number:
+        :return:
+        """
+        d: dict = spglib.get_symmetry_dataset(self.cell, symprec, angle_tolerance, hall_number)
+        if not d:  # If `ds` is `None`
             print('The search failed!')
         else:
-            return ds
+            return d
 
-    def get_symmetry_from_database(self):
-        hall_number = self.symmetry_database['hall_number']
-        return get_symmetry_from_database(hall_number)
+    @CachedProperty
+    def symmetry_dataset(self) -> Optional[Dict[str, Union[int, np.ndarray, str, List[str]]]]:
+        """
+        A property as a shorthand of `get_symmetry_dataset` method.
+        Note only default arguments are used! They are: `symprec=1e-5, angle_tolerance=-1.0, hall_number=0`.
+        If you want a more flexible control of parameters, you can either:
+            1. use `get_symmetry_dataset` method directly and give arguments you want
+            2. change `self.symprec`, `self.angle_tolerance`, `self.hall_number`. But be careful, if you change
+            these values, the returned symmetry dataset may be different from previous one, and thus cause some
+            other attributes different.
 
-    def get_spacegroup_type(self):
-        hall_number = self.symmetry_database['hall_number']
-        return get_spacegroup_type(hall_number)
+        :return: Symmetry dataset.
+        """
+        return self.get_symmetry_dataset(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
-    def get_hall_number_from_symmetry(self, symprec=1e-5):
-        rotations, translations = self.symmetry_database['rotations'], self.symmetry_database['translations']
-        return get_hall_number_from_symmetry(rotations, translations, symprec)
+    @CachedProperty
+    def number(self) -> int:
+        """
+        This is just a wrapper for `symmetry_dataset['number']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['number']
+
+    @CachedProperty
+    def hall_number(self) -> int:
+        """
+        This is just a wrapper for `symmetry_dataset['hall_number']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['hall_number']
+
+    @CachedProperty
+    def international(self) -> str:
+        """
+        This is just a wrapper for `symmetry_dataset['international']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['international']
+
+    international_short = international
+
+    @CachedProperty
+    def hall(self) -> str:
+        """
+        This is just a wrapper for `symmetry_dataset['hall']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['hall']
+
+    hall_symbol = hall
+
+    @CachedProperty
+    def choice(self) -> str:
+        """
+        This is just a wrapper for `symmetry_dataset['choice']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['choice']
+
+    @CachedProperty
+    def transformation_matrix(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['transformation_matrix']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['transformation_matrix']
+
+    @CachedProperty
+    def origin_shift(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['origin_shift']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['origin_shift']
+
+    @CachedProperty
+    def rotations(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['rotations']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['rotations']
+
+    @CachedProperty
+    def translations(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['translations']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['translations']
+
+    @CachedProperty
+    def wyckoffs(self) -> List[str]:
+        """
+        This is just a wrapper for `symmetry_dataset['wyckoffs']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['wyckoffs']
+
+    @CachedProperty
+    def equivalent_atoms(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['equivalent_atoms']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['equivalent_atoms']
+
+    @CachedProperty
+    def mapping_to_primitive(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['mapping_to_primitive']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['mapping_to_primitive']
+
+    @CachedProperty
+    def std_lattice(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['std_lattice']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['std_lattice']
+
+    @CachedProperty
+    def std_types(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['std_types']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['std_types']
+
+    @CachedProperty
+    def std_positions(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['std_positions']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['std_positions']
+
+    @CachedProperty
+    def std_mapping_to_primitive(self) -> np.ndarray:
+        """
+        This is just a wrapper for `symmetry_dataset['std_mapping_to_primitive']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['std_mapping_to_primitive']
+
+    @CachedProperty
+    def pointgroup(self) -> str:
+        """
+        This is just a wrapper for `symmetry_dataset['pointgroup']`.
+
+        :return:
+        """
+        return self.symmetry_dataset['pointgroup']
+
+    # ============================== symmetry dataset has ended ==============================
+
+    # ============================== Code block belongs to reduction methods ==============================
 
     def niggli_reduce(self, eps: float = 1e-5):
+        """
+        This is just a wrapper for `spglib.niggli_lattice`.
+
+        :param eps:
+        :return:
+        """
         search_result = spglib.niggli_reduce(self.lattice, eps)
         if not search_result:  # If `search_result` is `None`
             print('Niggli reduction search failed!')
@@ -97,7 +420,22 @@ class Cell:
             niggli_lattice, = search_result
             return niggli_lattice
 
+    @CachedProperty
+    def niggli_lattice(self):
+        """
+        This is just a property as a shorthand for `self.niggli_reduce` method.
+
+        :return:
+        """
+        return self.niggli_reduce(eps=self.eps)
+
     def delaunay_reduce(self, eps=1e-5):
+        """
+        This is just a wrapper for `spglib.delaunay_reduce`.
+
+        :param eps:
+        :return:
+        """
         search_result = spglib.delaunay_reduce(self.lattice, eps)
         if not search_result:  # If `search_result` is `None`
             print('Delaunay reduction search failed!')
@@ -105,7 +443,23 @@ class Cell:
             delaunay_lattice, = search_result
             return delaunay_lattice
 
+    @CachedProperty
+    def delaunay_lattice(self):
+        """
+        This is just a property as a shorthand for `self.delaunay_reduce` method.
+
+        :return:
+        """
+        return self.delaunay_reduce(eps=self.eps)
+
     def get_ir_reciprocal_mesh(self, mesh: List[int], is_shift: List[int] = [0, 0, 0]):
+        """
+        This is just a wrapper for `spglib.get_ir_reciprocal_mesh`.
+
+        :param mesh:
+        :param is_shift:
+        :return:
+        """
         search_result = spglib.get_ir_reciprocal_mesh(mesh, self.cell, is_shift)
         if not search_result:  # If `search_result` is `None`
             print('Delaunay reduction search failed!')
@@ -113,102 +467,120 @@ class Cell:
             mapping, grid = search_result
             return mapping, grid
 
+    # ============================== reduction methods have ended ==============================
+
+    # ============================== Code block belongs to spacegroup type ==============================
     @CachedProperty
-    def niggli_lattice(self):
-        return self.niggli_reduce()
+    def spacegroup_type(self) -> Dict[str, Union[str, int]]:
+        """
+
+        :return:
+        """
+        # Note that `self.hall_number` comes from `self.symmetry_dataset['hall_number']`, so if
+        # `self.symmetry_dataset` is changed by accident, unwanted error may arise!
+        return get_spacegroup_type(self.hall_number)
 
     @CachedProperty
-    def delaunay_lattice(self):
-        return self.delaunay_reduce()
+    def international_full(self) -> str:
+        """
+        This is just a wrapper for `spacegroup_type['international_full']`.
+
+        :return:
+        """
+        return self.spacegroup_type['international_full']
 
     @CachedProperty
-    def spacegroup(self):
-        return self.get_spacegroup()
+    def schoenflies(self) -> str:
+        """
+        This is just a wrapper for `spacegroup_type['schoenflies']`.
+
+        :return:
+        """
+        return self.spacegroup_type['schoenflies']
 
     @CachedProperty
-    def symmetry(self):
-        return self.get_symmetry()
+    def pointgroup_schoenflies(self) -> str:
+        """
+        This is just a wrapper for `spacegroup_type['pointgroup_schoenflies']`.
+
+        :return:
+        """
+        return self.spacegroup_type['pointgroup_schoenflies']
 
     @CachedProperty
-    def dataset(self):
-        return self.get_symmetry_dataset()
+    def pointgroup_international(self) -> str:
+        """
+        This is just a wrapper for `spacegroup_type['pointgroup_international']`.
+
+        :return:
+        """
+        return self.spacegroup_type['pointgroup_international']
 
     @CachedProperty
-    def number(self):
-        return self.dataset['number']
+    def arithmetic_crystal_class_number(self) -> int:
+        """
+        This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_number']`.
+
+        :return:
+        """
+        return self.spacegroup_type['arithmetic_crystal_class_number']
 
     @CachedProperty
-    def hall_number(self):
-        return self.dataset['hall_number']
+    def arithmetic_crystal_class_symbol(self) -> str:
+        """
+        This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_symbol']`.
 
-    @CachedProperty
-    def international(self):
-        return self.dataset['international']
+        :return:
+        """
+        return self.spacegroup_type['arithmetic_crystal_class_symbol']
 
-    @CachedProperty
-    def hall(self):
-        return self.dataset['hall']
+    # ============================== spacegroup type has ended ==============================
 
-    @CachedProperty
-    def choice(self):
-        return self.dataset['choice']
-
-    @CachedProperty
-    def transformation_matrix(self):
-        return self.dataset['transformation_matrix']
-
-    @CachedProperty
-    def origin_shift(self):
-        return self.dataset['origin_shift']
-
-    @CachedProperty
-    def rotations(self):
-        return self.dataset['rotations']
-
-    @CachedProperty
-    def translations(self):
-        return self.dataset['translations']
-
-    @CachedProperty
-    def wyckoffs(self):
-        return self.dataset['wyckoffs']
-
-    @CachedProperty
-    def equivalent_atoms(self):
-        return self.dataset['equivalent_atoms']
-
-    @CachedProperty
-    def mapping_to_primitive(self):
-        return self.dataset['mapping_to_primitive']
-
-    @CachedProperty
-    def std_lattice(self):
-        return self.dataset['std_lattice']
-
-    @CachedProperty
-    def std_types(self):
-        return self.dataset['std_types']
-
-    @CachedProperty
-    def std_positions(self):
-        return self.dataset['std_positions']
-
-    @CachedProperty
-    def std_mapping_to_primitive(self):
-        return self.dataset['std_mapping_to_primitive']
-
-    @CachedProperty
-    def pointgroup(self):
-        return self.dataset['pointgroup']
-
-    def __str__(self):
-        return str(self.cell)
+    # ============================== Code block belongs to special methods ==============================
+    def __str__(self) -> str:
+        return \
+            """
+            The cell is:
+            lattice: {0}
+            positions: {1}
+            numbers: {2}
+            """.format(self.lattice.tolist(), self.positions.tolist(), self.numbers.tolist())
 
     __repr__ = __str__
 
-    def __getattr__(self, item):
-        if item == 'symmetry_database':
-            self.__dict__['symmetry_database'] = self.get_symmetry_from_database()
-            return self.symmetry_database
+    def __eq__(self, other: object) -> bool:
+        """
+        Two cells are equal if all of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
+        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes are equal.
+
+        :param other: Should be another cell, or else raise an error.
+        :return: Whether two cells are equal.
+        """
+        if is_cell(other):
+            attrs = ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type',
+                     '_eps', '_silent']
+            return all(_cell_initial_values_equal(self.__dict__[x], other.__dict__[x]) for x in attrs)
         else:
-            raise AttributeError('Cell does not have attribute {0}!'.format(item))
+            raise TypeError('{0} is not a cell type!'.format(other))
+
+    def __ne__(self, other: object) -> bool:
+        """
+        Two cells are equal if all of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
+        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes are equal.
+
+        :param other: Should be another cell, or else raise an error.
+        :return: Whether two cells are not equal.
+        """
+        if is_cell(other):
+            attrs = ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type',
+                     '_eps', '_silent']
+            for x in attrs:  # Find the first attribute which are not equal for the 2 cells, then exit
+                if not _cell_initial_values_equal(self.__dict__[x], other.__dict__[x]):
+                    print('Attribute {0} for the 2 cells are not equal!'.format(x))
+                    return True
+            else:
+                return False
+        else:
+            raise TypeError('{0} is not a cell type!'.format(other))
+
+    # ============================== special methods have ended ==============================
