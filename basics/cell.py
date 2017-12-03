@@ -8,6 +8,12 @@ import spglib
 
 from basics.lazy import CachedProperty
 
+# ================================= These are some type aliases or type definitions. =================================
+CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)
+Cell = TypeVar('Cell')
+SimpleCell = TypeVar('SimpleCell')
+
+# =================================== These are some exports of spglib functions. ===================================
 get_symmetry_from_database: Callable[[int], Dict[str, np.ndarray]] = spglib.get_symmetry_from_database
 
 get_spacegroup_type: Callable[[int], Dict[str, Union[str, int]]] = spglib.get_spacegroup_type
@@ -15,28 +21,35 @@ get_spacegroup_type: Callable[[int], Dict[str, Union[str, int]]] = spglib.get_sp
 get_hall_number_from_symmetry: Callable[[np.ndarray, np.ndarray, float], int] = spglib.get_hall_number_from_symmetry
 
 
-def is_cell(obj: object) -> bool:
+# ========================================= These are some useful functions. =========================================
+def is_simple_cell(obj: object) -> bool:
     """
-    If an object has 3 attributes `lattice`, `positions`, and `numbers`, then it can be regarded as a cell.
+    If an object has 3 attributes `lattice`, `positions`, and `numbers`, then it can be regarded as a simple cell.
 
     :param obj: The object to be checked.
     :return: Whether it is a cell.
     """
-    if all(hasattr(obj, attr) for attr in ['lattice', 'positions', 'numbers']):
+    if all(hasattr(obj, attr) for attr in ['lattice', 'positions', 'numbers']) and not hasattr(obj, '_symprec'):
         return True
     else:
         return False
 
 
-def print_cell(cell: object):
-    if is_cell(cell):
+def is_cell(obj: object) -> bool:
+    if all(hasattr(obj, attr) for attr in
+           ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type', '_eps',
+            '_silent']):
+        return True
+    else:
+        return False
+
+
+def print_cell(cell: Union[Cell, SimpleCell]):
+    if is_cell(cell) or is_simple_cell(cell):
         from beeprint import pp
         pp(cell)
     else:
         raise TypeError('{0} is not a cell!'.format(cell))
-
-
-CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)
 
 
 def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue):
@@ -46,6 +59,14 @@ def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue):
         return a == b
 
 
+def simple_cell_to_cell(sc: SimpleCell) -> Optional[Cell]:
+    if is_simple_cell(sc):
+        return sc.to_cell()
+    else:
+        raise TypeError('{0} is not a simple cell!'.format(sc))
+
+
+# ========================================= These are classes definitions. =========================================
 class Cell:
     def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
                  numbers: Union[List, np.ndarray], *args):
@@ -165,7 +186,7 @@ class Cell:
 
     # ============================== Code block belongs to structure optimization ==============================
 
-    def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[object]:
+    def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
         """
         This is just a wrapper for `spglib.refine_cell`.
 
@@ -180,7 +201,7 @@ class Cell:
             lattice, scaled_positions, numbers = search_result
             return Cell(lattice, scaled_positions, numbers)
 
-    def find_primitive(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[object]:
+    def find_primitive(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
         """
         This is just a wrapper for `spglib.find_primitive`.
 
@@ -196,7 +217,7 @@ class Cell:
             return Cell(lattice, scaled_positions, numbers)
 
     def standardize_cell(self, to_primitive: bool = False, no_idealize: bool = False, symprec: float = 1e-5,
-                         angle_tolerance=-1.0) -> Optional[object]:
+                         angle_tolerance=-1.0) -> Optional[Cell]:
         """
         This is just a wrapper for `spglib.standardize_cell`.
 
@@ -552,6 +573,7 @@ class Cell:
         """
         Two cells are equal if all of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
         `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes are equal.
+        Why only compare these attributes? Because they uniquely define the cell.
 
         :param other: Should be another cell, or else raise an error.
         :return: Whether two cells are equal.
@@ -565,8 +587,9 @@ class Cell:
 
     def __ne__(self, other: object) -> bool:
         """
-        Two cells are equal if all of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
-        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes are equal.
+        Two cells are not equal if any of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
+        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes is not equal.
+        Why only compare these attributes? Because they uniquely define the cell.
 
         :param other: Should be another cell, or else raise an error.
         :return: Whether two cells are not equal.
@@ -584,3 +607,56 @@ class Cell:
             raise TypeError('{0} is not a cell type!'.format(other))
 
     # ============================== special methods have ended ==============================
+
+
+class SimpleCell:
+    def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
+                 numbers: Union[List, np.ndarray]):
+        self.lattice: np.ndarray = np.array(lattice)
+        self.positions: np.ndarray = np.array(positions)
+        self.numbers: np.ndarray = np.array(numbers)
+
+    def to_cell(self) -> Cell:
+        return Cell(self.lattice, self.positions, self.numbers)
+
+    def __str__(self) -> str:
+        return \
+            """
+            The simple cell is:
+            lattice: {0}
+            positions: {1}
+            numbers: {2}
+            """.format(self.lattice.tolist(), self.positions.tolist(), self.numbers.tolist())
+
+    __repr__ = __str__
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Two simple cells are equal if all of their `lattice`, `positions`, `numbers` attributes are equal.
+
+        :param other: Should be another simple cell, or else raise an error.
+        :return: Whether two cells are equal.
+        """
+        if is_simple_cell(other):
+            attrs = ['lattice', 'positions', 'numbers']
+            return all(np.array_equal(self.__dict__[x], other.__dict__[x]) for x in attrs)
+        else:
+            raise TypeError('{0} is not a simple cell type!'.format(other))
+
+    def __ne__(self, other: object) -> bool:
+        """
+        Two simple cells are not equal if any of their `lattice`, `positions`, `numbers` attributes is not equal.
+
+        :param other: Should be another simple cell, or else raise an error.
+        :return: Whether two cells are not equal.
+        """
+        if is_simple_cell(other):
+            attrs = ['lattice', 'positions', 'numbers']
+            for x in attrs:  # Find the first attribute which are not equal for the 2 cells, then exit
+                if not np.array_equal(self.__dict__[x], other.__dict__[x]):
+                    print('Attribute {0} for the 2 simple cells are not equal!'.format(x))
+                    return True
+            else:
+                return False
+        else:
+            raise TypeError('{0} is not a cell type!'.format(other))

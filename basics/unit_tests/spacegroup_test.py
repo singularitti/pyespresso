@@ -3,11 +3,12 @@
 
 import unittest
 
-from calculators.spacegroup import *
-from calculators.unit_tests.spacegroup_test_data import *
+from basics.cell import *
+from basics.unit_tests.spacegroup_test_data import *
 
 rutile = Cell(*rutile_spglib_cell)
 rutile_distorted = Cell(*rutile_distorted_spglib_cell)
+simple_rutile = SimpleCell(*rutile_spglib_cell)
 
 
 class CellTester(unittest.TestCase):
@@ -171,3 +172,19 @@ class CellTester(unittest.TestCase):
     @staticmethod
     def test_print_cell():
         print_cell(rutile)
+
+
+class SimpleCellTester(unittest.TestCase):
+    def test_to_cell(self):
+        self.assertTrue(simple_rutile.to_cell() == rutile)
+        self.assertTrue(simple_cell_to_cell(simple_rutile) == rutile)
+
+    @staticmethod
+    def test__str__():
+        print(simple_rutile)
+
+    def test__eq__(self):
+        self.assertTrue(simple_rutile == simple_rutile)
+
+    def test__ne__(self):
+        self.assertFalse(simple_rutile != simple_rutile)
