@@ -4,7 +4,7 @@
 import unittest
 
 from basics.cell import *
-from basics.unit_tests.spacegroup_test_data import *
+from basics.unittests.cell_test_data import *
 
 rutile = Cell(*rutile_spglib_cell)
 rutile_distorted = Cell(*rutile_distorted_spglib_cell)
