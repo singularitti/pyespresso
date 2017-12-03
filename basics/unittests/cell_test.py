@@ -43,7 +43,6 @@ class CellTester(unittest.TestCase):
 
     def test_standardize_cell(self):
         standardized_cell = rutile_distorted.standardize_cell(to_primitive=False, no_idealize=True, symprec=1e-1)
-        print(standardized_cell)
         np.testing.assert_array_equal(standardized_cell.lattice, np.array([[3.97, 0., 0.],
                                                                            [0., 4.03, 0.],
                                                                            [0., 0., 3.]]))

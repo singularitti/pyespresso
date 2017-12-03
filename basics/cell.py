@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # created at Nov 28, 2017 12:52 AM by Qi Zhang
 
+from numbers import Number
 from typing import *
 
 import numpy as np
@@ -27,7 +28,7 @@ def is_simple_cell(obj: object) -> bool:
     If an object has 3 attributes `lattice`, `positions`, and `numbers`, then it can be regarded as a simple cell.
 
     :param obj: The object to be checked.
-    :return: Whether it is a cell.
+    :return: Whether it is a simple cell.
     """
     if all(hasattr(obj, attr) for attr in ['lattice', 'positions', 'numbers']) and not hasattr(obj, '_symprec'):
         return True
@@ -36,6 +37,13 @@ def is_simple_cell(obj: object) -> bool:
 
 
 def is_cell(obj: object) -> bool:
+    """
+    If an object has attributes 'lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance',
+    '_symbol_type', '_eps', and '_silent', then it can be regarded as a cell.
+
+    :param obj: The object to be checked.
+    :return: Whether it is a cell.
+    """
     if all(hasattr(obj, attr) for attr in
            ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type', '_eps',
             '_silent']):
@@ -44,7 +52,13 @@ def is_cell(obj: object) -> bool:
         return False
 
 
-def print_cell(cell: Union[Cell, SimpleCell]):
+def print_cell(cell: Union[Cell, SimpleCell]) -> None:
+    """
+    Pretty print a (simple) cell.
+
+    :param cell: The (simple) cell to be printed.
+    :return: None.
+    """
     if is_cell(cell) or is_simple_cell(cell):
         from beeprint import pp
         pp(cell)
@@ -52,7 +66,16 @@ def print_cell(cell: Union[Cell, SimpleCell]):
         raise TypeError('{0} is not a cell!'.format(cell))
 
 
-def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue):
+def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue) -> bool:
+    """
+    For the initial values for 2 cells, i.e., 'lattice', 'positions', 'numbers', 'magmoms', '_symprec',
+    '_angle_tolerance', '_symbol_type', '_eps', and '_silent', compare them according to their different data
+    structures.
+
+    :param a: An initial value for one cell.
+    :param b: The corresponding initial value for another cell.
+    :return: Whether a and b are equal.
+    """
     if any(type(x) == np.ndarray for x in (a, b)):
         return np.array_equal(a, b)
     else:
@@ -60,49 +83,95 @@ def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue):
 
 
 def simple_cell_to_cell(sc: SimpleCell) -> Optional[Cell]:
+    """
+    Suppose you have a simple cell, and you want to convert it to a more complex cell, then use this method.
+
+    :param sc: The simple cell to be converted.
+    :return: The cell which is converted result.
+    """
     if is_simple_cell(sc):
         return sc.to_cell()
     else:
         raise TypeError('{0} is not a simple cell!'.format(sc))
 
 
-# ========================================= These are classes definitions. =========================================
+# ====================================== The followings are classes definitions. ======================================
 class Cell:
     def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
                  numbers: Union[List, np.ndarray], *args):
         """
         More detailed documentation see [here](https://atztogo.github.io/spglib/python-spglib.html#python-spglib).
 
-        :param lattice: Lattice parameters lattice are given by a $3x3$ matrix with floating point values, where a,b,c
+        :param lattice: Lattice parameters are given by a $3x3$ matrix with floating point values, where a,b,c
             are given as rows, which results in the transpose of the definition for C-API.
         :param positions: Fractional atomic positions positions are given by a $Nx3$ matrix with floating point values,
             where $N$ is the number of atoms.
-        :param numbers: Numbers to distinguish atomic species numbers are given by a list of N integers.
+        :param numbers: Numbers to distinguish atomic species. Numbers are given by a list of N integers.
         :param args: Only 1 optional positional argument is allowed, which is `magmoms` in `spglib` library.
             The collinear polarizations magmoms only work with `get_symmetry` and are given as a list of $N$ floating
             point values.
         """
+
         # Why we need to convert all `lattice`, `positions`, `numbers` and `magmoms` (if given) to numpy arrays?
         # Because in `refine_cell`, `find_primitive` and `standardize_cell` we generate new cells, and they are
         # already numpy arrays according to spglib. So if we want to this will make people confused if the resulted
         # attributes change type. And will cause ambiguity when comparing cells (using `__eq__` and `__ne__`).
+
         self.lattice: np.ndarray = np.array(lattice)
         self.positions: np.ndarray = np.array(positions)
         self.numbers: np.ndarray = np.array(numbers)
+        self.atoms_num = len(self.numbers)
+
+        self.validate_lattice()
+        self.validate_positions()
+        self.validate_numbers()
+
         if len(args) == 0:
             self.magmoms = None
             self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers)
         elif len(args) == 1:
             self.magmoms: np.ndarray = np.array(args[0])
+            self.validate_magmoms()
             self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers, self.magmoms)
         else:
             raise TypeError(
                 'Only 1 optional positional argument `magmoms` is allowed, but {0} are given!'.format(len(args)))
+
         self._symprec: float = 1e-5
         self._angle_tolerance: float = -1.0
         self._symbol_type: int = 0
         self._eps: float = 1e-5
         self._silent = False
+
+    # ============================== Code block belongs to some validating values ==============================
+    def validate_lattice(self):
+        if not self.lattice.shape == (3, 3):
+            raise ValueError('The lattice parameters shape is not 3x3!')
+        if not issubclass(self.lattice.dtype.type, (Number, np.number)):
+            raise TypeError('The lattice parameters are not made of numbers!')
+
+    def validate_positions(self):
+        shape = self.positions.shape
+        if not shape[1] == 3:
+            raise ValueError('The positions shape is not nx3!')
+        if not issubclass(self.positions.dtype.type, (Number, np.number)):
+            raise TypeError('The positions are not made of numbers!')
+
+    def validate_numbers(self):
+        shape = self.numbers.shape
+        if not shape == (self.atoms_num,):
+            raise ValueError('The numbers vector is not of shape Nx1!')
+        if not issubclass(self.numbers.dtype.type, (Number, np.number)):
+            raise TypeError('The numbers vector is not made of numbers!')
+
+    def validate_magmoms(self):
+        shape = self.magmoms.shape
+        if not shape == (self.atoms_num,):
+            raise ValueError('The magmoms vector is not of shape Nx1!')
+        if not issubclass(self.magmoms.dtype.type, (Number, np.number)):
+            raise TypeError('The magmoms vector is not made of numbers!')
+
+    # ========================================= end =========================================
 
     # ============================== Code block belongs to some "hidden" values ==============================
     @property
@@ -155,7 +224,7 @@ class Cell:
     def silent(self, new_silent: bool):
         self._silent = new_silent
 
-    # ============================== "hidden" values has ended ==============================
+    # ========================================= end =========================================
 
     def get_spacegroup(self, symprec: float = 1e-5, angle_tolerance: float = -1.0, symbol_type: int = 0) -> str:
         """
@@ -185,7 +254,6 @@ class Cell:
         return self.get_symmetry(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
     # ============================== Code block belongs to structure optimization ==============================
-
     def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
         """
         This is just a wrapper for `spglib.refine_cell`.
@@ -232,9 +300,9 @@ class Cell:
             print('Standardized crystal structure search failed!')
         else:
             lattice, scaled_positions, numbers = search_result
-            return Cell(lattice, scaled_positions, numbers, None)
+            return Cell(lattice, scaled_positions, numbers)
 
-    # ============================== structure optimization has ended ==============================
+    # ========================================= end =========================================
 
     # ============================== Code block belongs to symmetry dataset ==============================
     def get_symmetry_dataset(self, symprec=1e-5, angle_tolerance=-1.0, hall_number=0) -> Optional[dict]:
@@ -423,10 +491,9 @@ class Cell:
         """
         return self.symmetry_dataset['pointgroup']
 
-    # ============================== symmetry dataset has ended ==============================
+    # ========================================= end =========================================
 
     # ============================== Code block belongs to reduction methods ==============================
-
     def niggli_reduce(self, eps: float = 1e-5):
         """
         This is just a wrapper for `spglib.niggli_lattice`.
@@ -488,7 +555,7 @@ class Cell:
             mapping, grid = search_result
             return mapping, grid
 
-    # ============================== reduction methods have ended ==============================
+    # ========================================= end =========================================
 
     # ============================== Code block belongs to spacegroup type ==============================
     @CachedProperty
@@ -555,7 +622,7 @@ class Cell:
         """
         return self.spacegroup_type['arithmetic_crystal_class_symbol']
 
-    # ============================== spacegroup type has ended ==============================
+    # ========================================= end =========================================
 
     # ============================== Code block belongs to special methods ==============================
     def __str__(self) -> str:
@@ -606,7 +673,7 @@ class Cell:
         else:
             raise TypeError('{0} is not a cell type!'.format(other))
 
-    # ============================== special methods have ended ==============================
+    # ========================================= end =========================================
 
 
 class SimpleCell:
@@ -615,6 +682,31 @@ class SimpleCell:
         self.lattice: np.ndarray = np.array(lattice)
         self.positions: np.ndarray = np.array(positions)
         self.numbers: np.ndarray = np.array(numbers)
+        self.atoms_num = len(self.numbers)
+
+        self.validate_lattice()
+        self.validate_positions()
+        self.validate_numbers()
+
+    def validate_lattice(self):
+        if not self.lattice.shape == (3, 3):
+            raise ValueError('The lattice parameters shape is not 3x3!')
+        if not issubclass(self.lattice.dtype.type, (Number, np.number)):
+            raise TypeError('The lattice parameters are not made of numbers!')
+
+    def validate_positions(self):
+        shape = self.positions.shape
+        if not shape[1] == 3:
+            raise ValueError('The positions shape is not nx3!')
+        if not issubclass(self.positions.dtype.type, (Number, np.number)):
+            raise TypeError('The positions are not made of numbers!')
+
+    def validate_numbers(self):
+        shape = self.numbers.shape
+        if not shape == (self.atoms_num,):
+            raise ValueError('The numbers vector is not of shape Nx1!')
+        if not issubclass(self.numbers.dtype.type, (Number, np.number)):
+            raise TypeError('The numbers vector is not made of numbers!')
 
     def to_cell(self) -> Cell:
         return Cell(self.lattice, self.positions, self.numbers)

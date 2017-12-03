@@ -13,6 +13,8 @@ def is_number(obj: object):
 
     Examples
     --------
+    >>> is_number(float(5))
+    True
     >>> is_number(np.float64(1))
     True
     >>> is_number("foo")
