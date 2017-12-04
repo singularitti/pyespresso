@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # created at Nov 28, 2017 12:52 AM by Qi Zhang
+"""
+This module integrates spglib for Python API, and built 2 classes: `SimpleCell` for simply storing some basic
+information about a cell, and `Cell` for much more complex functional extension.
+"""
 
 from numbers import Number
 from typing import *
@@ -95,6 +99,38 @@ def simple_cell_to_cell(sc: SimpleCell) -> Optional[Cell]:
         raise TypeError('{0} is not a simple cell!'.format(sc))
 
 
+# ============================== Code block for some validating functions ==============================
+def _validate_lattice(lattice: np.ndarray):
+    if not lattice.shape == (3, 3):
+        raise ValueError('The shape of `lattice` is not 3x3!')
+    if not issubclass(lattice.dtype.type, (Number, np.number)):
+        raise TypeError('The lattice parameters are not made of numbers!')
+
+
+def _validate_positions(positions: np.ndarray, atoms_num: int):
+    shape = positions.shape
+    if not shape == (atoms_num, 3):
+        raise ValueError('The shape of `positions` is not Nx3!')
+    if not issubclass(positions.dtype.type, (Number, np.number)):
+        raise TypeError('The positions are not made of numbers!')
+
+
+def _validate_numbers(numbers: np.ndarray, atoms_num: int):
+    shape = numbers.shape
+    if not shape == (atoms_num,):
+        raise ValueError('The shape of `numbers` is not of shape Nx1!')
+    if not issubclass(numbers.dtype.type, (Number, np.number)):
+        raise TypeError('The `numbers` is not made of numbers!')
+
+
+def _validate_magmoms(magmoms: np.ndarray, atoms_num: int):
+    shape = magmoms.shape
+    if not shape == (atoms_num,):
+        raise ValueError('The shape of `magmoms` is not of shape Nx1!')
+    if not issubclass(magmoms.dtype.type, (Number, np.number)):
+        raise TypeError('The `magmoms` is not made of numbers!')
+
+
 # ====================================== The followings are classes definitions. ======================================
 class Cell:
     def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
@@ -122,16 +158,16 @@ class Cell:
         self.numbers: np.ndarray = np.array(numbers)
         self.atoms_num = len(self.numbers)
 
-        self.validate_lattice()
-        self.validate_positions()
-        self.validate_numbers()
+        _validate_lattice(self.lattice)
+        _validate_positions(self.positions, self.atoms_num)
+        _validate_numbers(self.numbers, self.atoms_num)
 
         if len(args) == 0:
             self.magmoms = None
             self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers)
         elif len(args) == 1:
             self.magmoms: np.ndarray = np.array(args[0])
-            self.validate_magmoms()
+            _validate_magmoms(self.magmoms, self.atoms_num)
             self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers, self.magmoms)
         else:
             raise TypeError(
@@ -143,37 +179,7 @@ class Cell:
         self._eps: float = 1e-5
         self._silent = False
 
-    # ============================== Code block belongs to some validating values ==============================
-    def validate_lattice(self):
-        if not self.lattice.shape == (3, 3):
-            raise ValueError('The lattice parameters shape is not 3x3!')
-        if not issubclass(self.lattice.dtype.type, (Number, np.number)):
-            raise TypeError('The lattice parameters are not made of numbers!')
-
-    def validate_positions(self):
-        shape = self.positions.shape
-        if not shape[1] == 3:
-            raise ValueError('The positions shape is not nx3!')
-        if not issubclass(self.positions.dtype.type, (Number, np.number)):
-            raise TypeError('The positions are not made of numbers!')
-
-    def validate_numbers(self):
-        shape = self.numbers.shape
-        if not shape == (self.atoms_num,):
-            raise ValueError('The numbers vector is not of shape Nx1!')
-        if not issubclass(self.numbers.dtype.type, (Number, np.number)):
-            raise TypeError('The numbers vector is not made of numbers!')
-
-    def validate_magmoms(self):
-        shape = self.magmoms.shape
-        if not shape == (self.atoms_num,):
-            raise ValueError('The magmoms vector is not of shape Nx1!')
-        if not issubclass(self.magmoms.dtype.type, (Number, np.number)):
-            raise TypeError('The magmoms vector is not made of numbers!')
-
-    # ========================================= end =========================================
-
-    # ============================== Code block belongs to some "hidden" values ==============================
+    # ============================== Code block for some "hidden" values ==============================
     @property
     def symprec(self):
         return self._symprec
@@ -253,7 +259,7 @@ class Cell:
     def symmetry(self) -> Dict[str, np.array]:
         return self.get_symmetry(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
-    # ============================== Code block belongs to structure optimization ==============================
+    # ============================== Code block for structure optimization ==============================
     def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
         """
         This is just a wrapper for `spglib.refine_cell`.
@@ -304,7 +310,7 @@ class Cell:
 
     # ========================================= end =========================================
 
-    # ============================== Code block belongs to symmetry dataset ==============================
+    # ============================== Code block for symmetry dataset ==============================
     def get_symmetry_dataset(self, symprec=1e-5, angle_tolerance=-1.0, hall_number=0) -> Optional[dict]:
         """
 
@@ -493,7 +499,7 @@ class Cell:
 
     # ========================================= end =========================================
 
-    # ============================== Code block belongs to reduction methods ==============================
+    # ============================== Code block for reduction methods ==============================
     def niggli_reduce(self, eps: float = 1e-5):
         """
         This is just a wrapper for `spglib.niggli_lattice`.
@@ -557,7 +563,7 @@ class Cell:
 
     # ========================================= end =========================================
 
-    # ============================== Code block belongs to spacegroup type ==============================
+    # ============================== Code block for spacegroup type ==============================
     @CachedProperty
     def spacegroup_type(self) -> Dict[str, Union[str, int]]:
         """
@@ -624,7 +630,7 @@ class Cell:
 
     # ========================================= end =========================================
 
-    # ============================== Code block belongs to special methods ==============================
+    # ============================== Code block for special methods ==============================
     def __str__(self) -> str:
         return \
             """
@@ -684,29 +690,9 @@ class SimpleCell:
         self.numbers: np.ndarray = np.array(numbers)
         self.atoms_num = len(self.numbers)
 
-        self.validate_lattice()
-        self.validate_positions()
-        self.validate_numbers()
-
-    def validate_lattice(self):
-        if not self.lattice.shape == (3, 3):
-            raise ValueError('The lattice parameters shape is not 3x3!')
-        if not issubclass(self.lattice.dtype.type, (Number, np.number)):
-            raise TypeError('The lattice parameters are not made of numbers!')
-
-    def validate_positions(self):
-        shape = self.positions.shape
-        if not shape[1] == 3:
-            raise ValueError('The positions shape is not nx3!')
-        if not issubclass(self.positions.dtype.type, (Number, np.number)):
-            raise TypeError('The positions are not made of numbers!')
-
-    def validate_numbers(self):
-        shape = self.numbers.shape
-        if not shape == (self.atoms_num,):
-            raise ValueError('The numbers vector is not of shape Nx1!')
-        if not issubclass(self.numbers.dtype.type, (Number, np.number)):
-            raise TypeError('The numbers vector is not made of numbers!')
+        _validate_lattice(self.lattice)
+        _validate_positions(self.positions, self.atoms_num)
+        _validate_numbers(self.numbers, self.atoms_num)
 
     def to_cell(self) -> Cell:
         return Cell(self.lattice, self.positions, self.numbers)

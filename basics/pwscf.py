@@ -17,13 +17,17 @@ class SCFStandardInput(Tree):
     def __init__(self, in_file):
         super().__init__()
         self.in_file = in_file
-        self.control_card = {}
+        self._control_card = {}
         self.system_card = {}
         self.electrons_card = {}
         self.cell_parameters: Dict[str, np.ndarray] = {'CELL_PARAMETERS': np.zeros((3, 3))}
         self.k_mesh: Dict[str, NamedTuple] = {'K_POINTS': k_mesh(grid=[1, 1, 1], shift=[0, 0, 0], option='')}
         self.atomic_species = {'ATOMIC_SPECIES': []}
         self.atomic_positions = {'ATOMIC_POSITIONS': [], 'option': ''}
+
+    @property
+    def control_card(self):
+        return self._control_card
 
     @property
     def flattened_tree(self) -> Dict[str, dict]:

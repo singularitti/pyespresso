@@ -33,25 +33,25 @@ class CellTester(unittest.TestCase):
         np.testing.assert_array_equal(refined_cell.lattice, np.array([[4., 0., 0.],
                                                                       [0., 4., 0.],
                                                                       [0., 0., 3.]]))
-        np.testing.assert_almost_equal(refined_cell.positions, np.array([[0.00000, 0.00000, 0.00000],
-                                                                         [0.50000, 0.50000, 0.50000],
-                                                                         [0.29995, 0.29995, 0.00000],
-                                                                         [0.70005, 0.70005, 0.00000],
-                                                                         [0.20005, 0.79995, 0.50000],
-                                                                         [0.79995, 0.20005, 0.50000]]))
+        np.testing.assert_array_almost_equal(refined_cell.positions, np.array([[0.00000, 0.00000, 0.00000],
+                                                                               [0.50000, 0.50000, 0.50000],
+                                                                               [0.29995, 0.29995, 0.00000],
+                                                                               [0.70005, 0.70005, 0.00000],
+                                                                               [0.20005, 0.79995, 0.50000],
+                                                                               [0.79995, 0.20005, 0.50000]]))
         np.testing.assert_array_equal(refined_cell.numbers, np.array([14, 14, 8, 8, 8, 8]))
 
     def test_standardize_cell(self):
         standardized_cell = rutile_distorted.standardize_cell(to_primitive=False, no_idealize=True, symprec=1e-1)
-        np.testing.assert_array_equal(standardized_cell.lattice, np.array([[3.97, 0., 0.],
-                                                                           [0., 4.03, 0.],
-                                                                           [0., 0., 3.]]))
-        np.testing.assert_array_equal(standardized_cell.positions, np.array([[0., 0., 0.],
-                                                                             [0.5001, 0.5, 0.5],
-                                                                             [0.3, 0.3, 0.],
-                                                                             [0.7, 0.7, 0.002],
-                                                                             [0.2, 0.8, 0.5],
-                                                                             [0.8, 0.2, 0.5]]))
+        np.testing.assert_array_equal(standardized_cell.lattice, np.array([[3.97, 0.00, 0.00],
+                                                                           [0.00, 4.03, 0.00],
+                                                                           [0.00, 0.00, 3.00]]))
+        np.testing.assert_array_equal(standardized_cell.positions, np.array([[0.0000, 0.0000, 0.0000],
+                                                                             [0.5001, 0.5000, 0.5000],
+                                                                             [0.3000, 0.3000, 0.0000],
+                                                                             [0.7000, 0.7000, 0.0020],
+                                                                             [0.2000, 0.8000, 0.5000],
+                                                                             [0.8000, 0.2000, 0.5000]]))
         np.testing.assert_array_equal(standardized_cell.numbers, np.array([14, 14, 8, 8, 8, 8]))
 
     def test_find_primitive(self):
@@ -59,12 +59,12 @@ class CellTester(unittest.TestCase):
         np.testing.assert_array_equal(primitive.lattice, np.array([[4., 0., 0.],
                                                                    [0., 4., 0.],
                                                                    [0., 0., 3.]]))
-        np.testing.assert_almost_equal(primitive.positions, np.array([[0.00000, 0.00000, 0.00000],
-                                                                      [0.50000, 0.50000, 0.50000],
-                                                                      [0.29995, 0.29995, 0.00000],
-                                                                      [0.70005, 0.70005, 0.00000],
-                                                                      [0.20005, 0.79995, 0.50000],
-                                                                      [0.79995, 0.20005, 0.50000]]))
+        np.testing.assert_array_almost_equal(primitive.positions, np.array([[0.00000, 0.00000, 0.00000],
+                                                                            [0.50000, 0.50000, 0.50000],
+                                                                            [0.29995, 0.29995, 0.00000],
+                                                                            [0.70005, 0.70005, 0.00000],
+                                                                            [0.20005, 0.79995, 0.50000],
+                                                                            [0.79995, 0.20005, 0.50000]]))
         np.testing.assert_array_equal(primitive.numbers, np.array([14, 14, 8, 8, 8, 8]))
 
     def test_spacegroup(self):
