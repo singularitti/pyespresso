@@ -9,7 +9,7 @@ import numpy as np
 from readers.simple import *
 
 
-class ElasticityOutputReader(SingleFileReader):
+class ElasticityOutputParser(SingleFileParser):
     def read_elastic_tensor(self) -> Tuple[List[float], List[np.ndarray]]:
         """
         Read c_ij file, which looks like:

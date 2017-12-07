@@ -8,7 +8,7 @@ from readers.elasticity import *
 
 class TestReadElasticityOutput(unittest.TestCase):
     def setUp(self):
-        self.eor = ElasticityOutputReader('Cij_file.dat')
+        self.eor = ElasticityOutputParser('Cij_file.dat')
 
     def test_read_elastic_tensor(self):
         p_list, c_list = self.eor.read_elastic_tensor()

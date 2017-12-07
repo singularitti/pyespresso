@@ -11,12 +11,12 @@ import numpy as np
 from readers.simple import *
 
 
-class VCRelaxInputfileReader(SCFInputReader):
+class VCRelaxInputfileReader(PWInputReader):
     def read_ions_card(self) -> Dict[str, str]:
-        return NamelistReader(self.in_file, IONS).read_namelist('IONS')
+        return NamelistParserGeneric(self.in_file, IONS).read_namelist('IONS')
 
     def read_cell_card(self) -> Dict[str, str]:
-        return NamelistReader(self.in_file, CELL).read_namelist('CELL')
+        return NamelistParserGeneric(self.in_file, CELL).read_namelist('CELL')
 
     def build_input_tree(self):
         return {'CONTROL': self.read_control_namelist(),
@@ -25,7 +25,7 @@ class VCRelaxInputfileReader(SCFInputReader):
                 'IONS': self.read_ions_card(),
                 'CELL': self.read_cell_card(),
                 'CELL_PARAMETERS': self.read_cell_parameters(),
-                'K_POINTS': self.read_k_mesh()}
+                'K_POINTS': self.read_k_points()}
 
 
 class VCRelaxOutfileReader:

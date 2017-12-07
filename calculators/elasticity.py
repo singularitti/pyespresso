@@ -18,7 +18,7 @@ class ElasticityCalculator:
 
         :param file: a file giving an 6x6 elastic tensor under each pressure.
         """
-        eor = ElasticityOutputReader(file)
+        eor = ElasticityOutputParser(file)
         self.pressures, self.elastic_tensors = eor.read_elastic_tensor()
         self.compliance_tensors = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
 

@@ -70,7 +70,7 @@ class ReciprocalPathGenerator(PathGenerator):
             Special character, like 'Γ' in utf-8 is allowed.
             Note that if you use 'Γ' in your `inp` file, you should also use 'Γ' in `reci_path`!
         """
-        self.reci_dict: Dict[str, List[float]] = PhononOutputReader(in_file).read_q_points()
+        self.reci_dict: Dict[str, List[float]] = PhononOutputParser(in_file).read_q_points()
         self.reci_path: List[str] = reci_path.upper().replace(' ', '').split('->')
 
     def generate_q_path(self, density: Optional[IntArray], out: str) -> np.ndarray:

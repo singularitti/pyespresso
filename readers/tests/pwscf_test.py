@@ -3,22 +3,12 @@
 
 import unittest
 
-from readers.pwscf import *
-from readers.vcrelax import *
+from basics.pw_builder import *
 
 
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
-        self.pir = SCFInputReader('test')
-        self.ssi = SCFStandardInput('test')
+        self.pwsi = build_pw_input('test')
 
-    def test_build_input_object(self):
-        print('The object is:\n{0}'.format(build_input_tree('test')))
-
-
-# class TestVCRelaxInputReader(unittest.TestCase):
-#     def setUp(self):
-#         self.vir = VCRelaxInputfileReader('Fe.in')
-#
-#     def test_build_vc_relax_input_tree(self):
-#         print(self.vir.build_input_tree())
+    def test_write_to_file(self):
+        self.pwsi.write_to_file('new')

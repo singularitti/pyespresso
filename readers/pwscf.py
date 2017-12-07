@@ -1,62 +1,97 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
-import os
-
 from basics.pwscf import *
-from basics.pwscf_params import *
 from readers.simple import *
+from basics.pw_params import *
 
 # Type alias
-KMesh = NamedTuple('KMesh', [('k_grid', List[float]), ('k_shift', List[float]), ('option', str)])
+KPoints = NamedTuple('KPoints', [('grid', List[float]), ('offsets', List[float])])
+
+AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
 
 
-class SCFInputReader(SingleFileReader):
+def write_to_file(obj: object, out_file: str):
+    if isinstance(obj, PWStandardInput):
+        obj.write_to_file(out_file)
+    else:
+        raise TypeError('Input object is not an {0}!'.format('SCFStandardInput'))
+
+
+# ====================================== The followings are input readers. ======================================
+class CONTROLNamelistParser(NamelistParserGeneric):
+    def __init__(self, in_file):
+        super().__init__(in_file, CONTROLNamelist())
+
+
+class SYSTEMNamelistParser(NamelistParserGeneric):
+    def __init__(self, in_file):
+        super().__init__(in_file, SYSTEMNamelist())
+
+
+class ELECTRONSNamelistParser(NamelistParserGeneric):
+    def __init__(self, in_file):
+        super().__init__(in_file, ELECTRONSNamelist())
+
+
+class IONSNamelistParser(NamelistParserGeneric):
+    def __init__(self, in_file):
+        super().__init__(in_file, IONSNamelist())
+
+
+class CELLNamelistParser(NamelistParserGeneric):
+    def __init__(self, in_file):
+        super().__init__(in_file, CELLNamelist())
+
+
+class PWInputParser(SingleFileParser):
     """
     This class read an scf input file in, and parse it to be a tree.
     """
 
-    def read_control_namelist(self) -> Dict[str, str]:
+    def parse_control_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' card.
 
         :return: a dictionary that stores the inputted information of 'CONTROL' card
         """
-        return NamelistReader(self.in_file, CONTROL).read_namelist('CONTROL')
+        return CONTROLNamelistParser(self.in_file).read_namelist()
 
-    def read_system_namelist(self) -> Dict[str, str]:
+    def parse_system_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'SYSTEM' card.
 
         :return: a dictionary that stores the inputted information of 'SYSTEM' card
         """
-        return NamelistReader(self.in_file, SYSTEM).read_namelist('SYSTEM')
+        return SYSTEMNamelistParser(self.in_file).read_namelist()
 
-    def read_electrons_namelist(self) -> Dict[str, str]:
+    def parse_electrons_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'ELECTRONS' card.
 
         :return: a dictionary that stores the inputted information of 'ELECTRONS' card
         """
-        return NamelistReader(self.in_file, ELECTRONS).read_namelist('ELECTRONS')
+        return ELECTRONSNamelistParser(self.in_file).read_namelist()
 
-    def read_cell_parameters(self) -> np.ndarray:
+    def parse_cell_parameters(self) -> np.ndarray:
         """
         Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
         the real cell parameters!
 
         :return: a numpy array that stores the cell parameters
         """
-        cell_params = np.zeros((3, 3))
+        cell_params = np.empty((3, 3))
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'CELL_PARAMETERS' in line.upper():
                     for i in range(3):
-                        # TODO: Consider if there are blank lines
-                        cell_params[i] = np.array(strs_to_floats(f.readline().split()))
+                        line = f.readline()
+                        # if not line.strip():  # If there are blank lines
+                        #     line = f.readline()
+                        cell_params[i] = np.array(strs_to_floats(line.split()))
         return cell_params
 
-    def read_k_mesh(self) -> Optional[KMesh]:
+    def parse_k_points(self) -> Optional[KPoints]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
         If there is no 'K_POINTS' in file, it will read to end, and raise an error.
@@ -70,40 +105,39 @@ class SCFInputReader(SingleFileReader):
 
         :return: a named tuple defined above
         """
+        option = 'tbipa'
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'K_POINTS' in line.upper():
                     option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
                     sp: List[str] = f.readline().split()
                     grid = strs_to_ints(sp[0:3])
-                    shift = strs_to_ints(sp[3:7])
-                    return k_mesh(grid, shift, option)
-                else:
-                    continue
+                    offsets = strs_to_ints(sp[3:7])
+        return KPoints(grid, offsets), option
 
-    def read_atomic_species(self):
+    def parse_atomic_species(self):
         atmsp = []
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'ATOMIC_SPECIES' in line.upper():
-                    # TODO: Consider if there are blank lines
-                    for _ in range(int(self.read_system_namelist()['ntyp'])):
-                        atmsp.append(f.readline().strip().split())
+                    for _ in range(int(self.parse_system_namelist()['ntyp'])):
+                        line = f.readline()
+                        if not line.strip():
+                            line = f.readline()
+                        name, mass, pseudopotential = line.strip().split()
+                        atmsp.append(AtomicSpecies(name, mass, pseudopotential))
         return atmsp
 
-    def read_atomic_positions(self):
+    def parse_atomic_positions(self):
         atmpos = []
+        option = 'alat'
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'ATOMIC_POSITIONS' in line.upper():
                     option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
-                    # TODO: Consider if there are blank lines
-                    for _ in range(int(self.read_system_namelist()['nat'])):
+                    for _ in range(int(self.parse_system_namelist()['nat'])):
                         atmpos.append(f.readline().strip().split())
-        if option:
-            return {'ATOMIC_POSITIONS': atmpos, 'option': option}
-        else:
-            return {'ATOMIC_POSITIONS': atmpos, 'option': ''}
+        return atmpos, option
 
     def __str__(self):
         try:
@@ -115,27 +149,8 @@ class SCFInputReader(SingleFileReader):
     __repr__ = __str__
 
 
-def build_input_tree(file) -> Tree:
-    sir = SCFInputReader(file)
-    ssi = SCFStandardInput(sir.in_file)
-    ssi.control_card = sir.read_control_namelist()
-    ssi.system_card = sir.read_system_namelist()
-    ssi.electrons_card = sir.read_electrons_namelist()
-    ssi.cell_parameters = {'CELL_PARAMETERS': sir.read_cell_parameters()}
-    ssi.k_mesh = {'K_POINTS': sir.read_k_mesh()}
-    ssi.atomic_species = {'ATOMIC_SPECIES': sir.read_atomic_species()}
-    ssi.atomic_positions = sir.read_atomic_positions()
-    return ssi
-
-
-def write_to_file(obj: object, out_file: str):
-    if isinstance(obj, SCFStandardInput):
-        obj.write_to_file(out_file)
-    else:
-        print('Input object is not an {0}!'.format('SCFStandardInput'))
-
-
-class PWscfOutputReader(SingleFileReader):
+# ====================================== The followings are output readers. ======================================
+class PWscfOutputParser(SingleFileParser):
     def read_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.

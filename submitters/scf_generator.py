@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from basics.pwscf_params import *
+from basics.pw_params import *
 from miscellaneous.string import *
 
 

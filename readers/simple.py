@@ -3,8 +3,18 @@
 
 from miscellaneous.string import *
 
+# ================================= These are some type aliases or type definitions. =================================
+Namelist = TypeVar('Namelist')
 
-class SingleFileReader:
+
+def is_namelist(obj: object):
+    if hasattr(obj, 'names'):
+        return True
+    else:
+        return False
+
+
+class SingleFileParser:
     def __init__(self, in_file: str):
         """
         In our implementation, for each file, you need to generate a `SimpleRead` class to read it.
@@ -12,6 +22,7 @@ class SingleFileReader:
         :param in_file: the exact one input file for this class
         """
         self.in_file = in_file
+        self.file_content = open(in_file, 'r').read()
 
     def _match_one_string(self, pattern: str, *args):
         pass
@@ -105,20 +116,22 @@ class SingleFileReader:
 class MultipleFilesReader:
     def __init__(self, files: List[str]):
         # Construct a dictionary with file names as keys
-        self.files = {file: SingleFileReader(file) for file in files}
+        self.files = {file: SingleFileParser(file) for file in files}
 
 
-class NamelistReader:
-    def __init__(self, in_file: str, namelist: set, param: object):
+class NamelistParserGeneric:
+    def __init__(self, in_file: str, namelist: object):
         """
         Match card between card title and the following '/' character.
 
         :param in_file:
-        :param namelist: a tree of cards, each card has many names defined by Quantum ESPRESSO
+        :param namelist: a card has many names defined by Quantum ESPRESSO
         """
         self.in_file = in_file
-        self.namelist = namelist
-        self.param = param
+        if is_namelist(namelist):
+            self.namelist: Namelist = namelist
+        else:
+            raise TypeError('{0} is not a namelist!'.format(namelist))
 
     @staticmethod
     def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator[str]:
@@ -142,14 +155,15 @@ class NamelistReader:
             if section_flag:
                 yield line
 
-    def read_namelist(self, namelist_name: str) -> Dict[str, str]:
+    def read_namelist(self) -> Dict[str, str]:
         """
         A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
         Note you cannot write more than one parameter in each line!
 
-        :param namelist_name: the namelist's name, could be 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', and 'CELL'
         :return: a dictionary that stores the inputted information of the intended card
         """
+        namelist_name = self.namelist.name
+        namelist_names = self.namelist.names
         filled_namelist: dict = {}
         start_pattern = '&' + namelist_name.upper()
 
@@ -161,7 +175,7 @@ class NamelistReader:
                 k, v = s.split('=', maxsplit=1)
                 k: str = k.strip()
                 v: str = v.strip().rstrip(',').strip()  # Ignore trailing comma of the line
-                if k in self.namelist:
+                if k in namelist_names:
                     filled_namelist.update({k: v})
                 else:
                     raise KeyError("'{0}' is not a valid parameter for '{1}' namelist!".format(k, namelist_name))
