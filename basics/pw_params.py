@@ -6,9 +6,8 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
-from basics.param import *
-from miscellaneous.dictionary import merge_dicts
 from basics.lazy import CachedProperty
+from basics.parameter import *
 
 
 class CONTROLNamelist:
@@ -21,12 +20,11 @@ class CONTROLNamelist:
             'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
             'dt', 'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr',
             'disk_io', 'pseudo_dir', 'tefield', 'dipfield', 'lelfield', 'nberrycyc', 'lorbm', 'lberry', 'gdir',
-            'nppstr',
-            'lfcpopt', 'monopole'
+            'nppstr', 'lfcpopt', 'monopole'
         ]
 
     @CachedProperty
-    def param_types(self) -> List[type]:
+    def value_types(self) -> List[type]:
         return []
 
     @CachedProperty
@@ -99,42 +97,11 @@ class CELLNamelist:
         return ['cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree']
 
 
-#
-default_control = {'restart_mode': 'from_scratch',
-                   'tstress': '.true.',
-                   'tprnfor': '.true.',
-                   'verbosity': 'high'}
+class PWscfParameter(Parameter):
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value = 1
 
-#
-default_system = {'ibrav': '0'}
-
-#
-default_electrons = {'diagonalization': 'david'}
-
-# Note that `merge_dicts` will overwrite keys which have the same _name, but we do not need to worry about that here.
-default_parameters: Dict = merge_dicts(default_control, default_system, default_electrons)
-
-# A non-flattened dictionary
-default_parameters_tree: Dict[str, Dict[str, str]] = {'CONTROL': default_control, 'SYSTEM': default_system,
-                                                      'ELECTRONS': default_electrons}
-
-#
-pseudo_CONTROL = {'pseudopotential directory': 'pseudo_dir', 'scratch folder': 'outdir'}
-
-#
-pseudo_SYSTEM = {'number of atoms': 'nat', 'number of atomic INPUTPH_param_types': 'ntyp', 'energy cutoff': 'ecutwfc',
-                 'density cutoff': 'ecutrho', 'number of bands': 'nbnd'}
-
-#
-pseudo_ELECTRONS = {}
-
-#
-pseudo_K_POINTS = {'k-points': [6, 6, 6], 'shift': [1, 1, 1]}
-
-#
-pseudo_parameters: dict = merge_dicts(pseudo_CONTROL, pseudo_SYSTEM, pseudo_ELECTRONS, pseudo_K_POINTS)
-
-
-class PWscfParam(Param):
-    def __init__(self, name: str, raw_value: str):
-        super().__init__(name, raw_value, {})
+    @property
+    def default_value(self):
+        return self._default_value

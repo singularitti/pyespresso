@@ -125,7 +125,7 @@ class PWInputParser(SingleFileParser):
                         if not line.strip():
                             line = f.readline()
                         name, mass, pseudopotential = line.strip().split()
-                        atmsp.append(AtomicSpecies(name, mass, pseudopotential))
+                        atmsp.append(AtomicSpecies(name, float(mass), pseudopotential))
         return atmsp
 
     def parse_atomic_positions(self):

@@ -13,6 +13,25 @@ AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
 AtomicPositions = namedtuple('AtomicPositions', ['name', 'positions'])
 
 
+def is_pw_input(obj: object):
+    if all(hasattr(obj, attr) for attr in
+           ['CONTROL', 'SYSTEM', 'ELECTRONS', 'CELL_PARAMETERS']):
+        return True
+    else:
+        return False
+
+
+def print_pw_input(obj: object):
+    if is_pw_input(obj):
+        try:
+            from beeprint import pp
+            pp(obj)
+        except ModuleNotFoundError:
+            print(obj)
+    else:
+        raise TypeError('{0} is not a pw input object!'.format(obj))
+
+
 class PWStandardInput:
     def __init__(self):
         self._control_namelist: Dict[str, Any] = {}
@@ -27,94 +46,94 @@ class PWStandardInput:
         self._k_points_option: str = ''
 
     @property
-    def control_namelist(self):
+    def CONTROL(self):
         return self._control_namelist
 
-    @control_namelist.setter
-    def control_namelist(self, d: dict):
+    @CONTROL.setter
+    def CONTROL(self, d: dict):
         self._control_namelist.update(d)
 
     @property
-    def system_namelist(self):
+    def SYSTEM(self):
         return self._system_namelist
 
-    @system_namelist.setter
-    def system_namelist(self, d: dict):
+    @SYSTEM.setter
+    def SYSTEM(self, d: dict):
         self._system_namelist.update(d)
 
     @property
-    def electrons_namelist(self):
+    def ELECTRONS(self):
         return self._electrons_namelist
 
-    @electrons_namelist.setter
-    def electrons_namelist(self, d: dict):
+    @ELECTRONS.setter
+    def ELECTRONS(self, d: dict):
         self._electrons_namelist.update(d)
 
     @property
-    def cell_parameters(self) -> np.ndarray:
+    def CELL_PARAMETERS(self) -> np.ndarray:
         return self._cell_parameters
 
-    @cell_parameters.setter
-    def cell_parameters(self, cell_parameters: np.ndarray):
+    @CELL_PARAMETERS.setter
+    def CELL_PARAMETERS(self, cell_parameters: np.ndarray):
         self._cell_parameters = cell_parameters
 
     @property
-    def atomic_species(self) -> List[NamedTuple]:
+    def ATOMIC_SPECIES(self) -> List[NamedTuple]:
         return self._atomic_species
 
-    @atomic_species.setter
-    def atomic_species(self, atomic_species: List[NamedTuple]):
+    @ATOMIC_SPECIES.setter
+    def ATOMIC_SPECIES(self, atomic_species: List[NamedTuple]):
         self._atomic_species = atomic_species
 
     @property
-    def atomic_positions(self) -> List[NamedTuple]:
+    def ATOMIC_POSITIONS(self) -> List[NamedTuple]:
         return self._atomic_positions
 
-    @atomic_positions.setter
-    def atomic_positions(self, atomic_positions: List[NamedTuple]):
+    @ATOMIC_POSITIONS.setter
+    def ATOMIC_POSITIONS(self, atomic_positions: List[NamedTuple]):
         self._atomic_positions = atomic_positions
 
     @property
-    def k_points(self) -> NamedTuple:
+    def K_POINTS(self) -> NamedTuple:
         return self._k_points
 
-    @k_points.setter
-    def k_points(self, k_points: NamedTuple):
+    @K_POINTS.setter
+    def K_POINTS(self, k_points: NamedTuple):
         self._k_points = k_points
 
     @property
-    def atomic_positions_option(self) -> str:
+    def ATOMIC_POSITIONS_option(self) -> str:
         if self._atomic_positions_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
         return self._atomic_positions_option
 
-    @atomic_positions_option.setter
-    def atomic_positions_option(self, option: str):
+    @ATOMIC_POSITIONS_option.setter
+    def ATOMIC_POSITIONS_option(self, option: str):
         if self._atomic_positions_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
         self._atomic_positions_option = option
 
     @property
-    def k_points_option(self) -> str:
+    def K_POINTS_option(self) -> str:
         return self._k_points_option
 
-    @k_points_option.setter
-    def k_points_option(self, option: str):
+    @K_POINTS_option.setter
+    def K_POINTS_option(self, option: str):
         self._k_points_option = option
 
     def write_to_file(self, out_file: str):
         k_points = self._k_points
         with open(out_file, 'w') as f:
             f.write("&CONTROL\n")
-            for k, v in self.control_namelist.items():
+            for k, v in self.CONTROL.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&SYSTEM\n")
-            for k, v in self.system_namelist.items():
+            for k, v in self.SYSTEM.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&ELECTRONS\n")
-            for k, v in self.electrons_namelist.items():
+            for k, v in self.ELECTRONS.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\nCELL_PARAMETERS\n")
             f.write(
@@ -124,7 +143,7 @@ class PWStandardInput:
             )
             f.write("\nATOMIC_SPECIES\n")
             for row in self._atomic_species:
-                f.write(' '.join(row))
+                f.write(' '.join(map(str, row)))
                 f.write("\n")
             f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self._atomic_positions_option))
             for row in self._atomic_positions:

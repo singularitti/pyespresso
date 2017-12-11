@@ -64,8 +64,11 @@ def print_cell(cell: Union[Cell, SimpleCell]) -> None:
     :return: None.
     """
     if is_cell(cell) or is_simple_cell(cell):
-        from beeprint import pp
-        pp(cell)
+        try:
+            from beeprint import pp
+            pp(cell)
+        except ModuleNotFoundError:
+            print(cell)
     else:
         raise TypeError('{0} is not a cell!'.format(cell))
 

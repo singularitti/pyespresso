@@ -4,6 +4,7 @@
 import unittest
 
 from basics.pw_builder import *
+from basics.pwscf import *
 
 
 class TestPWscfInputReader(unittest.TestCase):
@@ -12,3 +13,6 @@ class TestPWscfInputReader(unittest.TestCase):
 
     def test_write_to_file(self):
         self.pwsi.write_to_file('new')
+
+    def test_print_pw_input(self):
+        print_pw_input(self.pwsi)
