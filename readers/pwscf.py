@@ -21,27 +21,27 @@ def write_to_file(obj: object, out_file: str):
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, CONTROLNamelist())
+        super().__init__(in_file, CONTROLNamelist)
 
 
 class SYSTEMNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, SYSTEMNamelist())
+        super().__init__(in_file, SYSTEMNamelist)
 
 
 class ELECTRONSNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, ELECTRONSNamelist())
+        super().__init__(in_file, ELECTRONSNamelist)
 
 
 class IONSNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, IONSNamelist())
+        super().__init__(in_file, IONSNamelist)
 
 
 class CELLNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, CELLNamelist())
+        super().__init__(in_file, CELLNamelist)
 
 
 class PWInputParser(SingleFileParser):
@@ -113,7 +113,7 @@ class PWInputParser(SingleFileParser):
                     sp: List[str] = f.readline().split()
                     grid = strs_to_ints(sp[0:3])
                     offsets = strs_to_ints(sp[3:7])
-        return KPoints(grid, offsets), option
+        return KPoints(grid=grid, offsets=offsets), option
 
     def parse_atomic_species(self):
         atmsp = []

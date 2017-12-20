@@ -8,7 +8,7 @@ Namelist = TypeVar('Namelist')
 
 
 def is_namelist(obj: object):
-    if hasattr(obj, 'names'):
+    if hasattr(obj, 'name') and hasattr(obj, 'keys'):
         return True
     else:
         return False
@@ -163,7 +163,7 @@ class NamelistParserGeneric:
         :return: a dictionary that stores the inputted information of the intended card
         """
         namelist_name = self.namelist.name
-        namelist_names = self.namelist.names
+        namelist_keys = self.namelist.keys
         filled_namelist: dict = {}
         start_pattern = '&' + namelist_name.upper()
 
@@ -175,7 +175,14 @@ class NamelistParserGeneric:
                 k, v = s.split('=', maxsplit=1)
                 k: str = k.strip()
                 v: str = v.strip().rstrip(',').strip()  # Ignore trailing comma of the line
-                if k in namelist_names:
+                # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we neet to
+                # separate them.
+                if '(' in k:
+                    # Only take part before '('
+                    k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
+                else:
+                    k_prefix = k
+                if k_prefix in namelist_keys:
                     filled_namelist.update({k: v})
                 else:
                     raise KeyError("'{0}' is not a valid parameter for '{1}' namelist!".format(k, namelist_name))

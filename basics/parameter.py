@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # created at Nov 20, 2017 8:18 PM by Qi Zhang
 
+from collections import namedtuple
 from typing import *
 
+Namelist = namedtuple('Namelist', ['name', 'keys'])
 
-def _str_to_str(x: str):
+
+def _str_to_QE_str(x: str):
     return x
 
 
-def _float_to_str(x: float):
+def _float_to_QE_str(x: float):
     return str(x)
 
 
-def _bool_to_str(x: bool) -> str:
+def _bool_to_QE_str(x: bool) -> str:
     if x:
         return '.true.'
     elif not x:
@@ -21,7 +24,7 @@ def _bool_to_str(x: bool) -> str:
         raise TypeError('Input type unknown!')
 
 
-def _int_to_str(x: int) -> str:
+def _int_to_QE_str(x: int) -> str:
     return str(x)
 
 
@@ -69,9 +72,11 @@ class Parameter:
         """
         return self._type
 
-    def to_QE_style(self) -> str:
-        recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_str, int: _int_to_str,
-                                                                      float: _float_to_str, bool: _bool_to_str}
+    def to_QE_str(self) -> str:
+        recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_QE_str,
+                                                                      int: _int_to_QE_str,
+                                                                      float: _float_to_QE_str,
+                                                                      bool: _bool_to_QE_str}
         return recipe[self.type](self.value)
 
     def __str__(self) -> str:
