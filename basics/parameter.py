@@ -29,7 +29,7 @@ def _int_to_QE_str(x: int) -> str:
 
 
 class Parameter:
-    def __init__(self, name: str, value: Union[str, int, float, bool]):
+    def __init__(self, name: str, value: Union[str, int, float, bool], value_type: Type[Union[str, int, float, bool]]):
         """
         Generate an `Parameter` object, which stores user given name, and value.
 
@@ -39,7 +39,7 @@ class Parameter:
         """
         self._name = name
         self._value = value
-        self._type = type(value)
+        self._type = value_type
 
     @property
     def name(self) -> str:

@@ -6,28 +6,42 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
+from collections import defaultdict
+from typing import DefaultDict, Type, Union, Tuple
+
 from basics.parameter import Parameter, Namelist
 
+# Type alias
+DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
+
+# This is a list of names for 'CONTROL' namelist.
 CONTROL_names = [
     'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor', 'dt',
     'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr', 'disk_io',
     'pseudo_dir', 'tefield', 'dipfield', 'lelfield', 'nberrycyc', 'lorbm', 'lberry', 'gdir', 'nppstr', 'lfcpopt', 'gate'
 ]
 
+# This is a list of QE default values for 'CONTROL' namelist.
 CONTROL_default_values = [
     'scf', ' ', 'low', 'from_scratch', True, 1, 1, False, False, 20.0e0,
     './', './', 'pwscf', True, 1.0e7, 1.0e-4, 1.0e-3, 'medium',
     '$ESPRESSO_PSEUDO', False, False, False, 1, False, False, 1, 1, False, False
 ]
 
+# This is a list of types of each default value for 'CONTROL' namelist.
 CONTROL_value_types = [type(x) for x in CONTROL_default_values]
 
-_CONTROL_default_parameters = dict(zip(CONTROL_names, CONTROL_default_values))
+# This is a `DefaultDict` of `(QE default value, types of each default value)` tuples for 'CONTROL' namelist, with those
+# names to be its keys.
+CONTROL_default_parameters: DefaultParameters = defaultdict(tuple)
+for i, k in enumerate(CONTROL_names):
+    CONTROL_default_parameters[k] = (CONTROL_default_values[i], CONTROL_value_types[i])
 
-CONTROLNamelist = Namelist(name='CONTROL', keys=CONTROL_names)
+# This is a `NamedTuple` for 'CONTROL' namelist.
+CONTROLNamelist = Namelist(name='CONTROL', keys=set(CONTROL_names))
 # =================================== I am a cut line ===================================
 
-SYSTEM_keys = [
+SYSTEM_names = [
     'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat', 'ntyp', 'nbnd', 'tot_charge', 'starting_charge',
     'tot_magnetization', 'starting_magnetization', 'ecutwfc', 'ecutrho', 'ecutfock', 'nr1', 'nr2', 'nr3', 'nr1s',
     'nr2s', 'nr3s', 'nosym', 'nosym_evc', 'noinv', 'no_t_rev', 'force_symmorphic', 'use_all_frac', 'occupations',
@@ -42,14 +56,16 @@ SYSTEM_keys = [
     'block_2', 'block_height'
 ]
 
-SYSTEM_default_values = [0 for _ in range(len(SYSTEM_keys))]
+SYSTEM_default_values = [0 for _ in range(len(SYSTEM_names))]
 
-_SYSTEM_default_parameters = dict(zip(SYSTEM_keys, SYSTEM_default_values))
+SYSTEM_default_parameters: DefaultParameters = dict(zip(SYSTEM_names, SYSTEM_default_values))
+for i, k in enumerate(SYSTEM_default_parameters):
+    SYSTEM_default_parameters[k] = (SYSTEM_default_values[i], SYSTEM_default_parameters[i])
 
-SYSTEMNamelist = Namelist(name='SYSTEM', keys=SYSTEM_keys)
+SYSTEMNamelist = Namelist(name='SYSTEM', keys=set(SYSTEM_names))
 # =================================== I am a cut line ===================================
 
-ELECTRONS_keys = [
+ELECTRONS_names = [
     'electron_maxstep', 'scf_must_converge', 'conv_thr', 'adaptive_thr', 'conv_thr_init', 'conv_thr_multi',
     'mixing_mode', 'mixing_beta', 'mixing_ndim', 'mixing_fixed_ns', 'diagonalization', 'ortho_para', 'diago_thr_init',
     'diago_cg_maxiter', 'diago_david_ndim', 'diago_full_acc', 'efield', 'efield_cart', 'efield_phase', 'startingpot',
@@ -65,12 +81,14 @@ ELECTRONS_default_values = [
 
 ELECTRONS_value_types = [type(x) for x in ELECTRONS_default_values]
 
-_ELECTRONS_default_parameters = dict(zip(ELECTRONS_keys, ELECTRONS_default_values))
+ELECTRONS_default_parameters: DefaultParameters = dict(zip(ELECTRONS_names, ELECTRONS_default_values))
+for i, k in enumerate(ELECTRONS_names):
+    ELECTRONS_default_parameters[k] = (ELECTRONS_default_values[i], ELECTRONS_value_types[i])
 
-ELECTRONSNamelist = Namelist(name='ELECTRONS', keys=ELECTRONS_keys)
+ELECTRONSNamelist = Namelist(name='ELECTRONS', keys=set(ELECTRONS_names))
 # =================================== I am a cut line ===================================
 
-IONS_keys = [
+IONS_names = [
     'ion_dynamics', 'ion_positions', 'pot_extrapolation', 'wfc_extrapolation', 'remove_rigid_rot', 'ion_temperature',
     'tempw', 'tolp', 'delta_t', 'nraise', 'refold_pos', 'upscale', 'bfgs_ndim', 'trust_radius_max', 'trust_radius_min',
     'trust_radius_ini', 'w_1', 'w_2'
@@ -84,52 +102,93 @@ IONS_default_values = [
 
 IONS_value_types = [type(x) for x in IONS_default_values]
 
-_IONS_default_parameters = dict(zip(IONS_keys, IONS_default_values))
+IONS_default_parameters: DefaultParameters = defaultdict(tuple)
+for i, k in enumerate(IONS_names):
+    IONS_default_parameters[k] = (IONS_default_values[i], IONS_value_types[i])
 
-IONSNamelist = Namelist(name='IONS', keys=IONS_keys)
+IONSNamelist = Namelist(name='IONS', keys=set(IONS_names))
 # =================================== I am a cut line ===================================
 
-CELL_keys = ['cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree']
+CELL_names = ['cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree']
 
 CELL_default_values = ['none', 0.0e0, 0.001, 2.0, 0.5e0, 'all']
 
 CELL_value_types = [type(x) for x in CELL_default_values]
 
-_CELL_default_parameters = dict(zip(CELL_keys, CELL_default_values))
+CELL_default_parameters: DefaultParameters = defaultdict(tuple)
+for i, k in enumerate(CELL_names):
+    CELL_default_parameters[k] = (CELL_default_values[i], CELL_value_types[i])
 
-CELLNamelist = Namelist(name='CELL', keys=CELL_keys)
+CELLNamelist = Namelist(name='CELL', keys=set(CELL_names))
 
 
+# =================================== I am a cut line ===================================
 class PWParameterGeneric(Parameter):
+    """
+    This is a generic for building a parameter for one of 'CONTROL', 'SYSTEM', `ELECTRONS`, `IONS`, or `CELL` namelists.
+    You only need to provide the name of your parameter, the value of it, and the parameter `dict` it belongs to.
+    """
+
     def __init__(self, name: str, value: str, default_parameters: dict):
-        super().__init__(name, value)
-        self._default_value = default_parameters[name]
+        default_parameter = default_parameters[name]
+        super().__init__(name, value, default_parameter[1])
+        self._default_value = default_parameter[0]
 
     @property
     def default_value(self):
+        """
+        Return the default value defined by Quantum ESPRESSO.
+
+        :return: The default value defined by Quantum ESPRESSO.
+        """
         return self._default_value
 
 
 class CONTROLParameter(PWParameterGeneric):
+    """
+    To build a parameter for 'CONTROL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, _CONTROL_default_parameters)
+        super().__init__(name, value, CONTROL_default_parameters)
 
 
 class SYSTEMParameter(PWParameterGeneric):
+    """
+    To build a parameter for 'SYSTEM' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, _SYSTEM_default_parameters)
+        super().__init__(name, value, SYSTEM_default_parameters)
 
 
 class ELECTRONSParameter(PWParameterGeneric):
+    """
+    To build a parameter for 'ELECTRONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, _ELECTRONS_default_parameters)
+        super().__init__(name, value, ELECTRONS_default_parameters)
 
 
 class IONSParameter(PWParameterGeneric):
+    """
+    To build a parameter for 'IONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, _IONS_default_parameters)
+        super().__init__(name, value, IONS_default_parameters)
 
 
 class CELLParameter(PWParameterGeneric):
+    """
+    To build a parameter for 'CELL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, _CELL_default_parameters)
+        super().__init__(name, value, CELL_default_parameters)

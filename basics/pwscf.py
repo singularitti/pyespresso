@@ -34,97 +34,97 @@ def print_pw_input(obj: object):
 
 class PWStandardInput:
     def __init__(self):
-        self._control_namelist: Dict[str, Any] = {}
-        self._system_namelist: Dict[str, Any] = {}
-        self._electrons_namelist: Dict[str, Any] = {}
-        self._cell_parameters: np.ndarray = np.empty((3, 3))
-        self._k_points: NamedTuple = None
-        self._atomic_species: List[NamedTuple] = []
-        self._atomic_positions: List[NamedTuple] = []
-        self._cell_parameters_option: str = ''
-        self._atomic_positions_option: str = ''
-        self._k_points_option: str = ''
+        self._CONTROL: Dict[str, Any] = {}
+        self._SYSTEM: Dict[str, Any] = {}
+        self._ELECTRON: Dict[str, Any] = {}
+        self._CELL_PARAMETERS: np.ndarray = np.empty((3, 3))
+        self._K_POINTS: NamedTuple = None
+        self._ATOMIC_SPECIES: List[NamedTuple] = []
+        self._ATOMIC_POSITIONS: List[NamedTuple] = []
+        self._CELL_PARAMETERS_option: str = ''
+        self._ATOMIC_POSITIONS_option: str = ''
+        self._K_POINTS_option: str = ''
 
     @property
     def CONTROL(self):
-        return self._control_namelist
+        return self._CONTROL
 
     @CONTROL.setter
     def CONTROL(self, d: dict):
-        self._control_namelist.update(d)
+        self._CONTROL.update(d)
 
     @property
     def SYSTEM(self):
-        return self._system_namelist
+        return self._SYSTEM
 
     @SYSTEM.setter
     def SYSTEM(self, d: dict):
-        self._system_namelist.update(d)
+        self._SYSTEM.update(d)
 
     @property
     def ELECTRONS(self):
-        return self._electrons_namelist
+        return self._ELECTRON
 
     @ELECTRONS.setter
     def ELECTRONS(self, d: dict):
-        self._electrons_namelist.update(d)
+        self._ELECTRON.update(d)
 
     @property
     def CELL_PARAMETERS(self) -> np.ndarray:
-        return self._cell_parameters
+        return self._CELL_PARAMETERS
 
     @CELL_PARAMETERS.setter
     def CELL_PARAMETERS(self, cell_parameters: np.ndarray):
-        self._cell_parameters = cell_parameters
+        self._CELL_PARAMETERS = cell_parameters
 
     @property
     def ATOMIC_SPECIES(self) -> List[NamedTuple]:
-        return self._atomic_species
+        return self._ATOMIC_SPECIES
 
     @ATOMIC_SPECIES.setter
     def ATOMIC_SPECIES(self, atomic_species: List[NamedTuple]):
-        self._atomic_species = atomic_species
+        self._ATOMIC_SPECIES = atomic_species
 
     @property
     def ATOMIC_POSITIONS(self) -> List[NamedTuple]:
-        return self._atomic_positions
+        return self._ATOMIC_POSITIONS
 
     @ATOMIC_POSITIONS.setter
     def ATOMIC_POSITIONS(self, atomic_positions: List[NamedTuple]):
-        self._atomic_positions = atomic_positions
+        self._ATOMIC_POSITIONS = atomic_positions
 
     @property
     def K_POINTS(self) -> NamedTuple:
-        return self._k_points
+        return self._K_POINTS
 
     @K_POINTS.setter
     def K_POINTS(self, k_points: NamedTuple):
-        self._k_points = k_points
+        self._K_POINTS = k_points
 
     @property
     def ATOMIC_POSITIONS_option(self) -> str:
-        if self._atomic_positions_option == 'alat':
+        if self._ATOMIC_POSITIONS_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
-        return self._atomic_positions_option
+        return self._ATOMIC_POSITIONS_option
 
     @ATOMIC_POSITIONS_option.setter
     def ATOMIC_POSITIONS_option(self, option: str):
-        if self._atomic_positions_option == 'alat':
+        if self._ATOMIC_POSITIONS_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
-        self._atomic_positions_option = option
+        self._ATOMIC_POSITIONS_option = option
 
     @property
     def K_POINTS_option(self) -> str:
-        return self._k_points_option
+        return self._K_POINTS_option
 
     @K_POINTS_option.setter
     def K_POINTS_option(self, option: str):
-        self._k_points_option = option
+        self._K_POINTS_option = option
 
     def write_to_file(self, out_file: str):
-        k_points = self._k_points
+        k_points = self._K_POINTS
         with open(out_file, 'w') as f:
             f.write("&CONTROL\n")
             for k, v in self.CONTROL.items():
@@ -138,17 +138,17 @@ class PWStandardInput:
             f.write("/\nCELL_PARAMETERS\n")
             f.write(
                 re.sub("[\[\]]", ' ',
-                       np.array2string(self._cell_parameters,
+                       np.array2string(self._CELL_PARAMETERS,
                                        formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
             )
             f.write("\nATOMIC_SPECIES\n")
-            for row in self._atomic_species:
+            for row in self._ATOMIC_SPECIES:
                 f.write(' '.join(map(str, row)))
                 f.write("\n")
-            f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self._atomic_positions_option))
-            for row in self._atomic_positions:
+            f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self._ATOMIC_POSITIONS_option))
+            for row in self._ATOMIC_POSITIONS:
                 f.write(' '.join(row))
                 f.write("\n")
-            f.write("K_POINTS {{ {0} }}\n".format(self._k_points_option))
+            f.write("K_POINTS {{ {0} }}\n".format(self._K_POINTS_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
         print("Object is written to file '{0}'!".format(out_file))

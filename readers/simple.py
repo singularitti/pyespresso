@@ -157,7 +157,7 @@ class NamelistParserGeneric:
 
     def read_namelist(self) -> Dict[str, str]:
         """
-        A generic method to read `CONTROL`, `SYSTEM`, `ELECTRONS`, `IONS`, `CELL` cards.
+        A generic method to read a namelist.
         Note you cannot write more than one parameter in each line!
 
         :return: a dictionary that stores the inputted information of the intended card
@@ -178,7 +178,7 @@ class NamelistParserGeneric:
                 # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we neet to
                 # separate them.
                 if '(' in k:
-                    # Only take part before '('
+                    # Only take the part before the first '('
                     k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
                 else:
                     k_prefix = k
