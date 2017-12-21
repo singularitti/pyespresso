@@ -92,7 +92,7 @@ def str_to_float(s: str) -> float:
     if 'D' in s.upper():  # Possible double precision number
         try:
             return str_to_double_precision_float(s)
-        except AttributeError:
+        except ValueError:
             raise ValueError("The string '{0}' does not corresponds to a double precision number!".format(s))
     else:
         return float(s)

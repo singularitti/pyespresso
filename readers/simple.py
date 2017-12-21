@@ -8,7 +8,7 @@ Namelist = TypeVar('Namelist')
 
 
 def is_namelist(obj: object):
-    if hasattr(obj, 'name') and hasattr(obj, 'keys'):
+    if hasattr(obj, 'names') and hasattr(obj, 'default_values') and hasattr(obj, 'value_types'):
         return True
     else:
         return False
@@ -162,10 +162,9 @@ class NamelistParserGeneric:
 
         :return: a dictionary that stores the inputted information of the intended card
         """
-        namelist_name = self.namelist.name
-        namelist_keys = self.namelist.keys
+        namelist_names = set(self.namelist.names)
         filled_namelist: dict = {}
-        start_pattern = '&' + namelist_name.upper()
+        start_pattern = '&' + self.namelist.__name__.upper()
 
         with open(self.in_file, 'r') as f:
             generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
@@ -182,9 +181,9 @@ class NamelistParserGeneric:
                     k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
                 else:
                     k_prefix = k
-                if k_prefix in namelist_keys:
+                if k_prefix in namelist_names:
                     filled_namelist.update({k: v})
                 else:
-                    raise KeyError("'{0}' is not a valid parameter for '{1}' namelist!".format(k, namelist_name))
+                    raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.__name__))
 
         return filled_namelist

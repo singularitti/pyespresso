@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # created at Dec 7, 2017 1:46 AM by Qi Zhang
 
-from basics.pwscf import PWStandardInput
-from readers.pwscf import PWInputParser
 from basics.pw_params import *
+from basics.pwscf import PWStandardInput
 from miscellaneous.string import *
+from readers.pwscf import PWInputParser
 
 
 def build_pw_input(in_file: str) -> PWStandardInput:
@@ -55,18 +55,42 @@ class PWInputFancier:
 
     def fancy_CONTROL(self):
         d = {}
+        CONTROL_default_parameters = CONTROL_namelist.default_parameters
         for k, v in self.pw.CONTROL.items():
-            if CONTROL_values[k][1] is float:
+            if CONTROL_default_parameters[k][1] is float:
                 d.update({k: str_to_float(v)})
             else:
-                d.update({k: CONTROL_values[k][1](v)})
+                d.update({k: CONTROL_default_parameters[k][1](v)})
+        return d
+
+    def fancy_SYSTEM(self):
+        d = {}
+        SYSTEM_default_parameters = SYSTEM_namelist.default_parameters
+        for k, v in self.pw.SYSTEM.items():
+            if '(' in k:
+                # Only take the part before the first '('
+                k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
+            else:
+                k_prefix = k
+            print(k_prefix)
+            if SYSTEM_default_parameters[k_prefix][1] is float:
+                d.update({k: str_to_float(v)})
+            else:
+                d.update({k: SYSTEM_default_parameters[k_prefix][1](v)})
         return d
 
     def fancy_ELECTRONS(self):
         d = {}
+        ELECTRONS_default_parameters = ELECTRONS_namelist.default_parameters
         for k, v in self.pw.ELECTRONS.items():
-            if CONTROL_values[k][1] is float:
+            if ELECTRONS_default_parameters[k][1] is float:
                 d.update({k: str_to_float(v)})
             else:
-                d.update({k: CONTROL_values[k][1](v)})
+                d.update({k: ELECTRONSParameter(k, v)})
         return d
+
+    def fancy_input(self):
+        self.pw.CONTROL = self.fancy_CONTROL()
+        self.pw.SYSTEM = self.fancy_SYSTEM()
+        self.pw.ELECTRONS = self.fancy_ELECTRONS()
+        return self.pw

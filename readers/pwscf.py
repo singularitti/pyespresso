@@ -21,27 +21,27 @@ def write_to_file(obj: object, out_file: str):
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, CONTROLNamelist)
+        super().__init__(in_file, CONTROL_namelist)
 
 
 class SYSTEMNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, SYSTEMNamelist)
+        super().__init__(in_file, SYSTEM_namelist)
 
 
 class ELECTRONSNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, ELECTRONSNamelist)
+        super().__init__(in_file, ELECTRONS_namelist)
 
 
 class IONSNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, IONSNamelist)
+        super().__init__(in_file, IONS_namelist)
 
 
 class CELLNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, CELLNamelist)
+        super().__init__(in_file, CELL_namelist)
 
 
 class PWInputParser(SingleFileParser):

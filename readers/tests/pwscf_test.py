@@ -3,29 +3,34 @@
 
 import unittest
 
+from beeprint import pp
+
 from basics.pw_builder import *
 from basics.pwscf import *
 
-import pprint
 
-pp = pprint.PrettyPrinter(indent=4)
+# pp = pprint.PrettyPrinter(indent=4)
 
 
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
         self.pwsi = build_pw_input('test')
+        # pp(self.pwsi)
         self.fancy = PWInputFancier(self.pwsi)
 
     def test_write_to_file(self):
         self.pwsi.write_to_file('new')
 
-    # def test_print_pw_input(self):
-    #     print_pw_input(self.pwsi)
+    def test_print_pw_input(self):
+        print_pw_input(self.pwsi)
 
     def test_fancy_CONTROL(self):
         s = self.fancy.fancy_CONTROL()
-        pp.pprint(s)
+        pp(s)
 
     def test_fancy_ELECTRONS(self):
         s = self.fancy.fancy_ELECTRONS()
-        pp.pprint(s)
+        print(s)
+
+    def test_fancy_input(self):
+        pp(self.fancy.fancy_input())
