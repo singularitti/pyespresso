@@ -41,6 +41,8 @@ class Parameter:
         self._name = name
         self._value = value
         self._type = value_type
+        self._default_value = None
+        self._in_namelist = None
 
     @property
     def name(self) -> str:
@@ -52,7 +54,7 @@ class Parameter:
         return self._name
 
     @property
-    def value(self) -> str:
+    def value(self) -> Union[str, int, float, bool]:
         """
         Raw value given by the user, should be a string.
 
@@ -72,6 +74,26 @@ class Parameter:
         :return:
         """
         return self._type
+
+    @property
+    def default_value(self) -> Union[str, int, float, bool]:
+        """
+        The default value given by Quantum ESPRESSO.
+        Read-only property.
+
+        :return: the default value given by Quantum ESPRESSO
+        """
+        return self._default_value
+
+    @property
+    def in_namelist(self) -> str:
+        """
+        Return the namelist the parameter is in.
+        Read-only property.
+
+        :return: namelist's name
+        """
+        return self._in_namelist
 
     def to_QE_str(self) -> str:
         recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_QE_str,

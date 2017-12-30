@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 # created at Dec 3, 2017 10:46 PM by Qi Zhang
 
+import os
+import re
+
 import numpy as np
-from basics.lazy import CachedProperty
 
 
 class PHononStandaradInput:
     def __init__(self):
-        self._title: str = ''
+        self.__name__ = 'PHononStandaradInput'
+        self.__title__: str = ''
         self._INPUTPH_namelist: dict = {}
-        self._phonon_wavevector: np.ndarray = np.empty(3)
-        self._q_points: np.ndarray = np.empty(4)
+        self._single_q_point = None
+        self._q_points = None
 
-    @CachedProperty
+    @property
     def title(self):
-        return self._title
+        return self.__title__
 
     @title.setter
     def title(self, title: str):
-        self._title = title
+        self.__title__ = title
 
-    @CachedProperty
+    @property
     def INPUTPH_namelist(self):
         return self._INPUTPH_namelist
 
@@ -28,15 +31,15 @@ class PHononStandaradInput:
     def INPUTPH_namelist(self, d: dict):
         self._INPUTPH_namelist.update(d)
 
-    @CachedProperty
-    def phonon_wavevector(self):
-        return self._phonon_wavevector
+    @property
+    def single_q_point(self):
+        return self._single_q_point
 
-    @phonon_wavevector.setter
-    def phonon_wavevector(self, wavevector: np.ndarray):
-        self._phonon_wavevector = wavevector
+    @single_q_point.setter
+    def single_q_point(self, q_point: np.ndarray):
+        self._single_q_point = q_point
 
-    @CachedProperty
+    @property
     def q_points(self):
         return self._q_points
 
@@ -46,8 +49,19 @@ class PHononStandaradInput:
 
     def write_to_file(self, out_file: str):
         with open(out_file, 'w') as f:
-            f.write(self._title)
+            f.write(self.__title__)
             f.write("/\n&INPUTPH\n")
             for k, v in self._INPUTPH_namelist.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n")
+            if self._single_q_point:
+                f.write(' '.join(self._single_q_point))
+                f.write("\n")
+            elif self._q_points:
+                f.write(
+                    re.sub("[\[\]]", ' ',
+                           np.array2string(self._q_points,
+                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
+                )
+            else:
+                print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(out_file)))

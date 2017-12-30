@@ -22,7 +22,7 @@ class SingleFileParser:
         :param in_file: the exact one input file for this class
         """
         self.in_file = in_file
-        self.file_content = open(in_file, 'r').read()
+        self.file_content = open(in_file, 'r').readlines()
 
     def _match_one_string(self, pattern: str, *args):
         pass

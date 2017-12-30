@@ -3,59 +3,61 @@
 
 import numpy as np
 
-from basics.phonon_params import INPUTPH_keys
+from basics.phonon_params import INPUTPH_namelist
 from readers.simple import *
-from basics.phonon_params import PhononParam
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class PhononInputReader(NamelistParserGeneric):
+class INPUTPHNamelistParser(NamelistParserGeneric):
     def __init__(self, in_file):
-        super().__init__(in_file, INPUTPH_keys, PhononParam)
+        super().__init__(in_file, INPUTPH_namelist)
 
-    def read_INPUTPH_namelist(self) -> Dict[str, str]:
-        return self.read_namelist('INPUTPH')
 
-    def read_line_of_input(self):
+class PHononInputParser(SingleFileParser):
+    def parse_title(self) -> str:
+        """
+        Read the first non-empty line as the title of the file.
+
+        :return: The title of the file.
+        """
+        end_index = None
+        for i, line in enumerate(self.file_content):
+            if '&' in line:
+                end_index = i
+        return next(s for s in self.file_content[0:end_index] if s)
+
+    def parse_INPUTPH_namelist(self):
+        return INPUTPHNamelistParser(self.in_file).read_namelist()
+
+    def parse_single_q_point(self) -> Optional[np.ndarray]:
         with open(self.in_file, 'r') as f:
             for line in f:
-                if line.strip().startswith('/'):  # Find the end of 'INPUTPH' card
-                    line = f.readline()
-                    if len(line.strip().split()) == 3:
-                        if self.card['ldisp'] == '.false.' and self.card['qplot'] == '.false.':
-                            xq = list(map(float, line.split()))
-                            self.__dict__['xq'] = xq
-                            return xq
-                        else:
-                            raise ValueError('xq(1), xq(2), xq(3) are given but `ldisp=.true.` or `qplot=.true.`!')
-                    elif len(line.strip().split()) == 1:
-                        q_points = []
-                        if self.card['qplot'] == '.true.':
-                            q_points_num = int(line.strip().split()[0])
-                            for _ in range(q_points_num):
-                                line = f.readline()
-                                q_points.append(list(map(float, line.strip().split())))
-                                self.__dict__['q-points'] = q_points
-                                return q_points
-                        else:
-                            raise ValueError("Number of q-points is given but `qplot` is not '.true.'!")
-
-    def read_phonon_wavevector(self):
-        with open(self.in_file, 'r') as f:
-            for line in f:
+                print(line)
+                # If a line does not start with '/' (the end of 'INPUTPH' namelist),
+                # read next line immediately. If a '/' is met, execute `else` clause.
+                if not line.startswith('/'):
+                    break
+            else:
+                # Read next line, and parse the 3 q point coordinates.
+                line = f.readline()
                 if len(line.strip().split()) == 3:
-                    return strs_to_floats(line.strip().split())
+                    return np.array(strs_to_floats(line.strip().split()))
 
-    def read_q_points(self):
-        flag = False
+    def parse_q_points(self):
         with open(self.in_file, 'r') as f:
             for line in f:
+                if not line.startswith('/'):
+                    break
+            else:
+                line = f.readline()
                 if len(line.strip().split()) == 1:
-                    f.readline()
-                    if len(line.strip().split()) == 4:
-                        flag = True
+                    q_points_num = int(line.strip().split()[0])
+                    q_points = np.empty([q_points_num, 3])
+                    for i in range(q_points_num):
+                        q_points[i] = strs_to_floats(line.strip().split())
+                    return q_points
 
 
 class PhononOutputParser(SingleFileParser):

@@ -49,7 +49,7 @@ class PWInputParser(SingleFileParser):
     This class read an scf input file in, and parse it to be a tree.
     """
 
-    def parse_control_namelist(self) -> Dict[str, str]:
+    def parse_CONTROL_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' card.
 
@@ -80,7 +80,7 @@ class PWInputParser(SingleFileParser):
 
         :return: a numpy array that stores the cell parameters
         """
-        cell_params = np.empty((3, 3))
+        cell_params = np.empty([3, 3])
         with open(self.in_file, 'r') as f:
             for line in f:
                 if 'CELL_PARAMETERS' in line.upper():
@@ -88,7 +88,7 @@ class PWInputParser(SingleFileParser):
                         line = f.readline()
                         # if not line.strip():  # If there are blank lines
                         #     line = f.readline()
-                        cell_params[i] = np.array(strs_to_floats(line.split()))
+                        cell_params[i] = strs_to_floats(line.split())
         return cell_params
 
     def parse_k_points(self) -> Optional[KPoints]:

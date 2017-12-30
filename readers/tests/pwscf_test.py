@@ -9,13 +9,9 @@ from basics.pw_builder import *
 from basics.pwscf import *
 
 
-# pp = pprint.PrettyPrinter(indent=4)
-
-
 class TestPWscfInputReader(unittest.TestCase):
     def setUp(self):
         self.pwsi = build_pw_input('test')
-        # pp(self.pwsi)
         self.fancy = PWInputFancier(self.pwsi)
 
     def test_write_to_file(self):
@@ -30,7 +26,7 @@ class TestPWscfInputReader(unittest.TestCase):
 
     def test_fancy_ELECTRONS(self):
         s = self.fancy.fancy_ELECTRONS()
-        print(s)
+        pp(s)
 
     def test_fancy_input(self):
         pp(self.fancy.fancy_input())

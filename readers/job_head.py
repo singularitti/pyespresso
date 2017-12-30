@@ -6,7 +6,7 @@ from readers.simple import *
 
 class JobHeadParser(SingleFileParser):
     def read_scheduler(self) -> str:
-        return self._match_one_pattern("scheduler:\s*(\w+)", flags=re.IGNORECASE)
+        return self._match_one_pattern("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
 
     def read_modules(self) -> List[str]:
         with open(self.in_file, 'r') as f:
@@ -33,10 +33,3 @@ class JobHeadParser(SingleFileParser):
                 'nodes_num': self.read_nodes_num(),
                 'cores_num': self.read_cores_num(),
                 'shell_shebang': self.read_shell_shebang()}
-
-    def __getattr__(self, item):
-        if item == 'tree':
-            self.__dict__['tree'] = self.build_job_head_tree()
-            return self.tree
-        else:
-            raise AttributeError("Object has no attribute {0}!".format(item))

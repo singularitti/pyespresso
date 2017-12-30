@@ -9,7 +9,7 @@ Since finding an element in a list is O(N) but in a set is O(1).
 from basics.parameter import Parameter, Namelist
 
 # =================================== I am a cut line ===================================
-CONTROL_namelist = Namelist(
+CONTROL_namelist: Namelist = Namelist(
     'CONTROL', [
         'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
         'dt', 'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr', 'disk_io',
@@ -23,7 +23,7 @@ CONTROL_namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-SYSTEM_namelist = Namelist(
+SYSTEM_namelist: Namelist = Namelist(
     'SYSTEM', [
         'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat', 'ntyp', 'nbnd', 'tot_charge',
         'starting_charge',
@@ -55,7 +55,7 @@ SYSTEM_namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-ELECTRONS_namelist = Namelist(
+ELECTRONS_namelist: Namelist = Namelist(
     'ELECTRONS', [
         'electron_maxstep', 'scf_must_converge', 'conv_thr', 'adaptive_thr', 'conv_thr_init', 'conv_thr_multi',
         'mixing_mode', 'mixing_beta', 'mixing_ndim', 'mixing_fixed_ns', 'diagonalization', 'ortho_para',
@@ -72,7 +72,7 @@ ELECTRONS_namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-IONS_namelist = Namelist(
+IONS_namelist: Namelist = Namelist(
     'IONS', [
         'ion_dynamics', 'ion_positions', 'pot_extrapolation', 'wfc_extrapolation', 'remove_rigid_rot',
         'ion_temperature',
@@ -87,7 +87,7 @@ IONS_namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-CELL_namelist = Namelist(
+CELL_namelist: Namelist = Namelist(
     'CELL', [
         'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree'
     ], [
@@ -104,30 +104,10 @@ class PWParameterGeneric(Parameter):
     """
 
     def __init__(self, name: str, value: str, namelist: Namelist):
-        default_parameter = namelist.default_parameters[name]
-        super().__init__(name, value, default_parameter[1])
-        self._default_value = default_parameter[0]
+        default_value, value_type = namelist.default_parameters[name]
+        super().__init__(name, value, value_type)
+        self._default_value = default_value
         self._in_namelist = namelist.__name__
-
-    @property
-    def default_value(self):
-        """
-        Return the default value defined by Quantum ESPRESSO.
-        Read-only property.
-
-        :return: The default value defined by Quantum ESPRESSO.
-        """
-        return self._default_value
-
-    @property
-    def in_namelist(self) -> str:
-        """
-        Return the namelist the parameter is in.
-        Read-only property.
-
-        :return: namelist's name
-        """
-        return self._in_namelist
 
 
 class CONTROLParameter(PWParameterGeneric):

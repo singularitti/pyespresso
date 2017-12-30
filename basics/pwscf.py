@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # created at Nov 21, 2017 2:13 AM by Qi Zhang
 
+import os
 import re
 import warnings
 from collections import namedtuple
@@ -29,11 +30,12 @@ def print_pw_input(obj: object):
         except ModuleNotFoundError:
             print(obj)
     else:
-        raise TypeError('{0} is not a pw input object!'.format(obj))
+        raise TypeError("{0} is not a 'PWStandardInput' object!".format(obj))
 
 
 class PWStandardInput:
     def __init__(self):
+        self.__name__ = 'PWStandardInput'
         self._CONTROL: Dict[str, Any] = {}
         self._SYSTEM: Dict[str, Any] = {}
         self._ELECTRON: Dict[str, Any] = {}
@@ -98,7 +100,7 @@ class PWStandardInput:
         return self._K_POINTS
 
     @K_POINTS.setter
-    def K_POINTS(self, k_points: NamedTuple):
+    def K_POINTS(self, k_points: KPoints):
         self._K_POINTS = k_points
 
     @property
@@ -123,9 +125,9 @@ class PWStandardInput:
     def K_POINTS_option(self, option: str):
         self._K_POINTS_option = option
 
-    def write_to_file(self, out_file: str):
-        k_points = self._K_POINTS
-        with open(out_file, 'w') as f:
+    def write_to_file(self, output_path: str):
+        k_points: KPoints = self._K_POINTS
+        with open(output_path, 'w') as f:
             f.write("&CONTROL\n")
             for k, v in self.CONTROL.items():
                 f.write("{0} = {1}\n".format(k, v))
@@ -151,4 +153,4 @@ class PWStandardInput:
                 f.write("\n")
             f.write("K_POINTS {{ {0} }}\n".format(self._K_POINTS_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
-        print("Object is written to file '{0}'!".format(out_file))
+        print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(output_path)))

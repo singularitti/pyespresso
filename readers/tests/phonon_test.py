@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
 # created at Nov 25, 2017 8:05 PM by Qi Zhang
-import unittest
+from unittest import TestCase
 
+from beeprint import pp
+
+from basics.phonon_builder import PHononInputBuilder
 from readers.phonon import *
 
 
-class TestPHononInputReader(unittest.TestCase):
+class TestPHononInputReader(TestCase):
     def setUp(self):
-        self.phir = PhononInputReader('ph.in')
+        self.phip = PHononInputParser('ph.in')
 
-    def test_build_phono_input_tree(self):
-        print(self.phir.build_input_tree())
+    def test_parse_INPUTPH_namelist(self):
+        pp(self.phip.parse_INPUTPH_namelist())
+
+
+class TestPHononInputBuilder(TestCase):
+    def setUp(self):
+        self.phib = PHononInputBuilder('ph.in')
+
+    def test_build_all(self):
+        pp(self.phib.input_obj.single_q_point)
+        self.phib.build_all()
