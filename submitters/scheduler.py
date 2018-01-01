@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 # created at Dec 29, 2017 9:17 PM by Qi Zhang
 
+import warnings
 from time import strptime
 from typing import Union
 
-from lazy_property import LazyWritableProperty
+from lazy_property import LazyWritableProperty, LazyProperty
 
 from configue.scheduler import default_Slurm_config
-from miscellaneous.descriptors import Descriptor, DescriptorOwner
+from miscellaneous.descriptors import LabeledDescriptor, MetaDescriptorOwner
 
 
-class _NodesNumber(Descriptor):
-    def __init__(self, default_nodes_number: int):
-        super().__init__(default_nodes_number)
-        self.__name__ = 'nodes'
-        self.has_short_directive = True
-        self.long_directive_suffix = '--nodes'
-        self.short_directive_suffix = '-N'
-
+class _NodesNumber(LabeledDescriptor):
     def __set__(self, instance, new_nodes_number: int):
         if type(new_nodes_number) is not int:
             raise TypeError('The number of nodes is not an integer!')
@@ -27,20 +21,15 @@ class _NodesNumber(Descriptor):
         instance.__dict__[self.label] = new_nodes_number
 
 
-class _Time(Descriptor):
-    def __init__(self, default_time: str):
-        super().__init__(default_time)
-        self.__name__ = 'time'
-        self.has_short_directive = True
-        self.long_directive_suffix = '--time'
-        self.short_directive_suffix = '-t'
-
+class _Time(LabeledDescriptor):
     def __set__(self, instance, new_time: str):
+        if instance is None:
+            raise AttributeError
         if type(new_time) is not str:
             raise TypeError('The time you set is not a string!')
         hour: int = strptime(new_time, '%H:%M:%S').tm_hour
         if hour > 120:
-            print('The maximum time allowed is five days!')
+            warnings.warn('The maximum time allowed is five days!')
         instance.__dict__[self.label] = new_time
 
 
@@ -49,15 +38,23 @@ def _slurm_system_config(item: str):
         return default_Slurm_config[item]
 
 
-class SlurmSystem(metaclass=DescriptorOwner):
+class SlurmSystem(metaclass=MetaDescriptorOwner):
+    def __init__(self):
+        self.__name__ = 'Slurm system'
+
     nodes_number = _NodesNumber(_slurm_system_config('nodes_number'))
+    nodes_number.__name__ = 'nodes'
+    nodes_number.has_short_directive = True
+    nodes_number.long_directive = '--nodes'
+    nodes_number.short_directive = '-N'
     N = nodes_number  # Attribute alias
 
     time = _Time(_slurm_system_config('time'))
+    time.__name__ = 'time'
+    time.has_short_directive = True
+    time.long_directive = '--time'
+    time.short_directive = '-t'
     t = time  # Attribute alias
-
-    def __init__(self):
-        self.__name__ = 'Slurm system'
 
     @property
     def directive_prefix(self):
@@ -72,11 +69,21 @@ class SlurmSystem(metaclass=DescriptorOwner):
     def account(self) -> str:
         pass
 
+    account.__name__ = 'account'
+    account.has_short_directive = True
+    account.long_directive = '--account'
+    account.short_directive = '-A'
+
     A = account  # Attribute alias
 
     @LazyWritableProperty
     def job_name(self) -> str:
         pass
+
+    job_name.__name__ = 'job_name'
+    job_name.has_short_directive = True
+    job_name.long_directive = '--job-name'
+    job_name.short_directive = '-J'
 
     J = job_name  # Attribute alias
 
@@ -96,14 +103,14 @@ class SlurmSystem(metaclass=DescriptorOwner):
     def tasks_per_node(self) -> int:
         pass
 
+    @LazyWritableProperty
+    def cpus_per_task(self) -> int:
+        pass
 
-SlurmSystem.account.__name__ = 'account'
-SlurmSystem.account.long_directive_suffix = '--account'
-SlurmSystem.account.short_directive_suffix = '-A'
+    @LazyProperty
+    def exclusive(self):
+        pass
 
-SlurmSystem.job_name.__name__ = 'job-name'
-SlurmSystem.job_name.long_directive_suffix = '--job-name'
-SlurmSystem.job_name.short_directive_suffix = '-J'
 
 available_schedulers = {
     'slurm': SlurmSystem

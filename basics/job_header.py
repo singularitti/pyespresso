@@ -55,16 +55,6 @@ _comment = Comment  # Alias
 
 
 # ========================================= The following are core classes. =========================================
-def _long_directive_suffix(obj):
-    if hasattr(obj, 'long_directive_suffix'):
-        return obj.long_directive_suffix
-
-
-def _short_directive_suffix(obj):
-    if hasattr(obj, 'short_directive_suffix'):
-        return obj.short_directive_suffix
-
-
 class JobHeader:
     def __init__(self, scheduler_name: str, directive_style: str = 'short'):
         """
@@ -108,9 +98,22 @@ class JobHeader:
         self.__modules = remove_elements_from_set(self.__modules, args)
 
     def collect_directives(self):
-        dir = dict()
-        for obj in self.__scheduler:
+        directives = dict()
+        for obj in vars(self.__scheduler):
+            if obj.has_short_directive:
+                if self.directive_style == 'short':
+                    directives.update({obj: obj.short_directive})
+                else:  # self.directive_style == 'long'
+                    directives.update({obj: obj.long_directive})
 
+        return directives
+
+    @staticmethod
+    def add_comment(raw_comment: str) -> str:
+        return str(_comment(raw_comment))
+
+    @LazyWritableProperty
+    def commands(self):
         pass
 
     def write_to_file(self, output_file: str) -> None:
@@ -120,10 +123,11 @@ class JobHeader:
         :param output_file: A path redirects to the output file you want.
         :return:
         """
+        scheduler = self.__scheduler()
+        directive_prefix = scheduler.directive_prefix
         with open(output_file, 'w') as f:
             f.write("{0}\n".format(self.shebang))
-            f.write()
-
-    @staticmethod
-    def add_comment(raw_comment: str) -> str:
-        return str(_comment(raw_comment))
+            for directive in self.collect_directives():
+                f.write("{0} {1}={2}".format(directive_prefix, directive, scheduler.__dict__[directive.__name__]))
+            for module in self.modules:
+                f.write("module load {0}\n".format(module))

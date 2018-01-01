@@ -6,7 +6,7 @@ from weakref import WeakKeyDictionary
 
 # Referenced from
 # [here](http://nbviewer.jupyter.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb).
-class Descriptor(object):
+class LabeledDescriptor:
     """
     A "strong" descriptor.
     """
@@ -25,16 +25,16 @@ class Descriptor(object):
         instance.__dict__[self.label] = value
 
 
-class DescriptorOwner(type):
+class MetaDescriptorOwner(type):
     def __new__(cls, name, bases, attrs):
         # find all descriptors, auto-set their labels
         for n, v in attrs.items():
-            if isinstance(v, Descriptor):
+            if isinstance(v, LabeledDescriptor):
                 v.label = n
-        return super(DescriptorOwner, cls).__new__(cls, name, bases, attrs)
+        return super(MetaDescriptorOwner, cls).__new__(cls, name, bases, attrs)
 
 
-class WeakDescriptor(object):
+class WeakDescriptor:
     def __init__(self, default=None):
         # notice we aren't setting the label here
         self.data = WeakKeyDictionary()

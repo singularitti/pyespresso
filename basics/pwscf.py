@@ -10,7 +10,7 @@ from typing import *
 import numpy as np
 from lazy_property import LazyProperty, LazyWritableProperty
 
-from miscellaneous.descriptors import Descriptor, DescriptorOwner
+from miscellaneous.descriptors import LabeledDescriptor, MetaDescriptorOwner
 
 KPoints = namedtuple('KPoints', ['grid', 'offsets'])
 AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
@@ -36,7 +36,7 @@ def print_pw_input(obj: object):
         raise TypeError("{0} is not a 'PWStandardInput' object!".format(obj))
 
 
-class _OptionDescriptor(Descriptor):
+class _OptionLabeledDescriptor(LabeledDescriptor):
     def __set__(self, instance, new_option: int):
         if new_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
@@ -45,8 +45,8 @@ class _OptionDescriptor(Descriptor):
             instance.__dict__[self.label] = new_option
 
 
-class PWStandardInput(metaclass=DescriptorOwner):
-    atomic_positions_option = _OptionDescriptor()
+class PWStandardInput(metaclass=MetaDescriptorOwner):
+    atomic_positions_option = _OptionLabeledDescriptor()
 
     def __init__(self):
         self.__name__ = 'PWStandardInput'
@@ -122,12 +122,10 @@ class PWStandardInput(metaclass=DescriptorOwner):
             )
             f.write("\nATOMIC_SPECIES\n")
             for row in self.atomic_species:
-                f.write(' '.join(map(str, row)))
-                f.write("\n")
+                f.write(' '.join(map(str, row)) + "\n")
             f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self.atomic_positions_option))
             for row in self.atomic_positions:
-                f.write(' '.join(row))
-                f.write("\n")
+                f.write(' '.join(row) + "\n")
             f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
         print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(output_file)))
