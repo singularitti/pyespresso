@@ -3,7 +3,10 @@
 
 from typing import Iterable, Union, Set
 
+from lazy_property import LazyWritableProperty
+
 from miscellaneous.sets import add_elements_to_set, remove_elements_from_set
+from submitters.scheduler import available_schedulers, SchedulerSystem
 
 
 def _is_any_not_string(iterable: Iterable) -> bool:
@@ -16,65 +19,84 @@ def _is_any_not_string(iterable: Iterable) -> bool:
     return any(type(_) != str for _ in iterable)
 
 
+# ========================================= These are some useful classes. =========================================
+class Comment:
+    """
+    Insert comment between lines.
+    """
+
+    def __init__(self, raw_comment: str, line_length: int = 118, comment_character: str = '#'):
+        """
+
+        :param raw_comment: Comment string given by user.
+        :param line_length: Each line of the comment has a fixed length of characters.
+        :param comment_character:
+        """
+        self.raw_comment = raw_comment
+        self.fixed_length = line_length
+        self.comment_character = comment_character
+
+    @staticmethod
+    def chunk_string(string, length):
+        return (string[0 + i:length + i] for i in range(0, len(string), length))
+
+    def __str__(self):
+        lines = (_.strip() for _ in self.raw_comment.splitlines())
+        comment = []
+        for line in lines:
+            for chunk in self.chunk_string(line, self.fixed_length):
+                comment.append(self.comment_character + ' ' + chunk)
+        return "\n".join(comment)
+
+    __repr__ = __str__
+
+
+_comment = Comment  # Alias
+
+
+# ========================================= The following are core classes. =========================================
+def _long_directive_suffix(obj):
+    if hasattr(obj, 'long_directive_suffix'):
+        return obj.long_directive_suffix
+
+
+def _short_directive_suffix(obj):
+    if hasattr(obj, 'short_directive_suffix'):
+        return obj.short_directive_suffix
+
+
 class JobHeader:
-    def __init__(self):
+    def __init__(self, scheduler_name: str, directive_style: str = 'short'):
+        """
+
+        :param scheduler_name:
+        """
         self.__name__ = 'JobHeader'
-        self._account: str = ''
-        self._job_name: str = ''
-        self._scheduler: str = ''
-        self._modules: Set = set()
-        self._time: str = '00:00:00'
-        self._nodes_num = 0
-        self._processors_num: int = 0
-        self._tasks_per_node = 0
-        self._shebang = ''
+        self.scheduler_name: str = scheduler_name
+        self.directive_style: str = directive_style
+        self.__scheduler: SchedulerSystem = available_schedulers[scheduler_name]
+        self.__modules: Set = set()
 
-    @property
-    def account(self) -> str:
-        if self._account == '':
-            print("No account name is given! Use default value ''!")
-        return self._account
-
-    @account.setter
-    def account(self, new_account: str) -> None:
-        self._account = new_account
-
-    @property
-    def job_name(self):
-        if self._job_name == '':
-            print("No job name is given! Use default value ''!")
-        return self._job_name
-
-    @job_name.setter
-    def job_name(self, new_job_name: str):
-        self._job_name = new_job_name
-
-    @property
-    def scheduler(self) -> str:
-        return self._scheduler
-
-    @scheduler.setter
-    def scheduler(self, new_scheduler: str):
-        if new_scheduler.upper() not in {'SLURM', 'CRAY'}:
-            raise ValueError('Unknown scheduler {0} is provided!'.format(new_scheduler))
-        self._scheduler = new_scheduler
+    @LazyWritableProperty
+    def shebang(self) -> str:
+        pass
 
     @property
     def modules(self) -> Set[str]:
-        return self._modules
+        return self.__modules
 
     @modules.setter
     def modules(self, new_modules: Set[str]) -> None:
         if _is_any_not_string(new_modules):
             raise TypeError('Modules should all be strings! Check your type!')
-        self._modules = new_modules
+        self.__modules = new_modules
 
     def add_modules(self, *args: Union[str, Iterable[str]]) -> None:
         if _is_any_not_string(args):
             raise TypeError('Modules added should all be strings! Check your type!')
         if not args:  # If nothing is provided
             raise ValueError('No modules are added!')
-        self._modules = add_elements_to_set(self._modules, args)
+        self.__modules = add_elements_to_set(self.__modules, args)
         if len(args) == 1:
             print('Module {0} is added!'.format(args[0]))
         else:  # len(args) > 1
@@ -83,51 +105,13 @@ class JobHeader:
     def remove_modules(self, *args) -> None:
         if _is_any_not_string(args):
             raise TypeError('Modules removed should all be strings! Check your type!')
-        self._modules = remove_elements_from_set(self._modules, args)
+        self.__modules = remove_elements_from_set(self.__modules, args)
 
-    @property
-    def time(self) -> str:
-        return self._time
+    def collect_directives(self):
+        dir = dict()
+        for obj in self.__scheduler:
 
-    @time.setter
-    def time(self, new_time: str) -> None:
-        self._time = new_time
-
-    @property
-    def processors_num(self) -> int:
-        return self._processors_num
-
-    @processors_num.setter
-    def processors_num(self, new_processors_num: int) -> None:
-        if type(new_processors_num) == int:
-            raise TypeError('The number of processors should be an integer!')
-        self._processors_num = new_processors_num
-
-    @property
-    def nodes_num(self) -> int:
-        return self._nodes_num
-
-    @nodes_num.setter
-    def nodes_num(self, new_nodes_num: int) -> None:
-        if type(new_nodes_num) == int:
-            raise TypeError('The number of nodes should be an integer!')
-        self._nodes_num = new_nodes_num
-
-    @property
-    def tasks_per_node(self) -> int:
-        return self._tasks_per_node
-
-    @tasks_per_node.setter
-    def tasks_per_node(self, new_tasks_per_node):
-        self._tasks_per_node = new_tasks_per_node
-
-    @property
-    def shebang(self) -> str:
-        return self._shebang
-
-    @shebang.setter
-    def shebang(self, new_shebang: str) -> None:
-        self._shebang = new_shebang
+        pass
 
     def write_to_file(self, output_file: str) -> None:
         """
@@ -138,3 +122,8 @@ class JobHeader:
         """
         with open(output_file, 'w') as f:
             f.write("{0}\n".format(self.shebang))
+            f.write()
+
+    @staticmethod
+    def add_comment(raw_comment: str) -> str:
+        return str(_comment(raw_comment))

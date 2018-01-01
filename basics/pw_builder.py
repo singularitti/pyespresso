@@ -28,16 +28,16 @@ class PWInputBuilder:
         self.input_obj.ELECTRONS = self.parser.parse_electrons_namelist()
 
     def build_CELL_PARAMETERS(self):
-        self.input_obj.CELL_PARAMETERS = self.parser.parse_cell_parameters()
+        self.input_obj.cell_parameters = self.parser.parse_cell_parameters()
 
     def build_K_POINTS(self):
-        self.input_obj.K_POINTS, self.input_obj.K_POINTS_option = self.parser.parse_k_points()
+        self.input_obj.k_points, self.input_obj.k_points_option = self.parser.parse_k_points()
 
     def build_ATOMIC_SPECIES(self):
-        self.input_obj.ATOMIC_SPECIES = self.parser.parse_atomic_species()
+        self.input_obj.atomic_species = self.parser.parse_atomic_species()
 
     def build_ATOMIC_POSITIONS(self):
-        self.input_obj.ATOMIC_POSITIONS, self.input_obj.ATOMIC_POSITIONS_option = self.parser.parse_atomic_positions()
+        self.input_obj.atomic_positions, self.input_obj.atomic_positions_option = self.parser.parse_atomic_positions()
 
     def build_all(self):
         self.build_CONTROL()
