@@ -42,6 +42,7 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     def __init__(self):
         self.__name__ = 'Slurm system'
 
+    # Class level attribute
     nodes_number = _NodesNumber(_slurm_system_config('nodes_number'))
     nodes_number.__name__ = 'nodes'
     nodes_number.has_short_directive = True
@@ -56,7 +57,7 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     time.short_directive = '-t'
     t = time  # Attribute alias
 
-    @property
+    @LazyProperty
     def directive_prefix(self):
         """
         A read-only attribute.

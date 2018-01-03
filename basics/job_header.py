@@ -123,11 +123,11 @@ class JobHeader:
         :param output_file: A path redirects to the output file you want.
         :return:
         """
-        scheduler = self.__scheduler()
-        directive_prefix = scheduler.directive_prefix
+        directive_prefix = self.__scheduler.directive_prefix
         with open(output_file, 'w') as f:
             f.write("{0}\n".format(self.shebang))
             for directive in self.collect_directives():
-                f.write("{0} {1}={2}".format(directive_prefix, directive, scheduler.__dict__[directive.__name__]))
+                f.write(
+                    "{0} {1}={2}".format(directive_prefix, directive, self.__scheduler.__dict__[directive.__name__]))
             for module in self.modules:
                 f.write("module load {0}\n".format(module))
