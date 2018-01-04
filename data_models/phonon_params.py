@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Nov 20, 2017 3:17 PM by Qi Zhang
 
-from basics.parameter import Parameter, Namelist
+from meta.parameter import Parameter, Namelist
 
 INPUTPH_namelist = Namelist(
     'INPUTPH', [

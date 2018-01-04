@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
-from basics.pwscf import *
+from data_models.pwscf import *
 from readers.simple import *
-from basics.pw_params import *
+from data_models.pw_params import *
 
 # Type alias
 KPoints = NamedTuple('KPoints', [('grid', List[float]), ('offsets', List[float])])

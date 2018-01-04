@@ -3,7 +3,7 @@
 
 import numpy as np
 
-from basics.phonon_params import INPUTPH_namelist
+from data_models.phonon_params import INPUTPH_namelist
 from readers.simple import *
 
 # Type aliases

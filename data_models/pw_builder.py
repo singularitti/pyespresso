@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Dec 7, 2017 1:46 AM by Qi Zhang
 
-from basics.pw_params import *
-from basics.pwscf import PWStandardInput
+from data_models.pw_params import *
+from data_models.pwscf import PWStandardInput
 from miscellaneous.string import *
 from readers.pwscf import PWInputParser
 

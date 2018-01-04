@@ -7,7 +7,7 @@ from typing import Union
 
 from lazy_property import LazyWritableProperty, LazyProperty
 
-from configue.scheduler import default_Slurm_config
+from default_configuerations.scheduler import default_Slurm_config
 from miscellaneous.descriptors import LabeledDescriptor, MetaDescriptorOwner
 
 

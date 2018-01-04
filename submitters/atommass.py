@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# created at Aug 9, 2017 12:46 PM by Qi Zhang
+# created by Michel, changed at Aug 9, 2017 12:46 PM by Qi Zhang
 
 # Dictionary of atomic weights
 atom_weight = {'H': 1.00800000,

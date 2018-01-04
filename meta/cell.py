@@ -13,7 +13,7 @@ import numpy as np
 import spglib
 from json_tricks import *
 
-from basics.lazy import CachedProperty
+from meta.lazy import CachedProperty
 
 # ================================= These are some type aliases or type definitions. =================================
 CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)

@@ -43,8 +43,8 @@ class VCRelaxSubmitter:
         :param filename: str
         :return: (np.ndarray, float, float, float)
         """
-        with open(filename, 'r') as input_params:
-            lines = input_params.readlines()
+        with open(filename, 'r') as f:
+            lines = f.readlines()
 
         # Convert str to numpy.float64
         pressures = np.array(lines[0].split(), dtype=float)

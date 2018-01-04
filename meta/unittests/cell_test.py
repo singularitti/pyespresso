@@ -3,8 +3,8 @@
 
 import unittest
 
-from basics.cell import *
-from basics.unittests.cell_test_data import *
+from meta.cell import *
+from meta.unittests.cell_test_data import *
 
 rutile = Cell(*rutile_spglib_cell)
 rutile_distorted = Cell(*rutile_distorted_spglib_cell)

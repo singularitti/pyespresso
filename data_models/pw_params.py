@@ -6,7 +6,7 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
-from basics.parameter import Parameter, Namelist
+from meta.parameter import Parameter, Namelist
 
 # =================================== I am a cut line ===================================
 CONTROL_namelist: Namelist = Namelist(

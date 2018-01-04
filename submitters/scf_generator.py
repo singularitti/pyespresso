@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from basics.pw_params import *
+from data_models.pw_params import *
 from miscellaneous.string import *
 
 

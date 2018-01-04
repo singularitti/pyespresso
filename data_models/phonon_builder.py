@@ -2,7 +2,7 @@
 # created at Dec 22, 2017 10:48 PM by Qi Zhang
 
 from readers.phonon import PHononInputParser
-from basics.phonon import PHononStandaradInput
+from data_models.phonon import PHononStandaradInput
 
 
 class PHononInputBuilder:
