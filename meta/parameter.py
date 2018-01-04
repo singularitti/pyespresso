@@ -8,15 +8,15 @@ from typing import DefaultDict, Type, Union, Tuple, List, Callable, Dict
 DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
 
 
-def _str_to_QE_str(x: str) -> str:
+def _str_to_qe_str(x: str) -> str:
     return x
 
 
-def _float_to_QE_str(x: float) -> str:
+def _float_to_qe_str(x: float) -> str:
     return str(x)
 
 
-def _bool_to_QE_str(x: bool) -> str:
+def _bool_to_qe_str(x: bool) -> str:
     if x:
         return '.true.'
     elif not x:
@@ -25,7 +25,7 @@ def _bool_to_QE_str(x: bool) -> str:
         raise TypeError('Input type unknown!')
 
 
-def _int_to_QE_str(x: int) -> str:
+def _int_to_qe_str(x: int) -> str:
     return str(x)
 
 
@@ -95,11 +95,11 @@ class Parameter:
         """
         return self._in_namelist
 
-    def to_QE_str(self) -> str:
-        recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_QE_str,
-                                                                      int: _int_to_QE_str,
-                                                                      float: _float_to_QE_str,
-                                                                      bool: _bool_to_QE_str}
+    def to_qe_str(self) -> str:
+        recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_qe_str,
+                                                                      int: _int_to_qe_str,
+                                                                      float: _float_to_qe_str,
+                                                                      bool: _bool_to_qe_str}
         return recipe[self.type](self.value)
 
     def __str__(self) -> str:

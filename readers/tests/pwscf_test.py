@@ -15,7 +15,7 @@ class TestPWscfInputReader(unittest.TestCase):
         self.fancy = PWInputFancier(self.pwsi)
 
     def test_write_to_file(self):
-        self.pwsi.write_to_file('new')
+        self.pwsi.to_text_file('new')
 
     def test_print_pw_input(self):
         print_pw_input(self.pwsi)

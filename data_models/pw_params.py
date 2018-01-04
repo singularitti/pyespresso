@@ -104,9 +104,8 @@ class PWParameterGeneric(Parameter):
     """
 
     def __init__(self, name: str, value: str, namelist: Namelist):
-        default_value, value_type = namelist.default_parameters[name]
+        self._default_value, value_type = namelist.default_parameters[name]
         super().__init__(name, value, value_type)
-        self._default_value = default_value
         self._in_namelist = namelist.__name__
 
 

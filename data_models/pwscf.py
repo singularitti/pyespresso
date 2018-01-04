@@ -8,9 +8,10 @@ from collections import namedtuple
 from typing import *
 
 import numpy as np
-from lazy_property import LazyProperty, LazyWritableProperty
+from lazy_property import LazyWritableProperty
 
-from miscellaneous.descriptors import LabeledDescriptor, MetaDescriptorOwner
+from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
+from miscellaneous.path_generator import path_generator
 
 KPoints = namedtuple('KPoints', ['grid', 'offsets'])
 AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
@@ -18,8 +19,7 @@ AtomicPositions = namedtuple('AtomicPositions', ['name', 'positions'])
 
 
 def is_pw_input(obj: object):
-    if all(hasattr(obj, attr) for attr in
-           ['CONTROL', 'SYSTEM', 'ELECTRONS', 'CELL_PARAMETERS']):
+    if all(hasattr(obj, attr) for attr in ['CONTROL', 'SYSTEM', 'ELECTRONS', 'CELL_PARAMETERS']):
         return True
     else:
         return False
@@ -33,11 +33,11 @@ def print_pw_input(obj: object):
         except ModuleNotFoundError:
             print(obj)
     else:
-        raise TypeError("{0} is not a 'PWStandardInput' object!".format(obj))
+        raise TypeError("{0} is not a {1} object!".format(obj, type(obj).__name__))
 
 
-class _OptionLabeledDescriptor(LabeledDescriptor):
-    def __set__(self, instance, new_option: int):
+class _Option(LabeledDescriptor):
+    def __set__(self, instance, new_option: str):
         if new_option == 'alat':
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
@@ -46,17 +46,12 @@ class _OptionLabeledDescriptor(LabeledDescriptor):
 
 
 class PWStandardInput(metaclass=MetaDescriptorOwner):
-    atomic_positions_option = _OptionLabeledDescriptor()
+    atomic_positions_option = _Option()
 
     def __init__(self):
-        self.__name__ = 'PWStandardInput'
         self._CONTROL: Dict[str, Any] = {}
         self._SYSTEM: Dict[str, Any] = {}
         self._ELECTRON: Dict[str, Any] = {}
-
-    @LazyProperty
-    def name(self):
-        return self.__name__
 
     @property
     def CONTROL(self):
@@ -102,9 +97,12 @@ class PWStandardInput(metaclass=MetaDescriptorOwner):
     def k_points_option(self) -> str:
         pass
 
-    def write_to_file(self, output_file: str):
+    def to_text_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
+        outfile_path = path_generator(outfile, path_prefix)
+
         k_points: KPoints = self.k_points
-        with open(output_file, 'w') as f:
+
+        with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
             for k, v in self.CONTROL.items():
                 f.write("{0} = {1}\n".format(k, v))
@@ -115,11 +113,8 @@ class PWStandardInput(metaclass=MetaDescriptorOwner):
             for k, v in self.ELECTRONS.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\nCELL_PARAMETERS\n")
-            f.write(
-                re.sub("[\[\]]", ' ',
-                       np.array2string(self.cell_parameters,
-                                       formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
-            )
+            f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters,
+                                                          formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
             f.write("\nATOMIC_SPECIES\n")
             for row in self.atomic_species:
                 f.write(' '.join(map(str, row)) + "\n")
@@ -128,4 +123,5 @@ class PWStandardInput(metaclass=MetaDescriptorOwner):
                 f.write(' '.join(row) + "\n")
             f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
-        print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(output_file)))
+
+        print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(outfile_path)))

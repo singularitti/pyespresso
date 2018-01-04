@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Dec 24, 2017 7:34 PM by Qi Zhang
 
-from typing import Iterable, Union, Set, List
+from typing import Iterable, Union, Set, List, Optional
 
 from lazy_property import *
 
@@ -62,9 +62,8 @@ class JobInput:
 
         :param scheduler_name:
         """
-        self.__name__ = 'JobHeader'
-        self.__directive_style: str = directive_style
         self.scheduler: SchedulerSystem = available_schedulers[scheduler_name]()
+        self.__directive_style: str = directive_style
         self.__modules: Set = set()
         self.__commands: List[str] = []
 
@@ -115,7 +114,6 @@ class JobInput:
         directives = dict()
         for obj in type(self.scheduler).__dict__.values():
             if hasattr(obj, 'short_directive'):
-                print((obj))
                 directives.update({type(obj).__name__: (obj.short_directive, obj.__get__(self.scheduler, None))})
         return directives
 
@@ -135,13 +133,11 @@ class JobInput:
     def commands(self):
         return self.__commands
 
-    def add_command(self, new_command):
-        self.__commands.append(new_command)
+    @commands.setter
+    def commands(self, new_commands: List[str]):
+        self.__commands = new_commands
 
-    def remove_command(self, command):
-        self.__commands.remove(command)
-
-    def to_text_file(self, outfile: str, path_prefix: str = '') -> None:
+    def to_text_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
         """
 
         :param outfile: A path redirects to the output file you want.

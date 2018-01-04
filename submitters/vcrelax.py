@@ -14,8 +14,6 @@ from scipy.optimize import curve_fit
 from readers.job_head import *
 from . import flow
 
-print('Starting vc-relax calculations.')
-
 
 class VCRelaxSubmitter:
     def __init__(self, job_head: str):

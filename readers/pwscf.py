@@ -13,7 +13,7 @@ AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
 
 def write_to_file(obj: object, out_file: str):
     if isinstance(obj, PWStandardInput):
-        obj.write_to_file(out_file)
+        obj.to_text_file(out_file)
     else:
         raise TypeError('Input object is not an {0}!'.format('SCFStandardInput'))
 
@@ -46,10 +46,10 @@ class CELLNamelistParser(NamelistParserGeneric):
 
 class PWInputParser(SingleFileParser):
     """
-    This class read an scf input file in, and parse it to be a tree.
+    This class read an scf input file in, and parse it.
     """
 
-    def parse_CONTROL_namelist(self) -> Dict[str, str]:
+    def parse_control_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' card.
 

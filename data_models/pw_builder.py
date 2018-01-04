@@ -19,7 +19,7 @@ class PWInputBuilder:
         self.input_obj = PWStandardInput()
 
     def build_CONTROL(self):
-        self.input_obj.CONTROL = self.parser.parse_CONTROL_namelist()
+        self.input_obj.CONTROL = self.parser.parse_control_namelist()
 
     def build_SYSTEM(self):
         self.input_obj.SYSTEM = self.parser.parse_system_namelist()
