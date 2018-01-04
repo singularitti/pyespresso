@@ -14,8 +14,8 @@ def build_pw_input(in_file: str) -> PWStandardInput:
 
 
 class PWInputBuilder:
-    def __init__(self, in_file):
-        self.parser = PWInputParser(in_file)
+    def __init__(self, infile):
+        self.parser = PWInputParser(infile)
         self.input_obj = PWStandardInput()
 
     def build_CONTROL(self):

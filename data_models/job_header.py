@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # created at Dec 24, 2017 7:34 PM by Qi Zhang
 
-import os
 from typing import Iterable, Union, Set, List
 
 from lazy_property import *
 
+from data_models.scheduler import available_schedulers, SchedulerSystem
+from miscellaneous.path_generator import path_generator
 from miscellaneous.sets import add_elements_to_set, remove_elements_from_set
-from submitters.scheduler import available_schedulers, SchedulerSystem
 
 
 def _is_any_not_string(iterable: Iterable) -> bool:
@@ -148,10 +148,7 @@ class JobInput:
         :param path_prefix:
         :return:
         """
-        if not path_prefix:
-            file_path = os.path.join(os.getcwd(), outfile)
-        else:
-            file_path = os.path.join(path_prefix, outfile)
+        file_path: str = path_generator(outfile, path_prefix)
 
         scheduler = self.scheduler
         directive_prefix = scheduler.directive_prefix
