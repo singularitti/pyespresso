@@ -5,11 +5,13 @@ This module integrates spglib for Python API, and built 2 classes: `SimpleCell` 
 information about a cell, and `Cell` for much more complex functional extension.
 """
 
+import os
 from numbers import Number
 from typing import *
 
 import numpy as np
 import spglib
+from json_tricks import *
 
 from basics.lazy import CachedProperty
 
@@ -637,13 +639,13 @@ class Cell:
     def __str__(self) -> str:
         return \
             """
-            The cell is:
             lattice: {0}
             positions: {1}
             numbers: {2}
             """.format(self.lattice.tolist(), self.positions.tolist(), self.numbers.tolist())
 
-    __repr__ = __str__
+    def __repr__(self):
+        return {'lattice': self.lattice, 'positions': self.positions, 'numbers': self.numbers}
 
     def __eq__(self, other: object) -> bool:
         """
@@ -682,6 +684,17 @@ class Cell:
         else:
             raise TypeError('{0} is not a cell type!'.format(other))
 
+    def to_json(self, output_name: str, output_path: str = ''):
+        if not output_name.endswith('.json'):
+            output_name: str = output_name + '.json'
+        if not output_path:
+            file_path: str = os.path.join(os.getcwd(), output_name)
+        else:
+            file_path: str = os.path.join(output_path, output_name)
+
+        with open(file_path, 'w') as f:
+            dump(self.__repr__(), f)
+
     # ========================================= end =========================================
 
 
@@ -703,13 +716,13 @@ class SimpleCell:
     def __str__(self) -> str:
         return \
             """
-            The simple cell is:
             lattice: {0}
             positions: {1}
             numbers: {2}
             """.format(self.lattice.tolist(), self.positions.tolist(), self.numbers.tolist())
 
-    __repr__ = __str__
+    def __repr__(self):
+        return {'lattice': self.lattice, 'positions': self.positions, 'numbers': self.numbers}
 
     def __eq__(self, other: object) -> bool:
         """
@@ -741,3 +754,14 @@ class SimpleCell:
                 return False
         else:
             raise TypeError('{0} is not a cell type!'.format(other))
+
+    def to_json(self, output_name: str, output_path: str = ''):
+        if not output_name.endswith('.json'):
+            output_name: str = output_name + '.json'
+        if not output_path:
+            file_path: str = os.path.join(os.getcwd(), output_name)
+        else:
+            file_path: str = os.path.join(output_path, output_name)
+
+        with open(file_path, 'w') as f:
+            dump(self.__repr__(), f)
