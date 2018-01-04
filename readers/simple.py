@@ -15,14 +15,30 @@ def is_namelist(obj: object):
 
 
 class SingleFileParser:
-    def __init__(self, infile: str):
+    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
         """
-        In our implementation, for each file, you need to generate a `SimpleRead` class to read it.
 
-        :param infile: the exact one input file for this class
+
+        :param instream: If this is given, `infile` argument will be ignored.
+        :param infile: If `instream` is not given, this argument will be used.
         """
-        self.infile = infile
-        self.file_content = open(infile, 'r').readlines()
+        if isinstance(instream, str):
+            self.instream: str = instream
+            self.infile = None
+        elif isinstance(infile, str):
+            self.infile: str = infile
+            self.instream = None
+        else:
+            raise TypeError('instream and infile cannot be both None! You must specify one of them!')
+
+    def stream_generator(self) -> Iterator[str]:
+        if self.instream:  # If `instream` is given and thus not `None`
+            for line in self.instream:
+                yield line
+        else:  # If `infile` is given and thus not `None`
+            with open(self.infile, 'r') as f:
+                for line in f:
+                    yield line
 
     def _match_one_string(self, pattern: str, *args):
         pass
@@ -111,12 +127,6 @@ class SingleFileParser:
                 del sp[col_index]  # Remove the indexing column
                 values.append(func(sp))
         return dict(zip(keys, values))
-
-
-class MultipleFilesReader:
-    def __init__(self, files: List[str]):
-        # Construct a dictionary with file names as keys
-        self.files = {file: SingleFileParser(file) for file in files}
 
 
 class NamelistParserGeneric:
