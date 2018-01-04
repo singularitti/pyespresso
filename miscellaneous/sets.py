@@ -22,7 +22,7 @@ def add_elements_to_set(s: set, *args) -> set:
     :param args: The element(s) to be added.
     :return: The modified set `s`.
     """
-    s.update(set(args))
+    s.update(set(*args))
     return s
 
 

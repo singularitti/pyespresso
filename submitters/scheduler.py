@@ -44,15 +44,11 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
 
     # Class level attribute
     nodes_number = _NodesNumber(_slurm_system_config('nodes_number'))
-    nodes_number.__name__ = 'nodes'
-    nodes_number.has_short_directive = True
     nodes_number.long_directive = '--nodes'
     nodes_number.short_directive = '-N'
     N = nodes_number  # Attribute alias
 
     time = _Time(_slurm_system_config('time'))
-    time.__name__ = 'time'
-    time.has_short_directive = True
     time.long_directive = '--time'
     time.short_directive = '-t'
     t = time  # Attribute alias
@@ -70,8 +66,6 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     def account(self) -> str:
         pass
 
-    account.__name__ = 'account'
-    account.has_short_directive = True
     account.long_directive = '--account'
     account.short_directive = '-A'
 
@@ -81,8 +75,6 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     def job_name(self) -> str:
         pass
 
-    job_name.__name__ = 'job_name'
-    job_name.has_short_directive = True
     job_name.long_directive = '--job-name'
     job_name.short_directive = '-J'
 
@@ -92,13 +84,19 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     def mail_type(self) -> str:
         pass
 
+    # mail_type.long_directive = '--mail-type'
+
     @LazyWritableProperty
     def mail_user(self) -> str:
         pass
 
+    # mail_user.long_directive = '--mail-user'
+
     @LazyWritableProperty
     def mem(self) -> int:
         pass
+
+    # mem.long_directive = '--mem'
 
     @LazyWritableProperty
     def tasks_per_node(self) -> int:
@@ -107,6 +105,8 @@ class SlurmSystem(metaclass=MetaDescriptorOwner):
     @LazyWritableProperty
     def cpus_per_task(self) -> int:
         pass
+
+    # cpus_per_task.long_directive = '--cpus-per-task'
 
     @LazyProperty
     def exclusive(self):

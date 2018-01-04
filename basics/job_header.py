@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # created at Dec 24, 2017 7:34 PM by Qi Zhang
 
-from typing import Iterable, Union, Set
+import os
+from typing import Iterable, Union, Set, List
 
-from lazy_property import LazyWritableProperty
+from lazy_property import *
 
 from miscellaneous.sets import add_elements_to_set, remove_elements_from_set
 from submitters.scheduler import available_schedulers, SchedulerSystem
@@ -55,17 +56,36 @@ _comment = Comment  # Alias
 
 
 # ========================================= The following are core classes. =========================================
-class JobHeader:
+class JobInput:
     def __init__(self, scheduler_name: str, directive_style: str = 'short'):
         """
 
         :param scheduler_name:
         """
         self.__name__ = 'JobHeader'
-        self.scheduler_name: str = scheduler_name
-        self.directive_style: str = directive_style
-        self.__scheduler: SchedulerSystem = available_schedulers[scheduler_name]
+        self.__directive_style: str = directive_style
+        self.scheduler: SchedulerSystem = available_schedulers[scheduler_name]()
         self.__modules: Set = set()
+        self.__commands: List[str] = []
+
+    @LazyProperty
+    def scheduler_name(self) -> str:
+        """
+
+        :return: 'Slurm system' or 'Cray system'
+        """
+        return self.scheduler.__name__
+
+    @property
+    def directive_style(self):
+        return self.__directive_style
+
+    @directive_style.setter
+    def directive_style(self, new_style: str):
+        if new_style.lower() not in {'short', 'long'}:
+            raise ValueError()
+        else:
+            self.__directive_style = new_style
 
     @LazyWritableProperty
     def shebang(self) -> str:
@@ -74,12 +94,6 @@ class JobHeader:
     @property
     def modules(self) -> Set[str]:
         return self.__modules
-
-    @modules.setter
-    def modules(self, new_modules: Set[str]) -> None:
-        if _is_any_not_string(new_modules):
-            raise TypeError('Modules should all be strings! Check your type!')
-        self.__modules = new_modules
 
     def add_modules(self, *args: Union[str, Iterable[str]]) -> None:
         if _is_any_not_string(args):
@@ -97,37 +111,62 @@ class JobHeader:
             raise TypeError('Modules removed should all be strings! Check your type!')
         self.__modules = remove_elements_from_set(self.__modules, args)
 
-    def collect_directives(self):
+    def collect_short_directives(self):
         directives = dict()
-        for obj in vars(self.__scheduler):
-            if obj.has_short_directive:
-                if self.directive_style == 'short':
-                    directives.update({obj: obj.short_directive})
-                else:  # self.directive_style == 'long'
-                    directives.update({obj: obj.long_directive})
+        for obj in type(self.scheduler).__dict__.values():
+            if hasattr(obj, 'short_directive'):
+                print((obj))
+                directives.update({type(obj).__name__: (obj.short_directive, obj.__get__(self.scheduler, None))})
+        return directives
 
+    def collect_long_directives(self):
+        directives = dict()
+        for obj in dir(type(self.scheduler)):
+            if hasattr(obj, 'long_directive'):
+                directives.update({type(obj).__name__: (obj.long_directive, self.scheduler.__dict__[type(obj).__name__])})
         return directives
 
     @staticmethod
     def add_comment(raw_comment: str) -> str:
         return str(_comment(raw_comment))
 
-    @LazyWritableProperty
+    @property
     def commands(self):
-        pass
+        return self.__commands
 
-    def write_to_file(self, output_file: str) -> None:
+    def add_command(self, new_command):
+        self.__commands.append(new_command)
+
+    def remove_command(self, command):
+        self.__commands.remove(command)
+
+    def write_to_file(self, output_name: str, output_path: str = '') -> None:
         """
 
-
-        :param output_file: A path redirects to the output file you want.
+        :param output_name: A path redirects to the output file you want.
+        :param output_path:
         :return:
         """
-        directive_prefix = self.__scheduler.directive_prefix
-        with open(output_file, 'w') as f:
+        if not output_path:
+            file_path = os.path.join(os.getcwd(), output_name)
+        else:
+            file_path = os.path.join(output_path, output_name)
+
+        scheduler = self.scheduler
+        directive_prefix = scheduler.directive_prefix
+        with open(file_path, 'w') as f:
             f.write("{0}\n".format(self.shebang))
-            for directive in self.collect_directives():
-                f.write(
-                    "{0} {1}={2}".format(directive_prefix, directive, self.__scheduler.__dict__[directive.__name__]))
+            if self.directive_style == 'short':
+                print(self.collect_short_directives().items())
+                for directive_name, directive in self.collect_short_directives().items():
+                    f.write("{0} {1}={2}\n".format(directive_prefix, directive[0], directive[1]))
+            else:
+                for directive_name, directive in self.collect_long_directives().items():
+                    f.write("{0} {1}={2}".format(directive_prefix, directive[0], directive[1]))
+            f.write("\n")
             for module in self.modules:
                 f.write("module load {0}\n".format(module))
+            f.write("\n")
+            f.write("\n".join(self.commands))
+
+        print("A job input has been written to file {0}!".format(file_path))
