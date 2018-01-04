@@ -11,8 +11,8 @@ IntArray = Union[int, List[int], np.ndarray]
 
 
 class INPUTPHNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, INPUTPH_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, INPUTPH_namelist)
 
 
 class PHononInputParser(SingleFileParser):
@@ -29,10 +29,10 @@ class PHononInputParser(SingleFileParser):
         return next(s for s in self.file_content[0:end_index] if s)
 
     def parse_INPUTPH_namelist(self):
-        return INPUTPHNamelistParser(self.in_file).read_namelist()
+        return INPUTPHNamelistParser(self.infile).read_namelist()
 
     def parse_single_q_point(self) -> Optional[np.ndarray]:
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 print(line)
                 # If a line does not start with '/' (the end of 'INPUTPH' namelist),
@@ -46,7 +46,7 @@ class PHononInputParser(SingleFileParser):
                     return np.array(strs_to_floats(line.strip().split()))
 
     def parse_q_points(self):
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if not line.startswith('/'):
                     break
@@ -74,7 +74,7 @@ class PhononOutputParser(SingleFileParser):
             [np.zeros([1, density[i], 3]) for i in range(path_num)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             headline = f.readline()
             nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
             nq = int(re.findall("nks=\s+(\d+)", headline)[0])

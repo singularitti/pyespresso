@@ -123,7 +123,8 @@ class JobInput:
         directives = dict()
         for obj in dir(type(self.scheduler)):
             if hasattr(obj, 'long_directive'):
-                directives.update({type(obj).__name__: (obj.long_directive, self.scheduler.__dict__[type(obj).__name__])})
+                directives.update(
+                    {type(obj).__name__: (obj.long_directive, self.scheduler.__dict__[type(obj).__name__])})
         return directives
 
     @staticmethod
@@ -140,17 +141,17 @@ class JobInput:
     def remove_command(self, command):
         self.__commands.remove(command)
 
-    def write_to_file(self, output_name: str, output_path: str = '') -> None:
+    def to_text_file(self, outfile: str, path_prefix: str = '') -> None:
         """
 
-        :param output_name: A path redirects to the output file you want.
-        :param output_path:
+        :param outfile: A path redirects to the output file you want.
+        :param path_prefix:
         :return:
         """
-        if not output_path:
-            file_path = os.path.join(os.getcwd(), output_name)
+        if not path_prefix:
+            file_path = os.path.join(os.getcwd(), outfile)
         else:
-            file_path = os.path.join(output_path, output_name)
+            file_path = os.path.join(path_prefix, outfile)
 
         scheduler = self.scheduler
         directive_prefix = scheduler.directive_prefix

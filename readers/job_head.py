@@ -9,7 +9,7 @@ class JobHeadParser(SingleFileParser):
         return self._match_one_pattern("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
 
     def read_modules(self) -> List[str]:
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             match = re.findall('Necessary modules to be loaded.*', f.read(), flags=re.IGNORECASE | re.MULTILINE)
         return list(map(lambda x: x.strip(), match[0].split(':')[1].strip().split(',')))
 
@@ -21,7 +21,7 @@ class JobHeadParser(SingleFileParser):
 
     def read_shell_shebang(self):
         shebang = []
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if line.strip().startswith('#'):
                     shebang.append(line)

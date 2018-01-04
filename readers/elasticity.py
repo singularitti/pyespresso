@@ -31,7 +31,7 @@ class ElasticityOutputParser(SingleFileParser):
         """
         pressures = []
         elastic_tensors = []
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if not line.strip():  # Ignore blank lines
                     continue

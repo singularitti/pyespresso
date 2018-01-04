@@ -15,14 +15,14 @@ def is_namelist(obj: object):
 
 
 class SingleFileParser:
-    def __init__(self, in_file: str):
+    def __init__(self, infile: str):
         """
         In our implementation, for each file, you need to generate a `SimpleRead` class to read it.
 
-        :param in_file: the exact one input file for this class
+        :param infile: the exact one input file for this class
         """
-        self.in_file = in_file
-        self.file_content = open(in_file, 'r').readlines()
+        self.infile = infile
+        self.file_content = open(infile, 'r').readlines()
 
     def _match_one_string(self, pattern: str, *args):
         pass
@@ -35,7 +35,7 @@ class SingleFileParser:
         :param args: a wrapper function which determines the returned type of value
         :return: Determined by the `wrapper`, the value you want to grep out from the file.
         """
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             s = f.read()
             match: Optional[List[str]] = re.findall(pattern, s,
                                                     **kwargs)  # `match` is either an empty list or a list of strings.
@@ -58,7 +58,7 @@ class SingleFileParser:
         :return: a list contains all the lines of the file
         """
         line_list = []
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 line_list.append(re.split('\n', line)[0])
         return line_list
@@ -71,7 +71,7 @@ class SingleFileParser:
         :return: a list of `n` columns that contain the contents of each column
         """
         n_columns = [[] for _ in range(n)]
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if not line.split():  # If line is ''
                     f.readline()
@@ -104,7 +104,7 @@ class SingleFileParser:
         keys = []
         values = []
         # Add utf-8 support because we may use special characters.
-        with open(self.in_file, 'r', encoding='utf-8') as f:
+        with open(self.infile, 'r', encoding='utf-8') as f:
             for line in f:
                 sp = line.split()
                 keys.append(sp[col_index])
@@ -120,36 +120,36 @@ class MultipleFilesReader:
 
 
 class NamelistParserGeneric:
-    def __init__(self, in_file: str, namelist: object):
+    def __init__(self, infile: str, namelist: object):
         """
         Match card between card title and the following '/' character.
 
-        :param in_file:
+        :param infile:
         :param namelist: a card has many names defined by Quantum ESPRESSO
         """
-        self.in_file = in_file
+        self.infile = infile
         if is_namelist(namelist):
             self.namelist: Namelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
 
     @staticmethod
-    def _section_with_bounds(file, start_pattern, end_pattern) -> Iterator[str]:
+    def _section_with_bounds(infile, start_pattern, end_pattern) -> Iterator[str]:
         """
         Search in file for the contents between 2 patterns. Referenced from
         [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
 
-        :param file: file to be read
+        :param infile: file to be read
         :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
             ignored
         :param end_pattern: the pattern labels where the content is to an end
         :return: an iterator that can read the file
         """
         section_flag = False
-        for line in file:
+        for line in infile:
             if re.match(start_pattern, line, re.IGNORECASE):
                 section_flag = True
-                line = file.readline()  # If the line is the `start_pattern` itself, we do not parse this line
+                line = infile.readline()  # If the line is the `start_pattern` itself, we do not parse this line
             if line.startswith(end_pattern):
                 section_flag = False
             if section_flag:
@@ -166,7 +166,7 @@ class NamelistParserGeneric:
         filled_namelist: dict = {}
         start_pattern = '&' + self.namelist.__name__.upper()
 
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
             for line in generator:  # Read each line in the namelist until '/'
                 s: str = line.strip()

@@ -20,28 +20,28 @@ def write_to_file(obj: object, out_file: str):
 
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, CONTROL_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, CONTROL_namelist)
 
 
 class SYSTEMNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, SYSTEM_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, SYSTEM_namelist)
 
 
 class ELECTRONSNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, ELECTRONS_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, ELECTRONS_namelist)
 
 
 class IONSNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, IONS_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, IONS_namelist)
 
 
 class CELLNamelistParser(NamelistParserGeneric):
-    def __init__(self, in_file):
-        super().__init__(in_file, CELL_namelist)
+    def __init__(self, infile):
+        super().__init__(infile, CELL_namelist)
 
 
 class PWInputParser(SingleFileParser):
@@ -55,7 +55,7 @@ class PWInputParser(SingleFileParser):
 
         :return: a dictionary that stores the inputted information of 'CONTROL' card
         """
-        return CONTROLNamelistParser(self.in_file).read_namelist()
+        return CONTROLNamelistParser(self.infile).read_namelist()
 
     def parse_system_namelist(self) -> Dict[str, str]:
         """
@@ -63,7 +63,7 @@ class PWInputParser(SingleFileParser):
 
         :return: a dictionary that stores the inputted information of 'SYSTEM' card
         """
-        return SYSTEMNamelistParser(self.in_file).read_namelist()
+        return SYSTEMNamelistParser(self.infile).read_namelist()
 
     def parse_electrons_namelist(self) -> Dict[str, str]:
         """
@@ -71,7 +71,7 @@ class PWInputParser(SingleFileParser):
 
         :return: a dictionary that stores the inputted information of 'ELECTRONS' card
         """
-        return ELECTRONSNamelistParser(self.in_file).read_namelist()
+        return ELECTRONSNamelistParser(self.infile).read_namelist()
 
     def parse_cell_parameters(self) -> np.ndarray:
         """
@@ -81,7 +81,7 @@ class PWInputParser(SingleFileParser):
         :return: a numpy array that stores the cell parameters
         """
         cell_params = np.empty([3, 3])
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if 'CELL_PARAMETERS' in line.upper():
                     for i in range(3):
@@ -106,7 +106,7 @@ class PWInputParser(SingleFileParser):
         :return: a named tuple defined above
         """
         option = 'tbipa'
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if 'K_POINTS' in line.upper():
                     option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
@@ -117,7 +117,7 @@ class PWInputParser(SingleFileParser):
 
     def parse_atomic_species(self):
         atmsp = []
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if 'ATOMIC_SPECIES' in line.upper():
                     for _ in range(int(self.parse_system_namelist()['ntyp'])):
@@ -131,7 +131,7 @@ class PWInputParser(SingleFileParser):
     def parse_atomic_positions(self):
         atmpos = []
         option = 'alat'
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if 'ATOMIC_POSITIONS' in line.upper():
                     option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
@@ -270,7 +270,7 @@ class PWscfOutputParser(SingleFileParser):
         stress_atomic = np.zeros((3, 3))
         stress_kbar = np.zeros((3, 3))
         stress = {'atomic': stress_atomic, 'kbar': stress_kbar}
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if 'total   stress' in line:
                     for i in range(3):  # Read a 3x3 matrix
@@ -300,7 +300,7 @@ class PWscfOutputParser(SingleFileParser):
         else:
             raise ValueError("Unknown coordinate system type! It can be either 'Cartesian' or 'crystal'!")
 
-        with open(self.in_file, 'r') as f, open(out_file, 'w') as g:
+        with open(self.infile, 'r') as f, open(out_file, 'w') as g:
             flag = False  # If flag is true, read line and match pattern, if not true, no need to match pattern
             k_count = 0  # Count how many k-points have been read
             k_num = None  # How many k-points in total, given by Quantum ESPRESSO
@@ -339,7 +339,7 @@ class PWscfOutputParser(SingleFileParser):
                         "They maybe too close so there is no space between them! Try to add a space!"
         stress = np.zeros((3, 3))
 
-        with open(self.in_file, 'r') as f:
+        with open(self.infile, 'r') as f:
             for line in f:
                 if name in line and 'stress' in line:  # Read the first line of the matrix
                     try:
