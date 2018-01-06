@@ -11,23 +11,6 @@ import numpy as np
 from readers.simple import *
 
 
-class VCRelaxInputfileReader(PWInputReader):
-    def read_ions_card(self) -> Dict[str, str]:
-        return NamelistParserGeneric(self.in_file, IONS).read_namelist('IONS')
-
-    def read_cell_card(self) -> Dict[str, str]:
-        return NamelistParserGeneric(self.in_file, CELL).read_namelist('CELL')
-
-    def build_input_tree(self):
-        return {'CONTROL': self.read_control_namelist(),
-                'SYSTEM': self.read_system_namelist(),
-                'ELECTRONS': self.read_electrons_namelist(),
-                'IONS': self.read_ions_card(),
-                'CELL': self.read_cell_card(),
-                'CELL_PARAMETERS': self.read_cell_parameters(),
-                'K_POINTS': self.read_k_points()}
-
-
 class VCRelaxOutfileReader:
     @staticmethod
     def read_pv(inp: str) -> Tuple[List[float], List[float]]:

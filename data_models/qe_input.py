@@ -51,7 +51,7 @@ def print_pw_input(obj: object):
 # ========================================= define useful data structures =========================================
 class _Option(LabeledDescriptor):
     def __set__(self, instance, new_option: str):
-        if new_option == 'alat':
+        if not new_option:  # if new_option is None:
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
                           category=DeprecationWarning)
         else:
@@ -61,35 +61,19 @@ class _Option(LabeledDescriptor):
 # ========================================= most important data structures =========================================
 class PWscfStandardInput(metaclass=MetaDescriptorOwner):
     atomic_positions_option = _Option()
+    cell_parameters_option = _Option()
 
-    def __init__(self):
-        self._CONTROL: Dict[str, Any] = {}
-        self._SYSTEM: Dict[str, Any] = {}
-        self._ELECTRON: Dict[str, Any] = {}
+    @LazyWritableProperty
+    def control(self):
+        pass
 
-    @property
-    def CONTROL(self):
-        return self._CONTROL
+    @LazyWritableProperty
+    def system(self):
+        pass
 
-    @CONTROL.setter
-    def CONTROL(self, d: dict):
-        self._CONTROL.update(d)
-
-    @property
-    def SYSTEM(self):
-        return self._SYSTEM
-
-    @SYSTEM.setter
-    def SYSTEM(self, d: dict):
-        self._SYSTEM.update(d)
-
-    @property
-    def ELECTRONS(self):
-        return self._ELECTRON
-
-    @ELECTRONS.setter
-    def ELECTRONS(self, d: dict):
-        self._ELECTRON.update(d)
+    @LazyWritableProperty
+    def electrons(self):
+        pass
 
     @LazyWritableProperty
     def cell_parameters(self) -> np.ndarray:
@@ -118,13 +102,13 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
 
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
-            for k, v in self.CONTROL.items():
+            for k, v in self.control.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&SYSTEM\n")
-            for k, v in self.SYSTEM.items():
+            for k, v in self.system.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&ELECTRONS\n")
-            for k, v in self.ELECTRONS.items():
+            for k, v in self.electrons.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\nCELL_PARAMETERS\n")
             f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters,
@@ -142,23 +126,13 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
 
 
 class PHononStandardInput:
-    def __init__(self):
-        self.__name__ = 'PHononStandaradInput'
-        self._INPUTPH_namelist: dict = {}
-        self._single_q_point = None
-        self._q_points = None
-
     @LazyWritableProperty
-    def title(self) -> str:
+    def title(self):
         pass
 
-    @property
-    def INPUTPH_namelist(self):
-        return self._INPUTPH_namelist
-
-    @INPUTPH_namelist.setter
-    def INPUTPH_namelist(self, d: dict):
-        self._INPUTPH_namelist.update(d)
+    @LazyWritableProperty
+    def inputph(self):
+        pass
 
     @LazyWritableProperty
     def single_q_point(self) -> np.ndarray:
@@ -174,14 +148,14 @@ class PHononStandardInput:
         with open(outfile_path, 'w') as f:
             f.write(self.title)
             f.write("/\n&INPUTPH\n")
-            for k, v in self._INPUTPH_namelist.items():
+            for k, v in self.inputph.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n")
-            if self._single_q_point:
-                f.write(' '.join(self._single_q_point))
+            if self.single_q_point:
+                f.write(' '.join(self.single_q_point))
                 f.write("\n")
-            elif self._q_points:
-                f.write(re.sub("[\[\]]", ' ', np.array2string(self._q_points,
+            elif self.q_points:
+                f.write(re.sub("[\[\]]", ' ', np.array2string(self.q_points,
                                                               formatter={
                                                                   'float_kind': lambda x: "{:20.10f}".format(x)})))
             else:

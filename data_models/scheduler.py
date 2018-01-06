@@ -7,7 +7,7 @@ from typing import Union
 
 from lazy_property import LazyWritableProperty, LazyProperty
 
-from default_configuerations.scheduler import default_Slurm_config
+from default_configuerations.scheduler import DEFAULT_SLURM_CONFIG
 from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
 
 
@@ -35,7 +35,7 @@ class _Time(LabeledDescriptor):
 
 def _slurm_system_config(item: str):
     if True:
-        return default_Slurm_config[item]
+        return DEFAULT_SLURM_CONFIG[item]
 
 
 class SlurmSystem(metaclass=MetaDescriptorOwner):

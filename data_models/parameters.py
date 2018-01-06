@@ -9,7 +9,7 @@ Since finding an element in a list is O(N) but in a set is O(1).
 from meta.parameter import ParameterGeneric, Namelist
 
 # =================================== I am a cut line ===================================
-CONTROL_namelist: Namelist = Namelist(
+CONTROL_NAMELIST: Namelist = Namelist(
     'CONTROL', [
         'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
         'dt', 'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr', 'disk_io',
@@ -23,7 +23,7 @@ CONTROL_namelist: Namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-SYSTEM_namelist: Namelist = Namelist(
+SYSTEM_NAMELIST: Namelist = Namelist(
     'SYSTEM', [
         'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat', 'ntyp', 'nbnd', 'tot_charge',
         'starting_charge',
@@ -55,7 +55,7 @@ SYSTEM_namelist: Namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-ELECTRONS_namelist: Namelist = Namelist(
+ELECTRONS_NAMELIST: Namelist = Namelist(
     'ELECTRONS', [
         'electron_maxstep', 'scf_must_converge', 'conv_thr', 'adaptive_thr', 'conv_thr_init', 'conv_thr_multi',
         'mixing_mode', 'mixing_beta', 'mixing_ndim', 'mixing_fixed_ns', 'diagonalization', 'ortho_para',
@@ -72,7 +72,7 @@ ELECTRONS_namelist: Namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-IONS_namelist: Namelist = Namelist(
+IONS_NAMELIST: Namelist = Namelist(
     'IONS', [
         'ion_dynamics', 'ion_positions', 'pot_extrapolation', 'wfc_extrapolation', 'remove_rigid_rot',
         'ion_temperature',
@@ -87,7 +87,7 @@ IONS_namelist: Namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-CELL_namelist: Namelist = Namelist(
+CELL_NAMELIST: Namelist = Namelist(
     'CELL', [
         'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree'
     ], [
@@ -96,7 +96,7 @@ CELL_namelist: Namelist = Namelist(
 )
 
 # =================================== I am a cut line ===================================
-INPUTPH_namelist = Namelist(
+INPUTPH_NAMELIST = Namelist(
     'INPUTPH', [
         'amass', 'outdir', 'prefix', 'niter_ph', 'tr2_ph', 'alpha_mix', 'nmix_ph', 'verbosity', 'reduce_io',
         'max_seconds', 'fildyn', 'fildrho', 'fildvscf', 'epsil', 'lrpa', 'lnoloc', 'trans', 'lraman',
@@ -136,7 +136,7 @@ class CONTROLParameter(_Parameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, CONTROL_namelist)
+        super().__init__(name, value, CONTROL_NAMELIST)
 
 
 class SYSTEMParameter(_Parameter):
@@ -146,7 +146,7 @@ class SYSTEMParameter(_Parameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, SYSTEM_namelist)
+        super().__init__(name, value, SYSTEM_NAMELIST)
 
 
 class ELECTRONSParameter(_Parameter):
@@ -156,7 +156,7 @@ class ELECTRONSParameter(_Parameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, ELECTRONS_namelist)
+        super().__init__(name, value, ELECTRONS_NAMELIST)
 
 
 class IONSParameter(_Parameter):
@@ -166,7 +166,7 @@ class IONSParameter(_Parameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, IONS_namelist)
+        super().__init__(name, value, IONS_NAMELIST)
 
 
 class CELLParameter(_Parameter):
@@ -176,9 +176,9 @@ class CELLParameter(_Parameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value, CELL_namelist)
+        super().__init__(name, value, CELL_NAMELIST)
 
 
 class INPUTPHParameter(_Parameter):
     def __init__(self, name, value):
-        super().__init__(name, value, INPUTPH_namelist)
+        super().__init__(name, value, INPUTPH_NAMELIST)

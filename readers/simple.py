@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
+from meta.text import TextStream
 from miscellaneous.string import *
 
 # ================================= These are some type aliases or type definitions. =================================
@@ -14,36 +15,7 @@ def is_namelist(obj: object):
         return False
 
 
-class Stream:
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
-        """
-
-
-        :param instream: If this is given, `infile` argument will be ignored.
-        :param infile: If `instream` is not given, this argument will be used.
-        """
-        if instream is None and infile is None:
-            raise TypeError('instream and infile cannot be both None! You must specify one of them!')
-        if isinstance(instream, str):
-            self.instream: str = instream
-            self.infile = None
-        elif isinstance(infile, str):
-            self.infile: str = infile
-            self.instream = None
-        else:
-            raise TypeError('The type of one argument is wrong! They should all be str!')
-
-    def stream_generator(self) -> Iterator[str]:
-        if self.instream:  # If `instream` is given and thus not `None`
-            for line in self.instream:
-                yield line
-        else:  # If `infile` is given and thus not `None`
-            with open(self.infile, 'r') as f:
-                for line in f:
-                    yield line
-
-
-class SimpleParser(Stream):
+class SimpleParser(TextStream):
     def _match_one_string(self, pattern: str, *args):
         pass
 

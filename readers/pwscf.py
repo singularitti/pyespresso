@@ -5,11 +5,6 @@ from data_models.qe_input import *
 from readers.simple import *
 from data_models.parameters import *
 
-# Type alias
-KPoints = NamedTuple('KPoints', [('grid', List[float]), ('offsets', List[float])])
-
-AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
-
 
 def write_to_file(obj: object, out_file: str):
     if isinstance(obj, PWscfStandardInput):
@@ -21,30 +16,30 @@ def write_to_file(obj: object, out_file: str):
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, CONTROL_namelist)
+        super().__init__(infile, CONTROL_NAMELIST)
 
 
 class SYSTEMNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, SYSTEM_namelist)
+        super().__init__(infile, SYSTEM_NAMELIST)
 
 
 class ELECTRONSNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, ELECTRONS_namelist)
+        super().__init__(infile, ELECTRONS_NAMELIST)
 
 
 class IONSNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, IONS_namelist)
+        super().__init__(infile, IONS_NAMELIST)
 
 
 class CELLNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, CELL_namelist)
+        super().__init__(infile, CELL_NAMELIST)
 
 
-class PWscfStandardInputParser(Stream):
+class PWscfStandardInputParser(TextStream):
     """
     This class read an scf input file in, and parse it.
     """
@@ -73,7 +68,7 @@ class PWscfStandardInputParser(Stream):
         """
         return ELECTRONSNamelistParser(self.infile).read_namelist()
 
-    def parse_cell_parameters(self) -> np.ndarray:
+    def parse_cell_parameters(self) -> Optional[Tuple[np.ndarray, str]]:
         """
         Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
         the real cell parameters!
@@ -83,10 +78,17 @@ class PWscfStandardInputParser(Stream):
         cell_params = np.empty([3, 3])
         for line in self.stream_generator():
             if 'CELL_PARAMETERS' in line.upper():
+                option = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?\n", line, re.IGNORECASE).group(1)
+                if not option:  # if option is None:
+                    option = 'bohr'
                 for i in range(3):
                     line = next(line)
                     cell_params[i] = strs_to_floats(line.split())
-        return cell_params
+                return cell_params, option
+        else:
+            warnings.warn(
+                'Not specifying unit or lattice parameter is DEPRECATED and will no longer be allowed in the future!',
+                category=DeprecationWarning)
 
     def parse_k_points(self) -> Optional[KPoints]:
         """
@@ -104,7 +106,7 @@ class PWscfStandardInputParser(Stream):
             if 'K_POINTS' in line.upper():
                 # The first parenthesized subgroup will be `option`.
                 option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
-                if not option:  # if `option` is `None`
+                if not option:  # if option is None:
                     option = 'tpiba'
                 try:
                     ks: List[int] = strs_to_ints(next(line).split())
@@ -144,7 +146,7 @@ class PWscfStandardInputParser(Stream):
         for line in self.stream_generator():
             if 'ATOMIC_POSITIONS' in line.upper():
                 option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
-                if not option:  # if `option` is `None`
+                if not option:  # if option is None:
                     warnings.warn("No option is found, default option 'alat' will be set!")
                     option = 'alat'
                 for _ in range(atoms_number):

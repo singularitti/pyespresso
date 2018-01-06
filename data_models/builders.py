@@ -21,13 +21,13 @@ class PWInputBuilder:
         self.input_obj = PWscfStandardInput()
 
     def build_CONTROL(self):
-        self.input_obj.CONTROL = self.parser.parse_control_namelist()
+        self.input_obj.control = self.parser.parse_control_namelist()
 
     def build_SYSTEM(self):
-        self.input_obj.SYSTEM = self.parser.parse_system_namelist()
+        self.input_obj.system = self.parser.parse_system_namelist()
 
     def build_ELECTRONS(self):
-        self.input_obj.ELECTRONS = self.parser.parse_electrons_namelist()
+        self.input_obj.electrons = self.parser.parse_electrons_namelist()
 
     def build_CELL_PARAMETERS(self):
         self.input_obj.cell_parameters = self.parser.parse_cell_parameters()
@@ -57,8 +57,8 @@ class PWInputFancier:
 
     def fancy_CONTROL(self):
         d = {}
-        CONTROL_default_parameters = CONTROL_namelist.default_parameters
-        for k, v in self.pw.CONTROL.items():
+        CONTROL_default_parameters = CONTROL_NAMELIST.default_parameters
+        for k, v in self.pw.control.items():
             if CONTROL_default_parameters[k][1] is float:
                 d.update({k: str_to_float(v)})
             else:
@@ -67,8 +67,8 @@ class PWInputFancier:
 
     def fancy_SYSTEM(self):
         d = {}
-        SYSTEM_default_parameters = SYSTEM_namelist.default_parameters
-        for k, v in self.pw.SYSTEM.items():
+        SYSTEM_default_parameters = SYSTEM_NAMELIST.default_parameters
+        for k, v in self.pw.system.items():
             if '(' in k:
                 # Only take the part before the first '('
                 k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
@@ -83,8 +83,8 @@ class PWInputFancier:
 
     def fancy_ELECTRONS(self):
         d = {}
-        ELECTRONS_default_parameters = ELECTRONS_namelist.default_parameters
-        for k, v in self.pw.ELECTRONS.items():
+        ELECTRONS_default_parameters = ELECTRONS_NAMELIST.default_parameters
+        for k, v in self.pw.electrons.items():
             if ELECTRONS_default_parameters[k][1] is float:
                 d.update({k: str_to_float(v)})
             else:
@@ -92,9 +92,9 @@ class PWInputFancier:
         return d
 
     def fancy_input(self):
-        self.pw.CONTROL = self.fancy_CONTROL()
-        self.pw.SYSTEM = self.fancy_SYSTEM()
-        self.pw.ELECTRONS = self.fancy_ELECTRONS()
+        self.pw.control = self.fancy_CONTROL()
+        self.pw.system = self.fancy_SYSTEM()
+        self.pw.electrons = self.fancy_ELECTRONS()
         return self.pw
 
 
@@ -104,7 +104,7 @@ class PHononInputBuilder:
         self.input_obj = PHononStandardInput()
 
     def build_INPUTPH(self):
-        self.input_obj.INPUTPH_namelist = self.parser.parse_INPUTPH_namelist()
+        self.input_obj.inputph = self.parser.parse_INPUTPH_namelist()
 
     def build_title(self):
         self.input_obj.__title__ = self.parser.parse_title()

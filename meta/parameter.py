@@ -110,8 +110,8 @@ class ParameterGeneric:
         """
         return "The parameter is '{0}', value: {1}, with type: {2}".format(self.name, self.value, self.type.__name__)
 
-    def __repr__(self):
-        return "'{0}': {1}".format(self.name, self.value)
+    # def __repr__(self):
+    #     return "'{0}': {1}".format(self.name, self.value)
 
 
 class Namelist:
