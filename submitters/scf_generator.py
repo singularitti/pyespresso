@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from data_models.pw_params import *
+from data_models.parameters import *
 from miscellaneous.string import *
 
 
@@ -42,7 +42,7 @@ class SCFGenerator:
         self.control, self.system, self.eletrons, self.ions, self.cell = self._split_parameters()
         self.atomic_species, self.amsmass, self.amspp, self.cell_param, self.atomic_positions = self.read_variable_input()
 
-    def read_fixed_input(self) -> Parameter:
+    def read_fixed_input(self) -> ParameterGeneric:
         """
         This method reads submitters from a given template file. Each line in the file is of form:
             key: value

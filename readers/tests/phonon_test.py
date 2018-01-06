@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from beeprint import pp
 
-from data_models.phonon_builder import PHononInputBuilder
+from data_models.builders import PHononInputBuilder
 from readers.phonon import *
 
 

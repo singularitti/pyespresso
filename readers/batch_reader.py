@@ -4,10 +4,10 @@
 import re
 from itertools import filterfalse
 from typing import *
-from readers.simple import SingleFileParser
+from readers.simple import SimpleParser
 
 
-class SlurmBatchReader(SingleFileParser):
+class SlurmBatchReader(SimpleParser):
     def read_shebang(self) -> str:
         """
 

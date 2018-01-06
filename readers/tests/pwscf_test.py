@@ -5,8 +5,8 @@ import unittest
 
 from beeprint import pp
 
-from data_models.pw_builder import *
-from data_models.pwscf import *
+from data_models.builders import *
+from data_models.qe_input import *
 
 
 class TestPWscfInputReader(unittest.TestCase):

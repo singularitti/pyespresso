@@ -13,9 +13,19 @@ from lazy_property import LazyWritableProperty
 from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
 from miscellaneous.path_generator import path_generator
 
-KPoints = namedtuple('KPoints', ['grid', 'offsets'])
-AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
-AtomicPositions = namedtuple('AtomicPositions', ['name', 'positions'])
+# Type alias
+KPoints = NamedTuple('KPoints', [('grid', int), ('offsets', int)])
+AtomicSpecies = NamedTuple('AtomicSpecies', [('name', str), ('mass', float), ('pseudopotential', str)])
+AtomicPosition = NamedTuple('AtomicPosition', [('name', str), ('position', np.ndarray)])
+
+# Define namedtuple data structure
+KPoints: KPoints = namedtuple('KPoints', ['grid', 'offsets'])
+AtomicSpecies: AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
+AtomicSpecies.__doc__ = \
+    """Note that the word 'species' serves as singular and plural both. So here though suffixed with a 's', it is for 
+    one atom and thus is singular.
+    """
+AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
 
 
 def is_pw_input(obj: object):
@@ -45,7 +55,7 @@ class _Option(LabeledDescriptor):
             instance.__dict__[self.label] = new_option
 
 
-class PWStandardInput(metaclass=MetaDescriptorOwner):
+class PWscfStandardInput(metaclass=MetaDescriptorOwner):
     atomic_positions_option = _Option()
 
     def __init__(self):
@@ -125,3 +135,50 @@ class PWStandardInput(metaclass=MetaDescriptorOwner):
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
 
         print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(outfile_path)))
+
+
+class PHononStandardInput:
+    def __init__(self):
+        self.__name__ = 'PHononStandaradInput'
+        self._INPUTPH_namelist: dict = {}
+        self._single_q_point = None
+        self._q_points = None
+
+    @LazyWritableProperty
+    def title(self) -> str:
+        pass
+
+    @property
+    def INPUTPH_namelist(self):
+        return self._INPUTPH_namelist
+
+    @INPUTPH_namelist.setter
+    def INPUTPH_namelist(self, d: dict):
+        self._INPUTPH_namelist.update(d)
+
+    @LazyWritableProperty
+    def single_q_point(self) -> np.ndarray:
+        pass
+
+    @LazyWritableProperty
+    def q_points(self) -> np.ndarray:
+        pass
+
+    def write_to_file(self, out_file: str):
+        with open(out_file, 'w') as f:
+            f.write(self.title)
+            f.write("/\n&INPUTPH\n")
+            for k, v in self._INPUTPH_namelist.items():
+                f.write("{0} = {1}\n".format(k, v))
+            f.write("/\n")
+            if self._single_q_point:
+                f.write(' '.join(self._single_q_point))
+                f.write("\n")
+            elif self._q_points:
+                f.write(
+                    re.sub("[\[\]]", ' ',
+                           np.array2string(self._q_points,
+                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
+                )
+            else:
+                print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(out_file)))

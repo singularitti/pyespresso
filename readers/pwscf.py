@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
-from data_models.pwscf import *
+from data_models.qe_input import *
 from readers.simple import *
-from data_models.pw_params import *
+from data_models.parameters import *
 
 # Type alias
 KPoints = NamedTuple('KPoints', [('grid', List[float]), ('offsets', List[float])])
@@ -12,7 +12,7 @@ AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
 
 
 def write_to_file(obj: object, out_file: str):
-    if isinstance(obj, PWStandardInput):
+    if isinstance(obj, PWscfStandardInput):
         obj.to_text_file(out_file)
     else:
         raise TypeError('Input object is not an {0}!'.format('SCFStandardInput'))
@@ -44,7 +44,7 @@ class CELLNamelistParser(NamelistParserGeneric):
         super().__init__(infile, CELL_namelist)
 
 
-class PWInputParser(SingleFileParser):
+class PWscfStandardInputParser(Stream):
     """
     This class read an scf input file in, and parse it.
     """
@@ -81,76 +81,86 @@ class PWInputParser(SingleFileParser):
         :return: a numpy array that stores the cell parameters
         """
         cell_params = np.empty([3, 3])
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if 'CELL_PARAMETERS' in line.upper():
-                    for i in range(3):
-                        line = f.readline()
-                        # if not line.strip():  # If there are blank lines
-                        #     line = f.readline()
-                        cell_params[i] = strs_to_floats(line.split())
+        for line in self.stream_generator():
+            if 'CELL_PARAMETERS' in line.upper():
+                for i in range(3):
+                    line = next(line)
+                    cell_params[i] = strs_to_floats(line.split())
         return cell_params
 
     def parse_k_points(self) -> Optional[KPoints]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
-        If there is no 'K_POINTS' in file, it will read to end, and raise an error.
-
         We allow options and comments on the same line as 'K_POINTS':
 
-        >>> test_strs = ['K_POINTS { crystal }','K_POINTS {crystal}','K_POINTS  crystal','K_POINTScrystal',\
+        >>> test_strs = ['K_POINTS { crystal }','K_POINTS {crystal}','K_POINTS  crystal','K_POINTScrystal', \
         'K_POINTScrystal! This is a comment.','K_POINTS ! This is a comment.','K_POINTS']
-        >>> [re.match("K_POINTS\s*{?\s*(\w*)\s*}?", s, re.IGNORECASE).groups()[0] for s in test_strs]
+        >>> [re.match("K_POINTS\s*{?\s*(\w*)\s*}?", s, re.IGNORECASE).group(1) for s in test_strs]
         ['crystal', 'crystal', 'crystal', 'crystal', 'crystal', '', '']
 
         :return: a named tuple defined above
         """
-        option = 'tbipa'
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if 'K_POINTS' in line.upper():
-                    option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
-                    sp: List[str] = f.readline().split()
-                    grid = strs_to_ints(sp[0:3])
-                    offsets = strs_to_ints(sp[3:7])
-        return KPoints(grid=grid, offsets=offsets), option
+        for line in self.stream_generator():
+            if 'K_POINTS' in line.upper():
+                # The first parenthesized subgroup will be `option`.
+                option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
+                if not option:  # if `option` is `None`
+                    option = 'tpiba'
+                try:
+                    ks: List[int] = strs_to_ints(next(line).split())
+                except (ValueError, TypeError):
+                    raise ValueError('This line is not a line of strings that can be converted into integers!')
+                try:
+                    grid, offsets = ks[0:3], ks[3:7]
+                except IndexError:
+                    raise IndexError('This line contains less than 6 integers!')
+                return KPoints(grid=grid, offsets=offsets), option
+        else:
+            warnings.warn("No 'K_POINTS' is found in your input! Check it!")
 
-    def parse_atomic_species(self):
-        atmsp = []
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if 'ATOMIC_SPECIES' in line.upper():
-                    for _ in range(int(self.parse_system_namelist()['ntyp'])):
-                        line = f.readline()
-                        if not line.strip():
-                            line = f.readline()
-                        name, mass, pseudopotential = line.strip().split()
-                        atmsp.append(AtomicSpecies(name, float(mass), pseudopotential))
-        return atmsp
-
-    def parse_atomic_positions(self):
-        atmpos = []
-        option = 'alat'
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if 'ATOMIC_POSITIONS' in line.upper():
-                    option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).groups()[0]
-                    for _ in range(int(self.parse_system_namelist()['nat'])):
-                        atmpos.append(f.readline().strip().split())
-        return atmpos, option
-
-    def __str__(self):
+    def parse_atomic_species(self) -> Optional[List[AtomicSpecies]]:
         try:
-            from beeprint import pp
-            return str(pp(vars(self)))
-        except ModuleNotFoundError:
-            str(vars(self))
+            atom_types_number = int(self.parse_system_namelist()['ntyp'])
+        except KeyError:
+            raise KeyError("The 'ntyp' parameter is not correctly given in SYSTEM namelist!")
+        atomic_species = []
+        for line in self.stream_generator():
+            if 'ATOMIC_SPECIES' in line.upper():
+                for _ in range(atom_types_number):
+                    if not line.strip():  # if this line is followed by an empty line
+                        line = next(line)
+                    name, mass, pseudopotential = next(line).strip().split()
+                    atomic_species.append(AtomicSpecies(name, float(mass), pseudopotential))
+                return atomic_species
+        else:
+            warnings.warn("No 'ATOMIC_SPECIES' is found in your input! Check it!")
 
-    __repr__ = __str__
+    def parse_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
+        try:
+            atoms_number = int(self.parse_system_namelist()['nat'])
+        except KeyError:
+            raise KeyError("The 'nat' parameter is not correctly given in SYSTEM namelist!")
+        atomic_positions = []
+        for line in self.stream_generator():
+            if 'ATOMIC_POSITIONS' in line.upper():
+                option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
+                if not option:  # if `option` is `None`
+                    warnings.warn("No option is found, default option 'alat' will be set!")
+                    option = 'alat'
+                for _ in range(atoms_number):
+                    if not line.strip():  # if this line is followed by an empty line
+                        line = next(line)
+                    name, coord1, coord2, coord3 = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)",
+                                                            next(line).strip()).groups()
+                    atomic_positions.append(
+                        AtomicPosition(name, np.array(strs_to_floats([coord1, coord2, coord3]))))
+                return atomic_positions, option
+        else:
+            warnings.warn("No 'ATOMIC_POSITIONS' is found in your input! Check it!")
 
 
 # ====================================== The followings are output readers. ======================================
-class PWscfOutputParser(SingleFileParser):
+class PWscfOutputParser(SimpleParser):
     def read_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.

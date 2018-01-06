@@ -14,7 +14,7 @@ def is_namelist(obj: object):
         return False
 
 
-class SingleFileParser:
+class Stream:
     def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
         """
 
@@ -22,6 +22,8 @@ class SingleFileParser:
         :param instream: If this is given, `infile` argument will be ignored.
         :param infile: If `instream` is not given, this argument will be used.
         """
+        if instream is None and infile is None:
+            raise TypeError('instream and infile cannot be both None! You must specify one of them!')
         if isinstance(instream, str):
             self.instream: str = instream
             self.infile = None
@@ -29,7 +31,7 @@ class SingleFileParser:
             self.infile: str = infile
             self.instream = None
         else:
-            raise TypeError('instream and infile cannot be both None! You must specify one of them!')
+            raise TypeError('The type of one argument is wrong! They should all be str!')
 
     def stream_generator(self) -> Iterator[str]:
         if self.instream:  # If `instream` is given and thus not `None`
@@ -40,6 +42,8 @@ class SingleFileParser:
                 for line in f:
                     yield line
 
+
+class SimpleParser(Stream):
     def _match_one_string(self, pattern: str, *args):
         pass
 

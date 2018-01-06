@@ -29,10 +29,10 @@ def _int_to_qe_str(x: int) -> str:
     return str(x)
 
 
-class Parameter:
+class ParameterGeneric:
     def __init__(self, name: str, value: Union[str, int, float, bool], value_type: Type[Union[str, int, float, bool]]):
         """
-        Generate an `Parameter` object, which stores user given name, and value.
+        Generate an `ParameterGeneric` object, which stores user given name, and value.
 
         :param name: the name given by user in the card
         :param value: a raw value given by user, has to be a string, it will be converted into exact type defined by

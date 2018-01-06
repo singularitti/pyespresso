@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-# created at Dec 7, 2017 1:46 AM by Qi Zhang
+# created at Dec 22, 2017 10:48 PM by Qi Zhang
 
-from data_models.pw_params import *
-from data_models.pwscf import PWStandardInput
+from data_models.parameters import *
+from data_models.qe_input import PHononStandardInput
+from data_models.qe_input import PWscfStandardInput
 from miscellaneous.string import *
-from readers.pwscf import PWInputParser
+from readers.phonon import PHononInputParser
+from readers.pwscf import PWscfStandardInputParser
 
 
-def build_pw_input(in_file: str) -> PWStandardInput:
+def build_pw_input(in_file: str) -> PWscfStandardInput:
     pwib = PWInputBuilder(in_file)
     pwib.build_all()
     return pwib.input_obj
@@ -15,8 +17,8 @@ def build_pw_input(in_file: str) -> PWStandardInput:
 
 class PWInputBuilder:
     def __init__(self, infile):
-        self.parser = PWInputParser(infile)
-        self.input_obj = PWStandardInput()
+        self.parser = PWscfStandardInputParser(infile)
+        self.input_obj = PWscfStandardInput()
 
     def build_CONTROL(self):
         self.input_obj.CONTROL = self.parser.parse_control_namelist()
@@ -50,7 +52,7 @@ class PWInputBuilder:
 
 
 class PWInputFancier:
-    def __init__(self, obj: PWStandardInput):
+    def __init__(self, obj: PWscfStandardInput):
         self.pw = obj
 
     def fancy_CONTROL(self):
@@ -94,3 +96,27 @@ class PWInputFancier:
         self.pw.SYSTEM = self.fancy_SYSTEM()
         self.pw.ELECTRONS = self.fancy_ELECTRONS()
         return self.pw
+
+
+class PHononInputBuilder:
+    def __init__(self, in_file):
+        self.parser = PHononInputParser(in_file)
+        self.input_obj = PHononStandardInput()
+
+    def build_INPUTPH(self):
+        self.input_obj.INPUTPH_namelist = self.parser.parse_INPUTPH_namelist()
+
+    def build_title(self):
+        self.input_obj.__title__ = self.parser.parse_title()
+
+    def build_single_q_point(self):
+        self.input_obj.single_q_point = self.parser.parse_single_q_point()
+
+    def build_q_points(self):
+        self.input_obj.q_points = self.parser.parse_q_points()
+
+    def build_all(self):
+        self.build_INPUTPH()
+        # self.build_title()
+        self.build_single_q_point()
+        self.build_q_points()

@@ -4,7 +4,7 @@
 from readers.simple import *
 
 
-class JobHeadParser(SingleFileParser):
+class JobHeadParser(SimpleParser):
     def read_scheduler(self) -> str:
         return self._match_one_pattern("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
 
