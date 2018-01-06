@@ -10,7 +10,7 @@ class StreamTester(TestCase):
         self.infile = 'cell_test.py'
         with open(self.infile, 'r') as f:
             self.instream = repr(f.read())
-        self.stream = TextStream(instream=self.instream)
+        self.stream = TextStream(instr=self.instream)
 
     def test_print(self):
         for line in self.stream.stream_generator():

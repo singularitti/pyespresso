@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # created at Nov 20, 2017 8:18 PM by Qi Zhang
 
-from collections import defaultdict
-from typing import DefaultDict, Type, Union, Tuple, List, Callable, Dict
+from collections import defaultdict, namedtuple
+from typing import DefaultDict, Type, Union, Tuple, List, Callable, Dict, NamedTuple, Any
 
-# Type alias
+# ================================= These are some type aliases or type definitions. =================================
 DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
+SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Any), ('type', str)])
+
+# ========================================= define useful data structures =========================================
+SimpleParameter: SimpleParameter = namedtuple('SimpleParameter', ['name', 'value', 'type'])
 
 
 def _str_to_qe_str(x: str) -> str:
@@ -67,13 +71,13 @@ class ParameterGeneric:
         self._value = new_value
 
     @property
-    def type(self) -> Type[Union[str, int, float, bool]]:
+    def type(self) -> str:
         """
         Read-only property, cannot be changed once the instance is generated.
 
         :return:
         """
-        return self._type
+        return self._type.__name__
 
     @property
     def default_value(self) -> Union[str, int, float, bool]:
@@ -108,10 +112,11 @@ class ParameterGeneric:
 
         :return: a string showing `self.name` and `self.value`
         """
-        return "The parameter is '{0}', value: {1}, with type: {2}".format(self.name, self.value, self.type.__name__)
+        return "The parameter is '{0}', with value: {1}, and type: {2}.".format(self._name, self.value,
+                                                                                self.type)
 
-    # def __repr__(self):
-    #     return "'{0}': {1}".format(self.name, self.value)
+    def __repr__(self):
+        return str(SimpleParameter(self._name, self.value, self.type))
 
 
 class Namelist:

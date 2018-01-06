@@ -32,5 +32,4 @@ PWSCF_GENERATOR_CONFIG = {
 
 
 def pwscf_generator_config(raw, val):
-    print(raw, val)
     return PWSCF_GENERATOR_CONFIG[raw](val)

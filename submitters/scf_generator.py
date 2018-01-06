@@ -9,12 +9,12 @@ from typing import DefaultDict
 from default_configuerations.generator_mappings import pwscf_generator_config
 
 
-class PWscfStandardInputCreator(TextStream):
+class PWscfFixedFormParser(TextStream):
     """
 
     """
 
-    def read_fixed_input(self) -> DefaultDict[str, str]:
+    def _read_raw_parameters(self) -> DefaultDict[str, str]:
         """
         This method reads submitters from a given template file. Each line in the file is of form:
             key: value
@@ -26,15 +26,15 @@ class PWscfStandardInputCreator(TextStream):
         raw_parameters = defaultdict(str)
 
         for line in self.stream_generator():
-            print(line)
             stripped_line = line.strip()
             # If a line starts with '#', it will be regarded as a comment,
             # we do not parse this line.
-            if stripped_line.startswith('#'):  # If a line starts with '#', continue following code
+            if stripped_line.startswith('#'):  # If a line starts with '#', continue following code.
                 continue
-            if not stripped_line:  # If a line is a blank line, jump out of this step and continue next one
+            if not stripped_line:  # If a line is a blank line, jump out of this step and continue next one.
                 continue
             # Use ':' as the delimiter, split the line into key and value.
+            # You can have at most one ':' in this line!
             key, value = stripped_line.split(':', maxsplit=1)
             key: str = key.strip()
             value: str = value.strip()
@@ -48,9 +48,9 @@ class PWscfStandardInputCreator(TextStream):
 
     @LazyProperty
     def raw_parameters(self):
-        return self.read_fixed_input()
+        return self._read_raw_parameters()
 
-    def build_parameters(self):
+    def _build_parameters(self):
         """
         Split fixed parameters into 5 dictionaries.
         """
@@ -59,5 +59,15 @@ class PWscfStandardInputCreator(TextStream):
             parameters.add(pwscf_generator_config(k, v))
         return parameters
 
-    def read_variable_input(self):
+    @LazyProperty
+    def parameters(self):
+        return self._build_parameters()
+
+
+class PWscfFreeFormParser(TextStream):
+    """
+
+    """
+
+    def _read_raw_parameters(self):
         pass

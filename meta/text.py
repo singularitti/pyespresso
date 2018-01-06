@@ -8,17 +8,17 @@ from lazy_property import LazyProperty
 
 
 class TextStream:
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
+    def __init__(self, instr: Optional[str] = None, infile: Optional[str] = None):
         """
 
 
-        :param instream: If this is given, `infile` argument will be ignored.
+        :param instr: If this is given, `infile` argument will be ignored.
         :param infile: If `instream` is not given, this argument will be used.
         """
-        if instream is None and infile is None:
+        if instr is None and infile is None:
             raise TypeError('instream and infile cannot be both None! You must specify one of them!')
-        if isinstance(instream, str):
-            self.instream: str = instream
+        if isinstance(instr, str):
+            self.instream: str = instr
             self.infile = None
         elif isinstance(infile, str):
             self.infile: str = infile
