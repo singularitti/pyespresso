@@ -12,8 +12,7 @@ from typing import *
 import numpy as np
 import spglib
 from json_tricks import *
-
-from meta.lazy import CachedProperty
+from lazy_property import LazyProperty
 
 # ================================= These are some type aliases or type definitions. =================================
 CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)
@@ -247,7 +246,7 @@ class Cell:
         """
         return spglib.get_spacegroup(self.cell, symprec, angle_tolerance, symbol_type)
 
-    @CachedProperty
+    @LazyProperty
     def spacegroup(self) -> str:
         """
         A property as a shorthand of `get_spacegroup`.
@@ -260,7 +259,7 @@ class Cell:
     def get_symmetry(self, symprec: float = 1e-5, angle_tolerance=-1.0) -> Dict[str, np.array]:
         return spglib.get_symmetry(self.cell, symprec, angle_tolerance)
 
-    @CachedProperty
+    @LazyProperty
     def symmetry(self) -> Dict[str, np.array]:
         return self.get_symmetry(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
@@ -330,7 +329,7 @@ class Cell:
         else:
             return d
 
-    @CachedProperty
+    @LazyProperty
     def symmetry_dataset(self) -> Optional[Dict[str, Union[int, np.ndarray, str, List[str]]]]:
         """
         A property as a shorthand of `get_symmetry_dataset` method.
@@ -345,7 +344,7 @@ class Cell:
         """
         return self.get_symmetry_dataset(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
-    @CachedProperty
+    @LazyProperty
     def number(self) -> int:
         """
         This is just a wrapper for `symmetry_dataset['number']`.
@@ -354,7 +353,7 @@ class Cell:
         """
         return self.symmetry_dataset['number']
 
-    @CachedProperty
+    @LazyProperty
     def hall_number(self) -> int:
         """
         This is just a wrapper for `symmetry_dataset['hall_number']`.
@@ -363,7 +362,7 @@ class Cell:
         """
         return self.symmetry_dataset['hall_number']
 
-    @CachedProperty
+    @LazyProperty
     def international(self) -> str:
         """
         This is just a wrapper for `symmetry_dataset['international']`.
@@ -374,7 +373,7 @@ class Cell:
 
     international_short = international
 
-    @CachedProperty
+    @LazyProperty
     def hall(self) -> str:
         """
         This is just a wrapper for `symmetry_dataset['hall']`.
@@ -385,7 +384,7 @@ class Cell:
 
     hall_symbol = hall
 
-    @CachedProperty
+    @LazyProperty
     def choice(self) -> str:
         """
         This is just a wrapper for `symmetry_dataset['choice']`.
@@ -394,7 +393,7 @@ class Cell:
         """
         return self.symmetry_dataset['choice']
 
-    @CachedProperty
+    @LazyProperty
     def transformation_matrix(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['transformation_matrix']`.
@@ -403,7 +402,7 @@ class Cell:
         """
         return self.symmetry_dataset['transformation_matrix']
 
-    @CachedProperty
+    @LazyProperty
     def origin_shift(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['origin_shift']`.
@@ -412,7 +411,7 @@ class Cell:
         """
         return self.symmetry_dataset['origin_shift']
 
-    @CachedProperty
+    @LazyProperty
     def rotations(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['rotations']`.
@@ -421,7 +420,7 @@ class Cell:
         """
         return self.symmetry_dataset['rotations']
 
-    @CachedProperty
+    @LazyProperty
     def translations(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['translations']`.
@@ -430,7 +429,7 @@ class Cell:
         """
         return self.symmetry_dataset['translations']
 
-    @CachedProperty
+    @LazyProperty
     def wyckoffs(self) -> List[str]:
         """
         This is just a wrapper for `symmetry_dataset['wyckoffs']`.
@@ -439,7 +438,7 @@ class Cell:
         """
         return self.symmetry_dataset['wyckoffs']
 
-    @CachedProperty
+    @LazyProperty
     def equivalent_atoms(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['equivalent_atoms']`.
@@ -448,7 +447,7 @@ class Cell:
         """
         return self.symmetry_dataset['equivalent_atoms']
 
-    @CachedProperty
+    @LazyProperty
     def mapping_to_primitive(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['mapping_to_primitive']`.
@@ -457,7 +456,7 @@ class Cell:
         """
         return self.symmetry_dataset['mapping_to_primitive']
 
-    @CachedProperty
+    @LazyProperty
     def std_lattice(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['std_lattice']`.
@@ -466,7 +465,7 @@ class Cell:
         """
         return self.symmetry_dataset['std_lattice']
 
-    @CachedProperty
+    @LazyProperty
     def std_types(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['std_types']`.
@@ -475,7 +474,7 @@ class Cell:
         """
         return self.symmetry_dataset['std_types']
 
-    @CachedProperty
+    @LazyProperty
     def std_positions(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['std_positions']`.
@@ -484,7 +483,7 @@ class Cell:
         """
         return self.symmetry_dataset['std_positions']
 
-    @CachedProperty
+    @LazyProperty
     def std_mapping_to_primitive(self) -> np.ndarray:
         """
         This is just a wrapper for `symmetry_dataset['std_mapping_to_primitive']`.
@@ -493,7 +492,7 @@ class Cell:
         """
         return self.symmetry_dataset['std_mapping_to_primitive']
 
-    @CachedProperty
+    @LazyProperty
     def pointgroup(self) -> str:
         """
         This is just a wrapper for `symmetry_dataset['pointgroup']`.
@@ -519,7 +518,7 @@ class Cell:
             niggli_lattice, = search_result
             return niggli_lattice
 
-    @CachedProperty
+    @LazyProperty
     def niggli_lattice(self):
         """
         This is just a property as a shorthand for `self.niggli_reduce` method.
@@ -542,7 +541,7 @@ class Cell:
             delaunay_lattice, = search_result
             return delaunay_lattice
 
-    @CachedProperty
+    @LazyProperty
     def delaunay_lattice(self):
         """
         This is just a property as a shorthand for `self.delaunay_reduce` method.
@@ -569,7 +568,7 @@ class Cell:
     # ========================================= end =========================================
 
     # ============================== Code block for spacegroup type ==============================
-    @CachedProperty
+    @LazyProperty
     def spacegroup_type(self) -> Dict[str, Union[str, int]]:
         """
 
@@ -579,7 +578,7 @@ class Cell:
         # `self.symmetry_dataset` is changed by accident, unwanted error may arise!
         return get_spacegroup_type(self.hall_number)
 
-    @CachedProperty
+    @LazyProperty
     def international_full(self) -> str:
         """
         This is just a wrapper for `spacegroup_type['international_full']`.
@@ -588,7 +587,7 @@ class Cell:
         """
         return self.spacegroup_type['international_full']
 
-    @CachedProperty
+    @LazyProperty
     def schoenflies(self) -> str:
         """
         This is just a wrapper for `spacegroup_type['schoenflies']`.
@@ -597,7 +596,7 @@ class Cell:
         """
         return self.spacegroup_type['schoenflies']
 
-    @CachedProperty
+    @LazyProperty
     def pointgroup_schoenflies(self) -> str:
         """
         This is just a wrapper for `spacegroup_type['pointgroup_schoenflies']`.
@@ -606,7 +605,7 @@ class Cell:
         """
         return self.spacegroup_type['pointgroup_schoenflies']
 
-    @CachedProperty
+    @LazyProperty
     def pointgroup_international(self) -> str:
         """
         This is just a wrapper for `spacegroup_type['pointgroup_international']`.
@@ -615,7 +614,7 @@ class Cell:
         """
         return self.spacegroup_type['pointgroup_international']
 
-    @CachedProperty
+    @LazyProperty
     def arithmetic_crystal_class_number(self) -> int:
         """
         This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_number']`.
@@ -624,7 +623,7 @@ class Cell:
         """
         return self.spacegroup_type['arithmetic_crystal_class_number']
 
-    @CachedProperty
+    @LazyProperty
     def arithmetic_crystal_class_symbol(self) -> str:
         """
         This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_symbol']`.

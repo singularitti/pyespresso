@@ -13,21 +13,23 @@ from lazy_property import LazyWritableProperty
 from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
 from miscellaneous.path_generator import path_generator
 
-# Type alias
+# ========================================= type alias =========================================
 KPoints = NamedTuple('KPoints', [('grid', int), ('offsets', int)])
 AtomicSpecies = NamedTuple('AtomicSpecies', [('name', str), ('mass', float), ('pseudopotential', str)])
 AtomicPosition = NamedTuple('AtomicPosition', [('name', str), ('position', np.ndarray)])
 
-# Define namedtuple data structure
+# ========================================= define useful data structures =========================================
 KPoints: KPoints = namedtuple('KPoints', ['grid', 'offsets'])
+
 AtomicSpecies: AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
 AtomicSpecies.__doc__ = \
-    """Note that the word 'species' serves as singular and plural both. So here though suffixed with a 's', it is for 
-    one atom and thus is singular.
-    """
+    """Note that the word 'species' serves as singular and plural both.
+    So here though suffixed with a 's', it is for one atom and thus is singular."""
+
 AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
 
 
+# ========================================= define useful functions =========================================
 def is_pw_input(obj: object):
     if all(hasattr(obj, attr) for attr in ['CONTROL', 'SYSTEM', 'ELECTRONS', 'CELL_PARAMETERS']):
         return True
@@ -46,6 +48,7 @@ def print_pw_input(obj: object):
         raise TypeError("{0} is not a {1} object!".format(obj, type(obj).__name__))
 
 
+# ========================================= define useful data structures =========================================
 class _Option(LabeledDescriptor):
     def __set__(self, instance, new_option: str):
         if new_option == 'alat':
@@ -55,6 +58,7 @@ class _Option(LabeledDescriptor):
             instance.__dict__[self.label] = new_option
 
 
+# ========================================= most important data structures =========================================
 class PWscfStandardInput(metaclass=MetaDescriptorOwner):
     atomic_positions_option = _Option()
 
@@ -164,8 +168,10 @@ class PHononStandardInput:
     def q_points(self) -> np.ndarray:
         pass
 
-    def write_to_file(self, out_file: str):
-        with open(out_file, 'w') as f:
+    def write_to_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
+        outfile_path = path_generator(outfile, path_prefix)
+
+        with open(outfile_path, 'w') as f:
             f.write(self.title)
             f.write("/\n&INPUTPH\n")
             for k, v in self._INPUTPH_namelist.items():
@@ -175,10 +181,8 @@ class PHononStandardInput:
                 f.write(' '.join(self._single_q_point))
                 f.write("\n")
             elif self._q_points:
-                f.write(
-                    re.sub("[\[\]]", ' ',
-                           np.array2string(self._q_points,
-                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
-                )
+                f.write(re.sub("[\[\]]", ' ', np.array2string(self._q_points,
+                                                              formatter={
+                                                                  'float_kind': lambda x: "{:20.10f}".format(x)})))
             else:
-                print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(out_file)))
+                print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(outfile_path)))
