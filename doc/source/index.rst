@@ -10,15 +10,13 @@ PyQuE: the missing processing tookit for QE
    :maxdepth: 4
    :caption: Contents:
 
-   What’s New
-   Installation
-   Package overview
-   Tutorials
+   install
+   contributing
+   overview
+   tutorials
    Intro to Data Structures
-   API Reference
    meta
-   Documentation style
-   Type annotation
+   style
    test
 
 Indices and tables

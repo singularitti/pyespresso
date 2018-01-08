@@ -1,10 +1,15 @@
-.. currentmodule:: PyQuE
+:mod:`meta.cell`
+===========
 
-*************
-API Reference
-*************
+.. currentmodule:: meta
+
+Class overview
+--------------
+
+.. contents:: Table of contents:
+   :local:
 
 .. autosummary::
-   :toctree: meta
+   :template: class.rst
 
-   meta.cell
+   Cell

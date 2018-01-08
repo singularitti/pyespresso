@@ -4,6 +4,9 @@
 Sphinx extensions for embedded plots, math and more
 ****************************************************
 
+.. contents:: Table of contents:
+   :local:
+
 Sphinx is written in python, and supports the ability to write custom
 extensions.  We've written a few for the matplotlib documentation,
 some of which are part of matplotlib itself in the
