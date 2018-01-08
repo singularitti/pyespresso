@@ -7,4 +7,4 @@ API Reference
 .. autosummary::
    :toctree: meta
 
-   cell
+   meta.cell
