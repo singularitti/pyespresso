@@ -3,8 +3,8 @@
 
 from functools import partialmethod
 
-from data_models.parameters import *
-from miscellaneous.string import strs_to_ints
+from pyque.data_models.parameters import *
+from pyque.miscellaneous.strings import strs_to_ints
 
 
 def partialclass(cls, *args, **kwds):

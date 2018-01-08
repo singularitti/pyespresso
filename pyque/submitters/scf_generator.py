@@ -2,11 +2,12 @@
 # created at Jul 21, 2017 12:29 by Qi Zhang
 
 from collections import defaultdict
+from typing import DefaultDict
+
 from lazy_property import LazyProperty
 
-from meta.text import TextStream
-from typing import DefaultDict
-from default_configuerations.generator_mappings import pwscf_generator_config
+from pyque.default_configuerations.generator_mappings import pwscf_generator_config
+from pyque.meta.text import TextStream
 
 
 class PWscfFixedFormParser(TextStream):

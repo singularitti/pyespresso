@@ -3,8 +3,9 @@
 
 import numpy as np
 
-from data_models.phonon_params import INPUTPH_namelist
-from readers.simple import *
+from pyque.data_models.parameters import INPUTPH_NAMELIST
+from pyque.miscellaneous.strings import *
+from pyque.readers.simple import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
@@ -12,7 +13,7 @@ IntArray = Union[int, List[int], np.ndarray]
 
 class INPUTPHNamelistParser(NamelistParserGeneric):
     def __init__(self, infile):
-        super().__init__(infile, INPUTPH_namelist)
+        super().__init__(infile, INPUTPH_NAMELIST)
 
 
 class PHononInputParser(SimpleParser):

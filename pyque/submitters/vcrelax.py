@@ -11,7 +11,7 @@ import time
 import numpy as np
 from scipy.optimize import curve_fit
 
-from readers.job_head import *
+from pyque.readers.job_head import *
 from . import flow
 
 

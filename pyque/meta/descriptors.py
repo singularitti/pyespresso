@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # created at Dec 30, 2017 1:14 PM by Qi Zhang
+"""
+Referenced from
+`here <http://nbviewer.jupyter.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb/>`_.
+"""
 
 from weakref import WeakKeyDictionary
 
 
-# Referenced from
-# [here](http://nbviewer.jupyter.org/urls/gist.github.com/ChrisBeaumont/5758381/raw/descriptor_writeup.ipynb).
 class LabeledDescriptor:
     """
     A "strong" descriptor.

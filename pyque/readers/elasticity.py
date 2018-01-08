@@ -4,9 +4,11 @@
 This module will only deal with elastic basics reading processes.
 """
 
+from typing import *
+
 import numpy as np
 
-from readers.simple import *
+from pyque.readers.simple import *
 
 
 class ElasticityOutputParser(SimpleParser):

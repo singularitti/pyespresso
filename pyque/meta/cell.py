@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Nov 28, 2017 12:52 AM by Qi Zhang
 """
-This module integrates spglib for Python API, and built 2 classes: `SimpleCell` for simply storing some basic
-information about a cell, and `Cell` for much more complex functional extension.
+This module integrates spglib for Python API, and built 2 classes: ``SimpleCell`` for simply storing some basic
+information about a cell, and ``Cell`` for much more complex functional extension.
 """
 
 import os
@@ -15,9 +15,7 @@ from json_tricks import *
 from lazy_property import LazyProperty
 
 # ================================= These are some type aliases or type definitions. =================================
-CellInitialValue = TypeVar('CellInitialValue', List, np.ndarray, float, bool, int, None)
-Cell = TypeVar('Cell')
-SimpleCell = TypeVar('SimpleCell')
+CellInitialValue = TypeVar('CellInitialValue', list, np.ndarray, float, bool, int, None)
 
 # =================================== These are some exports of spglib functions. ===================================
 get_symmetry_from_database: Callable[[int], Dict[str, np.ndarray]] = spglib.get_symmetry_from_database
@@ -30,7 +28,7 @@ get_hall_number_from_symmetry: Callable[[np.ndarray, np.ndarray, float], int] = 
 # ========================================= These are some useful functions. =========================================
 def is_simple_cell(obj: object) -> bool:
     """
-    If an object has 3 attributes `lattice`, `positions`, and `numbers`, then it can be regarded as a simple cell.
+    If an object has 3 attributes ``lattice``, ``positions``, and ``numbers``, then it can be regarded as a simple cell.
 
     :param obj: The object to be checked.
     :return: Whether it is a simple cell.
@@ -43,8 +41,8 @@ def is_simple_cell(obj: object) -> bool:
 
 def is_cell(obj: object) -> bool:
     """
-    If an object has attributes 'lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance',
-    '_symbol_type', '_eps', and '_silent', then it can be regarded as a cell.
+    If an object has attributes ``lattice``, ``positions``, ``numbers``, ``magmoms``, ``_symprec``,
+    ``_angle_tolerance``, ``_symbol_type``, ``_eps``, and ``_silent``, then it can be regarded as a cell.
 
     :param obj: The object to be checked.
     :return: Whether it is a cell.
@@ -55,23 +53,6 @@ def is_cell(obj: object) -> bool:
         return True
     else:
         return False
-
-
-def print_cell(cell: Union[Cell, SimpleCell]) -> None:
-    """
-    Pretty print a (simple) cell.
-
-    :param cell: The (simple) cell to be printed.
-    :return: None.
-    """
-    if is_cell(cell) or is_simple_cell(cell):
-        try:
-            from beeprint import pp
-            pp(cell)
-        except ModuleNotFoundError:
-            print(cell)
-    else:
-        raise TypeError('{0} is not a cell!'.format(cell))
 
 
 def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue) -> bool:
@@ -90,23 +71,10 @@ def _cell_initial_values_equal(a: CellInitialValue, b: CellInitialValue) -> bool
         return a == b
 
 
-def simple_cell_to_cell(sc: SimpleCell) -> Optional[Cell]:
-    """
-    Suppose you have a simple cell, and you want to convert it to a more complex cell, then use this method.
-
-    :param sc: The simple cell to be converted.
-    :return: The cell which is converted result.
-    """
-    if is_simple_cell(sc):
-        return sc.to_cell()
-    else:
-        raise TypeError('{0} is not a simple cell!'.format(sc))
-
-
 # ============================== Code block for some validating functions ==============================
 def _validate_lattice(lattice: np.ndarray):
     if not lattice.shape == (3, 3):
-        raise ValueError('The shape of `lattice` is not 3x3!')
+        raise ValueError('The shape of ``lattice`` is not 3x3!')
     if not issubclass(lattice.dtype.type, (Number, np.number)):
         raise TypeError('The lattice parameters are not made of numbers!')
 
@@ -114,7 +82,7 @@ def _validate_lattice(lattice: np.ndarray):
 def _validate_positions(positions: np.ndarray, atoms_num: int):
     shape = positions.shape
     if not shape == (atoms_num, 3):
-        raise ValueError('The shape of `positions` is not Nx3!')
+        raise ValueError('The shape of ``positions`` is not Nx3!')
     if not issubclass(positions.dtype.type, (Number, np.number)):
         raise TypeError('The positions are not made of numbers!')
 
@@ -122,40 +90,40 @@ def _validate_positions(positions: np.ndarray, atoms_num: int):
 def _validate_numbers(numbers: np.ndarray, atoms_num: int):
     shape = numbers.shape
     if not shape == (atoms_num,):
-        raise ValueError('The shape of `numbers` is not of shape Nx1!')
+        raise ValueError('The shape of ``numbers`` is not of shape Nx1!')
     if not issubclass(numbers.dtype.type, (Number, np.number)):
-        raise TypeError('The `numbers` is not made of numbers!')
+        raise TypeError('The ``numbers`` is not made of numbers!')
 
 
 def _validate_magmoms(magmoms: np.ndarray, atoms_num: int):
     shape = magmoms.shape
     if not shape == (atoms_num,):
-        raise ValueError('The shape of `magmoms` is not of shape Nx1!')
+        raise ValueError('The shape of ``magmoms`` is not of shape Nx1!')
     if not issubclass(magmoms.dtype.type, (Number, np.number)):
-        raise TypeError('The `magmoms` is not made of numbers!')
+        raise TypeError('The ``magmoms`` is not made of numbers!')
 
 
 # ====================================== The followings are classes definitions. ======================================
 class Cell:
-    def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
-                 numbers: Union[List, np.ndarray], *args):
+    def __init__(self, lattice: Union[list, np.ndarray], positions: Union[list, np.ndarray],
+                 numbers: Union[list, np.ndarray], *args):
         """
-        More detailed documentation see [here](https://atztogo.github.io/spglib/python-spglib.html#python-spglib).
+        More detailed documentation see `here <https://atztogo.github.io/spglib/python-spglib.html#python-spglib/>`_.
 
         :param lattice: Lattice parameters are given by a $3x3$ matrix with floating point values, where a,b,c
             are given as rows, which results in the transpose of the definition for C-API.
         :param positions: Fractional atomic positions positions are given by a $Nx3$ matrix with floating point values,
             where $N$ is the number of atoms.
         :param numbers: Numbers to distinguish atomic species. Numbers are given by a list of N integers.
-        :param args: Only 1 optional positional argument is allowed, which is `magmoms` in `spglib` library.
-            The collinear polarizations magmoms only work with `get_symmetry` and are given as a list of $N$ floating
+        :param args: Only 1 optional positional argument is allowed, which is ``magmoms`` in ``spglib`` library.
+            The collinear polarizations magmoms only work with ``get_symmetry`` and are given as a list of $N$ floating
             point values.
         """
 
-        # Why we need to convert all `lattice`, `positions`, `numbers` and `magmoms` (if given) to numpy arrays?
-        # Because in `refine_cell`, `find_primitive` and `standardize_cell` we generate new cells, and they are
+        # Why we need to convert all ``lattice``, ``positions``, ``numbers`` and ``magmoms`` (if given) to numpy arrays?
+        # Because in ``refine_cell``, ``find_primitive`` and ``standardize_cell`` we generate new cells, and they are
         # already numpy arrays according to spglib. So if we want to this will make people confused if the resulted
-        # attributes change type. And will cause ambiguity when comparing cells (using `__eq__` and `__ne__`).
+        # attributes change type. And will cause ambiguity when comparing cells (using ``__eq__`` and ``__ne__``).
 
         self.lattice: np.ndarray = np.array(lattice)
         self.positions: np.ndarray = np.array(positions)
@@ -175,7 +143,7 @@ class Cell:
             self.cell: Tuple[np.ndarray, ...] = (self.lattice, self.positions, self.numbers, self.magmoms)
         else:
             raise TypeError(
-                'Only 1 optional positional argument `magmoms` is allowed, but {0} are given!'.format(len(args)))
+                'Only 1 optional positional argument ``magmoms`` is allowed, but {0} are given!'.format(len(args)))
 
         self._symprec: float = 1e-5
         self._angle_tolerance: float = -1.0
@@ -249,7 +217,7 @@ class Cell:
     @LazyProperty
     def spacegroup(self) -> str:
         """
-        A property as a shorthand of `get_spacegroup`.
+        A property as a shorthand of ``get_spacegroup``.
 
         :return:
         """
@@ -264,40 +232,40 @@ class Cell:
         return self.get_symmetry(symprec=self.symprec, angle_tolerance=self.angle_tolerance)
 
     # ============================== Code block for structure optimization ==============================
-    def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
+    def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional['Cell']:
         """
-        This is just a wrapper for `spglib.refine_cell`.
+        This is just a wrapper for ``spglib.refine_cell``.
 
         :param symprec:
         :param angle_tolerance:
         :return:
         """
         search_result = spglib.refine_cell(self.cell, symprec, angle_tolerance)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Refine cell failed!')
         else:
             lattice, scaled_positions, numbers = search_result
             return Cell(lattice, scaled_positions, numbers)
 
-    def find_primitive(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional[Cell]:
+    def find_primitive(self, symprec: float = 1e-5, angle_tolerance: float = -1.0) -> Optional['Cell']:
         """
-        This is just a wrapper for `spglib.find_primitive`.
+        This is just a wrapper for ``spglib.find_primitive``.
 
         :param symprec:
         :param angle_tolerance:
         :return:
         """
         search_result = spglib.find_primitive(self.cell, symprec, angle_tolerance)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Find primitive cell failed!')
         else:
             lattice, scaled_positions, numbers = search_result
             return Cell(lattice, scaled_positions, numbers)
 
     def standardize_cell(self, to_primitive: bool = False, no_idealize: bool = False, symprec: float = 1e-5,
-                         angle_tolerance=-1.0) -> Optional[Cell]:
+                         angle_tolerance=-1.0) -> Optional['Cell']:
         """
-        This is just a wrapper for `spglib.standardize_cell`.
+        This is just a wrapper for ``spglib.standardize_cell``.
 
         :param to_primitive:
         :param no_idealize:
@@ -306,7 +274,7 @@ class Cell:
         :return:
         """
         search_result = spglib.standardize_cell(self.cell, to_primitive, no_idealize, symprec, angle_tolerance)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Standardized crystal structure search failed!')
         else:
             lattice, scaled_positions, numbers = search_result
@@ -324,7 +292,7 @@ class Cell:
         :return:
         """
         d: dict = spglib.get_symmetry_dataset(self.cell, symprec, angle_tolerance, hall_number)
-        if not d:  # If `ds` is `None`
+        if not d:  # If ``ds`` is ``None``
             print('The search failed!')
         else:
             return d
@@ -332,13 +300,14 @@ class Cell:
     @LazyProperty
     def symmetry_dataset(self) -> Optional[Dict[str, Union[int, np.ndarray, str, List[str]]]]:
         """
-        A property as a shorthand of `get_symmetry_dataset` method.
-        Note only default arguments are used! They are: `symprec=1e-5, angle_tolerance=-1.0, hall_number=0`.
+        A property as a shorthand of ``get_symmetry_dataset`` method.
+        Note only default arguments are used! They are: ``symprec=1e-5, angle_tolerance=-1.0, hall_number=0``.
         If you want a more flexible control of parameters, you can either:
-            1. use `get_symmetry_dataset` method directly and give arguments you want
-            2. change `self.symprec`, `self.angle_tolerance`, `self.hall_number`. But be careful, if you change
-            these values, the returned symmetry dataset may be different from previous one, and thus cause some
-            other attributes different.
+
+        * Use ``get_symmetry_dataset`` method directly and give arguments you want.
+        * change ``self.symprec``, ``self.angle_tolerance``, ``self.hall_number``. But be careful, if you change
+          these values, the returned symmetry dataset may be different from previous one, and thus cause some
+          other attributes different.
 
         :return: Symmetry dataset.
         """
@@ -347,7 +316,7 @@ class Cell:
     @LazyProperty
     def number(self) -> int:
         """
-        This is just a wrapper for `symmetry_dataset['number']`.
+        This is just a wrapper for ``symmetry_dataset['number']``.
 
         :return:
         """
@@ -356,7 +325,7 @@ class Cell:
     @LazyProperty
     def hall_number(self) -> int:
         """
-        This is just a wrapper for `symmetry_dataset['hall_number']`.
+        This is just a wrapper for ``symmetry_dataset['hall_number']``.
 
         :return:
         """
@@ -365,7 +334,7 @@ class Cell:
     @LazyProperty
     def international(self) -> str:
         """
-        This is just a wrapper for `symmetry_dataset['international']`.
+        This is just a wrapper for ``symmetry_dataset['international']``.
 
         :return:
         """
@@ -376,7 +345,7 @@ class Cell:
     @LazyProperty
     def hall(self) -> str:
         """
-        This is just a wrapper for `symmetry_dataset['hall']`.
+        This is just a wrapper for ``symmetry_dataset['hall']``.
 
         :return:
         """
@@ -387,7 +356,7 @@ class Cell:
     @LazyProperty
     def choice(self) -> str:
         """
-        This is just a wrapper for `symmetry_dataset['choice']`.
+        This is just a wrapper for ``symmetry_dataset['choice']``.
 
         :return:
         """
@@ -396,7 +365,7 @@ class Cell:
     @LazyProperty
     def transformation_matrix(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['transformation_matrix']`.
+        This is just a wrapper for ``symmetry_dataset['transformation_matrix']``.
 
         :return:
         """
@@ -405,7 +374,7 @@ class Cell:
     @LazyProperty
     def origin_shift(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['origin_shift']`.
+        This is just a wrapper for ``symmetry_dataset['origin_shift']``.
 
         :return:
         """
@@ -414,7 +383,7 @@ class Cell:
     @LazyProperty
     def rotations(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['rotations']`.
+        This is just a wrapper for ``symmetry_dataset['rotations']``.
 
         :return:
         """
@@ -423,7 +392,7 @@ class Cell:
     @LazyProperty
     def translations(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['translations']`.
+        This is just a wrapper for ``symmetry_dataset['translations']``.
 
         :return:
         """
@@ -432,7 +401,7 @@ class Cell:
     @LazyProperty
     def wyckoffs(self) -> List[str]:
         """
-        This is just a wrapper for `symmetry_dataset['wyckoffs']`.
+        This is just a wrapper for ``symmetry_dataset['wyckoffs']``.
 
         :return:
         """
@@ -441,7 +410,7 @@ class Cell:
     @LazyProperty
     def equivalent_atoms(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['equivalent_atoms']`.
+        This is just a wrapper for ``symmetry_dataset['equivalent_atoms']``.
 
         :return:
         """
@@ -450,7 +419,7 @@ class Cell:
     @LazyProperty
     def mapping_to_primitive(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['mapping_to_primitive']`.
+        This is just a wrapper for ``symmetry_dataset['mapping_to_primitive']``.
 
         :return:
         """
@@ -459,7 +428,7 @@ class Cell:
     @LazyProperty
     def std_lattice(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['std_lattice']`.
+        This is just a wrapper for ``symmetry_dataset['std_lattice']``.
 
         :return:
         """
@@ -468,7 +437,7 @@ class Cell:
     @LazyProperty
     def std_types(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['std_types']`.
+        This is just a wrapper for ``symmetry_dataset['std_types']``.
 
         :return:
         """
@@ -477,7 +446,7 @@ class Cell:
     @LazyProperty
     def std_positions(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['std_positions']`.
+        This is just a wrapper for ``symmetry_dataset['std_positions']``.
 
         :return:
         """
@@ -486,7 +455,7 @@ class Cell:
     @LazyProperty
     def std_mapping_to_primitive(self) -> np.ndarray:
         """
-        This is just a wrapper for `symmetry_dataset['std_mapping_to_primitive']`.
+        This is just a wrapper for ``symmetry_dataset['std_mapping_to_primitive']``.
 
         :return:
         """
@@ -495,7 +464,7 @@ class Cell:
     @LazyProperty
     def pointgroup(self) -> str:
         """
-        This is just a wrapper for `symmetry_dataset['pointgroup']`.
+        This is just a wrapper for ``symmetry_dataset['pointgroup']``.
 
         :return:
         """
@@ -506,13 +475,13 @@ class Cell:
     # ============================== Code block for reduction methods ==============================
     def niggli_reduce(self, eps: float = 1e-5):
         """
-        This is just a wrapper for `spglib.niggli_lattice`.
+        This is just a wrapper for ``spglib.niggli_lattice``.
 
         :param eps:
         :return:
         """
         search_result = spglib.niggli_reduce(self.lattice, eps)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Niggli reduction search failed!')
         else:
             niggli_lattice, = search_result
@@ -521,7 +490,7 @@ class Cell:
     @LazyProperty
     def niggli_lattice(self):
         """
-        This is just a property as a shorthand for `self.niggli_reduce` method.
+        This is just a property as a shorthand for ``self.niggli_reduce`` method.
 
         :return:
         """
@@ -529,13 +498,13 @@ class Cell:
 
     def delaunay_reduce(self, eps=1e-5):
         """
-        This is just a wrapper for `spglib.delaunay_reduce`.
+        This is just a wrapper for ``spglib.delaunay_reduce``.
 
         :param eps:
         :return:
         """
         search_result = spglib.delaunay_reduce(self.lattice, eps)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Delaunay reduction search failed!')
         else:
             delaunay_lattice, = search_result
@@ -544,7 +513,7 @@ class Cell:
     @LazyProperty
     def delaunay_lattice(self):
         """
-        This is just a property as a shorthand for `self.delaunay_reduce` method.
+        This is just a property as a shorthand for ``self.delaunay_reduce`` method.
 
         :return:
         """
@@ -552,14 +521,14 @@ class Cell:
 
     def get_ir_reciprocal_mesh(self, mesh: List[int], is_shift: List[int] = [0, 0, 0]):
         """
-        This is just a wrapper for `spglib.get_ir_reciprocal_mesh`.
+        This is just a wrapper for ``spglib.get_ir_reciprocal_mesh``.
 
         :param mesh:
         :param is_shift:
         :return:
         """
         search_result = spglib.get_ir_reciprocal_mesh(mesh, self.cell, is_shift)
-        if not search_result:  # If `search_result` is `None`
+        if not search_result:  # If ``search_result`` is ``None``
             print('Delaunay reduction search failed!')
         else:
             mapping, grid = search_result
@@ -574,14 +543,14 @@ class Cell:
 
         :return:
         """
-        # Note that `self.hall_number` comes from `self.symmetry_dataset['hall_number']`, so if
-        # `self.symmetry_dataset` is changed by accident, unwanted error may arise!
+        # Note that ``self.hall_number`` comes from ``self.symmetry_dataset['hall_number']``, so if
+        # ``self.symmetry_dataset`` is changed by accident, unwanted error may arise!
         return get_spacegroup_type(self.hall_number)
 
     @LazyProperty
     def international_full(self) -> str:
         """
-        This is just a wrapper for `spacegroup_type['international_full']`.
+        This is just a wrapper for ``spacegroup_type['international_full']``.
 
         :return:
         """
@@ -590,7 +559,7 @@ class Cell:
     @LazyProperty
     def schoenflies(self) -> str:
         """
-        This is just a wrapper for `spacegroup_type['schoenflies']`.
+        This is just a wrapper for ``spacegroup_type['schoenflies']``.
 
         :return:
         """
@@ -599,7 +568,7 @@ class Cell:
     @LazyProperty
     def pointgroup_schoenflies(self) -> str:
         """
-        This is just a wrapper for `spacegroup_type['pointgroup_schoenflies']`.
+        This is just a wrapper for ``spacegroup_type['pointgroup_schoenflies']``.
 
         :return:
         """
@@ -608,7 +577,7 @@ class Cell:
     @LazyProperty
     def pointgroup_international(self) -> str:
         """
-        This is just a wrapper for `spacegroup_type['pointgroup_international']`.
+        This is just a wrapper for ``spacegroup_type['pointgroup_international']``.
 
         :return:
         """
@@ -617,7 +586,7 @@ class Cell:
     @LazyProperty
     def arithmetic_crystal_class_number(self) -> int:
         """
-        This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_number']`.
+        This is just a wrapper for ``spacegroup_type['arithmetic_crystal_class_number']``.
 
         :return:
         """
@@ -626,7 +595,7 @@ class Cell:
     @LazyProperty
     def arithmetic_crystal_class_symbol(self) -> str:
         """
-        This is just a wrapper for `spacegroup_type['arithmetic_crystal_class_symbol']`.
+        This is just a wrapper for ``spacegroup_type['arithmetic_crystal_class_symbol']``.
 
         :return:
         """
@@ -648,8 +617,8 @@ class Cell:
 
     def __eq__(self, other: object) -> bool:
         """
-        Two cells are equal if all of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
-        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes are equal.
+        Two cells are equal if all of their ``lattice``, ``positions``, ``numbers``, ``magmoms``, ``symprec``,
+        ``angle_tolerance``, ``symbol_type``, ``eps`` and ``silent`` attributes are equal.
         Why only compare these attributes? Because they uniquely define the cell.
 
         :param other: Should be another cell, or else raise an error.
@@ -664,8 +633,8 @@ class Cell:
 
     def __ne__(self, other: object) -> bool:
         """
-        Two cells are not equal if any of their `lattice`, `positions`, `numbers`, `magmoms`, `symprec`,
-        `angle_tolerance`, `symbol_type`, `eps` and `silent` attributes is not equal.
+        Two cells are not equal if any of their ``lattice``, ``positions``, ``numbers``, ``magmoms``, ``symprec``,
+        ``angle_tolerance``, ``symbol_type``, ``eps`` and ``silent`` attributes is not equal.
         Why only compare these attributes? Because they uniquely define the cell.
 
         :param other: Should be another cell, or else raise an error.
@@ -698,8 +667,8 @@ class Cell:
 
 
 class SimpleCell:
-    def __init__(self, lattice: Union[List, np.ndarray], positions: Union[List, np.ndarray],
-                 numbers: Union[List, np.ndarray]):
+    def __init__(self, lattice: Union[list, np.ndarray], positions: Union[list, np.ndarray],
+                 numbers: Union[list, np.ndarray]):
         self.lattice: np.ndarray = np.array(lattice)
         self.positions: np.ndarray = np.array(positions)
         self.numbers: np.ndarray = np.array(numbers)
@@ -725,7 +694,7 @@ class SimpleCell:
 
     def __eq__(self, other: object) -> bool:
         """
-        Two simple cells are equal if all of their `lattice`, `positions`, `numbers` attributes are equal.
+        Two simple cells are equal if all of their ``lattice``, ``positions``, ``numbers`` attributes are equal.
 
         :param other: Should be another simple cell, or else raise an error.
         :return: Whether two cells are equal.
@@ -738,7 +707,7 @@ class SimpleCell:
 
     def __ne__(self, other: object) -> bool:
         """
-        Two simple cells are not equal if any of their `lattice`, `positions`, `numbers` attributes is not equal.
+        Two simple cells are not equal if any of their ``lattice``, ``positions``, ``numbers`` attributes is not equal.
 
         :param other: Should be another simple cell, or else raise an error.
         :return: Whether two cells are not equal.
@@ -764,3 +733,33 @@ class SimpleCell:
 
         with open(file_path, 'w') as f:
             dump(self.__repr__(), f)
+
+
+def print_cell(cell: Union[Cell, SimpleCell]) -> None:
+    """
+    Pretty print a (simple) cell.
+
+    :param cell: The (simple) cell to be printed.
+    :return: None.
+    """
+    if is_cell(cell) or is_simple_cell(cell):
+        try:
+            from beeprint import pp
+            pp(cell)
+        except ModuleNotFoundError:
+            print(cell)
+    else:
+        raise TypeError('{0} is not a cell!'.format(cell))
+
+
+def simple_cell_to_cell(sc: SimpleCell) -> Optional[Cell]:
+    """
+    Suppose you have a simple cell, and you want to convert it to a more complex cell, then use this method.
+
+    :param sc: The simple cell to be converted.
+    :return: The cell which is converted result.
+    """
+    if is_simple_cell(sc):
+        return sc.to_cell()
+    else:
+        raise TypeError('{0} is not a simple cell!'.format(sc))

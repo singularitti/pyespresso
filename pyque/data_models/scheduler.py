@@ -7,8 +7,8 @@ from typing import Union
 
 from lazy_property import LazyWritableProperty, LazyProperty
 
-from default_configuerations.scheduler import DEFAULT_SLURM_CONFIG
-from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
+from pyque.default_configuerations.scheduler import DEFAULT_SLURM_CONFIG
+from pyque.meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
 
 
 class _NodesNumber(LabeledDescriptor):

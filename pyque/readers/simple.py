@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
-from meta.text import TextStream
-from miscellaneous.string import *
+from pyque.meta.text import TextStream
+from pyque.miscellaneous.strings import *
 
 # ================================= These are some type aliases or type definitions. =================================
 Namelist = TypeVar('Namelist')
@@ -25,7 +25,7 @@ class SimpleParser(TextStream):
 
         :param pattern: a regular expression that you want to match
         :param args: a wrapper function which determines the returned type of value
-        :return: Determined by the `wrapper`, the value you want to grep out from the file.
+        :return: Determined by the `wrapper`, the value you want to grep out from pyque.the file.
         """
         with open(self.infile, 'r') as f:
             s = f.read()
@@ -45,7 +45,7 @@ class SimpleParser(TextStream):
 
     def read_line_by_line(self) -> List[str]:
         """
-        This method reads each line simply from a file, and discards the '\n' character on the line end.
+        This method reads each line simply from pyque.a file, and discards the '\n' character on the line end.
 
         :return: a list contains all the lines of the file
         """
@@ -78,7 +78,7 @@ class SimpleParser(TextStream):
 
     def read_two_columns(self) -> List[List[str]]:
         """
-        This method reads 2 columns from a file. The are specified by spaces.
+        This method reads 2 columns from pyque.a file. The are specified by spaces.
 
         :return: two columns of the file
         """

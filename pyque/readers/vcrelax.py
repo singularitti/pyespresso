@@ -4,11 +4,10 @@
 import shlex
 from itertools import islice
 from operator import itemgetter
-from readers.pwscf import *
 
 import numpy as np
 
-from readers.simple import *
+from pyque.readers.simple import *
 
 
 class VCRelaxOutfileReader:

@@ -15,8 +15,8 @@ class JsonStr:
         """
 
 
-        :param instr: If this is given, `infile` argument will be ignored.
-        :param infile: If `instream` is not given, this argument will be used.
+        :param instr: If this is given, *infile* argument will be ignored.
+        :param infile: If *instream* is not given, this argument will be used.
         """
         if instr is None and infile is None:
             raise TypeError('instream and infile cannot be both None! You must specify one of them!')

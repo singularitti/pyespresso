@@ -4,7 +4,7 @@
 import re
 from itertools import filterfalse
 from typing import *
-from readers.simple import SimpleParser
+from pyque.readers.simple import SimpleParser
 
 
 class SlurmBatchReader(SimpleParser):

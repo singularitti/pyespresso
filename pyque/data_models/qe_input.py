@@ -10,8 +10,8 @@ from typing import *
 import numpy as np
 from lazy_property import LazyWritableProperty
 
-from meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
-from miscellaneous.path_generator import path_generator
+from pyque.meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
+from pyque.miscellaneous.path_generators import path_generator
 
 # ========================================= type alias =========================================
 KPoints = NamedTuple('KPoints', [('grid', int), ('offsets', int)])

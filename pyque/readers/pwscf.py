@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:15 PM by Qi Zhang
 
-from data_models.qe_input import *
-from readers.simple import *
-from data_models.parameters import *
+from pyque.data_models.parameters import *
+from pyque.data_models.qe_input import *
+from pyque.readers.simple import *
 
 
 def write_to_file(obj: object, out_file: str):
@@ -174,7 +174,7 @@ class PWscfOutputParser(SimpleParser):
 
     def read_total_energy(self) -> float:
         """
-        Read total energy from the output file. The val unit is Rydberg.
+        Read total energy from pyque.the output file. The val unit is Rydberg.
 
         :return: total energy
         """
@@ -274,7 +274,7 @@ class PWscfOutputParser(SimpleParser):
 
     def read_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
         """
-        Read the total stress, in 2 units, from the bottom of the output file.
+        Read the total stress, in 2 units, from pyque.the bottom of the output file.
 
         :param unit: There are 2 options, 'atomic' and 'kbar', where 'atomic' is the val one.
         :return: a 3x3 numpy array which contains the stress tensor
@@ -293,7 +293,7 @@ class PWscfOutputParser(SimpleParser):
 
     def read_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
         """
-        This method can be used to read how many k-points are involved in a PWscf calculation from a file
+        This method can be used to read how many k-points are involved in a PWscf calculation from pyque.a file
         outputted by pw.x. Here regular expression is used. Different version of Quantum ESPRESSO may need different
         version of regular expression. If you find a bug, please contact the author at qz2280@columbia.edu.
 

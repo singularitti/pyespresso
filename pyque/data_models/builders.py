@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # created at Dec 22, 2017 10:48 PM by Qi Zhang
 
-from data_models.parameters import *
-from data_models.qe_input import PHononStandardInput
-from data_models.qe_input import PWscfStandardInput
-from miscellaneous.string import *
-from readers.phonon import PHononInputParser
-from readers.pwscf import PWscfStandardInputParser
+from pyque.data_models.parameters import *
+from pyque.data_models.qe_input import PHononStandardInput
+from pyque.data_models.qe_input import PWscfStandardInput
+from pyque.miscellaneous.strings import *
+from pyque.readers.phonon import PHononInputParser
+from pyque.readers.pwscf import PWscfStandardInputParser
 
 
 def build_pw_input(in_file: str) -> PWscfStandardInput:

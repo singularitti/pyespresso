@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 # created by Michel, changed on Aug 9 at 2017 12:46 PM by Qi Zhang
+"""
+:mod:`atom_mass` -- Atomic mass for elements
+============================================
 
-# Dictionary of atomic weights
+.. module:: atom_mass
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: 8-digits atomic mass for each element up to Bi.
+.. moduleauthor:: Michel Marcondes <mld2189@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
+
+# Dictionary of atomic mass
 atom_mass = {'H': 1.00800000,
              'He': 4.00260200,
              'Li': 6.94000000,
@@ -85,3 +95,13 @@ atom_mass = {'H': 1.00800000,
              'Tl': 204.3800000,
              'Pb': 207.2000000,
              'Bi': 208.9804000}
+
+
+def get_atom_mass(name: str) -> float:
+    """
+    Give the name of an element, and its atomic mass is returned.
+
+    :param name: The name of an element.
+    :return: The atomic mass of an element.
+    """
+    return atom_mass[name]

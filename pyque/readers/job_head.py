@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # created at Nov 18, 2017 9:13 PM by Qi Zhang
 
-from readers.simple import *
+import re
+from typing import List
+
+from pyque.readers.simple import *
 
 
 class JobHeadParser(SimpleParser):

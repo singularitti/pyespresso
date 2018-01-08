@@ -6,7 +6,7 @@ Here I construct different sets of parameters, for consideration of performance.
 Since finding an element in a list is O(N) but in a set is O(1).
 """
 
-from meta.parameter import ParameterGeneric, Namelist
+from pyque.meta.parameter import ParameterGeneric, Namelist
 
 # =================================== I am a cut line ===================================
 CONTROL_NAMELIST: Namelist = Namelist(

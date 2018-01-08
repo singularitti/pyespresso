@@ -2,7 +2,7 @@
 # Created on Jan 4, 2018 at 14:27 by Qi Zhang
 """
 Code referenced from
-[here](https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta).
+`here <https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta/>`_.
 """
 
 import errno
@@ -12,23 +12,24 @@ from typing import Optional
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
-"""
+ERROR_INVALID_NAME.__doc__ = """\
 Windows-specific error code indicating an invalid pathname.
 
-See Also
-----------
-https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
-    Official listing of all such codes.
+.. seealso::
+
+   `Official listing of all such codes <https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx/>`_.
 """
 
 
 def is_pathname_valid(pathname: str) -> bool:
     """
-    `True` if the passed pathname is a valid pathname for the current OS;
-    `False` otherwise.
+    ``True`` if the passed pathname is a valid pathname for the current OS;
+    ``False`` otherwise.
+
+    :param pathname:
+    :return:
     """
-    # If this pathname is either not a string or is but is empty, this pathname
-    # is invalid.
+    # If this pathname is either not a string or is but is empty, this pathname is invalid.
     try:
         if not isinstance(pathname, str) or not pathname:
             return False
@@ -94,8 +95,8 @@ def is_pathname_valid(pathname: str) -> bool:
 
 def is_path_creatable(pathname: str) -> bool:
     """
-    `True` if the current user has sufficient permissions to create the passed
-    pathname; `False` otherwise.
+    ``True`` if the current user has sufficient permissions to create the passed
+    pathname; ``False`` otherwise.
 
     :param pathname:
     :return:
@@ -108,10 +109,10 @@ def is_path_creatable(pathname: str) -> bool:
 
 def is_path_exists_or_creatable(pathname: str) -> bool:
     """
-    `True` if the passed pathname is a valid pathname for the current OS _and_
-    either currently exists or is hypothetically creatable; `False` otherwise.
+    ``True`` if the passed pathname is a valid pathname for the current OS *and*
+    either currently exists or is hypothetically creatable; ``False`` otherwise.
 
-    This function is guaranteed to _never_ raise exceptions.
+    This function is guaranteed to *never* raise exceptions.
 
     :param pathname:
     :return:
@@ -129,6 +130,13 @@ def is_path_exists_or_creatable(pathname: str) -> bool:
 
 
 def path_generator(filename: str, path_prefix: str = '') -> Optional[str]:
+    """
+
+
+    :param filename:
+    :param path_prefix:
+    :return:
+    """
     if not path_prefix:
         file_path = os.path.join(os.getcwd(), filename)
     else:

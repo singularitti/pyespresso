@@ -5,9 +5,9 @@ from typing import Iterable, Union, Set, List, Optional
 
 from lazy_property import *
 
-from data_models.scheduler import available_schedulers, SchedulerSystem
-from miscellaneous.path_generator import path_generator
-from miscellaneous.sets import add_elements_to_set, remove_elements_from_set
+from pyque.data_models.scheduler import available_schedulers, SchedulerSystem
+from pyque.miscellaneous.path_generators import path_generator
+from pyque.miscellaneous.sets import add_elements_to_set, remove_elements_from_set
 
 
 def _is_any_not_string(iterable: Iterable) -> bool:
