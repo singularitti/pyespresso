@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Oct 24, 2017 6:17 PM by Qi Zhang
 """
-Referenced from https://d32ogoqmya1dw8.cloudfront.net/images/NAGTWorkshops/mineralogy/mineral_physics/table_9.v13.png.
+Referenced from `here <https://d32ogoqmya1dw8.cloudfront.net/images/NAGTWorkshops/mineralogy/mineral_physics/table_9.v13.png>`_.
 """
 
 HEXAGONAL = {'indices': [(0, 0), (2, 2), (3, 3), (0, 1), (0, 2)],

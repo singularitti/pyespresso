@@ -1,15 +1,20 @@
-:mod:`meta.cell`
-===========
+.. currentmodule:: pyque
+.. _api:
 
-.. currentmodule:: meta
-
-Class overview
---------------
+Modules overview
+================
 
 .. contents:: Table of contents:
    :local:
 
 .. autosummary::
-   :template: class.rst
 
-   Cell
+   meta.cell
+   meta.parameter
+   meta.text
+   meta.descriptors
+   meta.jsons
+
+   miscellaneous.converter
+   miscellaneous.dictionary
+   miscellaneous.tensors
