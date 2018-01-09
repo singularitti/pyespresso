@@ -14,27 +14,27 @@ def write_to_file(obj: object, out_file: str):
 
 
 # ====================================== The followings are input readers. ======================================
-class CONTROLNamelistParser(NamelistParserGeneric):
+class CONTROLNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, CONTROL_NAMELIST)
 
 
-class SYSTEMNamelistParser(NamelistParserGeneric):
+class SYSTEMNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, SYSTEM_NAMELIST)
 
 
-class ELECTRONSNamelistParser(NamelistParserGeneric):
+class ELECTRONSNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, ELECTRONS_NAMELIST)
 
 
-class IONSNamelistParser(NamelistParserGeneric):
+class IONSNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, IONS_NAMELIST)
 
 
-class CELLNamelistParser(NamelistParserGeneric):
+class CELLNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, CELL_NAMELIST)
 
@@ -76,13 +76,14 @@ class PWscfStandardInputParser(TextStream):
         :return: a numpy array that stores the cell parameters
         """
         cell_params = np.empty([3, 3])
-        for line in self.stream_generator():
+        generator: Iterator = self.stream_generator()
+        for line in generator:
             if 'CELL_PARAMETERS' in line.upper():
-                option = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?\n", line, re.IGNORECASE).group(1)
+                option = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
                 if not option:  # if option is None:
                     option = 'bohr'
                 for i in range(3):
-                    line = next(line)
+                    line = next(generator)
                     cell_params[i] = strs_to_floats(line.split())
                 return cell_params, option
         else:
@@ -102,14 +103,15 @@ class PWscfStandardInputParser(TextStream):
 
         :return: a named tuple defined above
         """
-        for line in self.stream_generator():
+        generator: Iterator = self.stream_generator()
+        for line in generator:
             if 'K_POINTS' in line.upper():
                 # The first parenthesized subgroup will be `option`.
                 option = re.match("K_POINTS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
                 if not option:  # if option is None:
                     option = 'tpiba'
                 try:
-                    ks: List[int] = strs_to_ints(next(line).split())
+                    ks: List[int] = strs_to_ints(next(generator).split())
                 except (ValueError, TypeError):
                     raise ValueError('This line is not a line of strings that can be converted into integers!')
                 try:
@@ -122,16 +124,17 @@ class PWscfStandardInputParser(TextStream):
 
     def parse_atomic_species(self) -> Optional[List[AtomicSpecies]]:
         try:
-            atom_types_number = int(self.parse_system_namelist()['ntyp'])
+            atom_types_number = int(self.parse_system_namelist()['ntyp'][0])
         except KeyError:
             raise KeyError("The 'ntyp' parameter is not correctly given in SYSTEM namelist!")
         atomic_species = []
-        for line in self.stream_generator():
+        generator: Iterator = self.stream_generator()
+        for line in generator:
             if 'ATOMIC_SPECIES' in line.upper():
                 for _ in range(atom_types_number):
                     if not line.strip():  # if this line is followed by an empty line
-                        line = next(line)
-                    name, mass, pseudopotential = next(line).strip().split()
+                        line = next(generator)
+                    name, mass, pseudopotential = next(generator).strip().split()
                     atomic_species.append(AtomicSpecies(name, float(mass), pseudopotential))
                 return atomic_species
         else:
@@ -139,11 +142,12 @@ class PWscfStandardInputParser(TextStream):
 
     def parse_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
         try:
-            atoms_number = int(self.parse_system_namelist()['nat'])
+            atoms_number = int(self.parse_system_namelist()['nat'][0])
         except KeyError:
             raise KeyError("The 'nat' parameter is not correctly given in SYSTEM namelist!")
         atomic_positions = []
-        for line in self.stream_generator():
+        generator: Iterator = self.stream_generator()
+        for line in generator:
             if 'ATOMIC_POSITIONS' in line.upper():
                 option = re.match("ATOMIC_POSITIONS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
                 if not option:  # if option is None:
@@ -151,9 +155,9 @@ class PWscfStandardInputParser(TextStream):
                     option = 'alat'
                 for _ in range(atoms_number):
                     if not line.strip():  # if this line is followed by an empty line
-                        line = next(line)
+                        line = next(generator)
                     name, coord1, coord2, coord3 = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)",
-                                                            next(line).strip()).groups()
+                                                            next(generator).strip()).groups()
                     atomic_positions.append(
                         AtomicPosition(name, np.array(strs_to_floats([coord1, coord2, coord3]))))
                 return atomic_positions, option

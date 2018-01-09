@@ -8,7 +8,7 @@
    :platform: Unix, Windows, Mac, Linux
    :synopsis: Referenced from
    `here <https://d32ogoqmya1dw8.cloudfront.net/images/NAGTWorkshops/mineralogy/mineral_physics/table_9.v13.png>`_.
-.. moduleauthor Qi Zhang <qz2280@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 HEXAGONAL = {'indices': [(0, 0), (2, 2), (3, 3), (0, 1), (0, 2)],

@@ -11,7 +11,7 @@ from pyque.parsers.simple import *
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class INPUTPHNamelistParser(NamelistParserGeneric):
+class INPUTPHNamelistParser(NamelistParser):
     def __init__(self, infile):
         super().__init__(infile, INPUTPH_NAMELIST)
 

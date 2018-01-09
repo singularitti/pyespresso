@@ -8,16 +8,7 @@ from lazy_property import *
 from pyque.data_models.scheduler import available_schedulers, SchedulerSystem
 from pyque.miscellaneous.path_generators import path_generator
 from pyque.miscellaneous.sets import add_elements_to_set, remove_elements_from_set
-
-
-def _is_any_not_string(iterable: Iterable) -> bool:
-    """
-    If any element of an iterable is not a string, return `True`.
-
-    :param iterable: Can be a set, a tuple, a list, etc.
-    :return: Whether any element of an iterable is not a string.
-    """
-    return any(type(_) != str for _ in iterable)
+from pyque.miscellaneous.strings import is_any_not_string
 
 
 # ========================================= These are some useful classes. =========================================
@@ -76,11 +67,22 @@ class BatchInput:
         return self.scheduler.__name__
 
     @property
-    def directive_style(self):
+    def directive_style(self) -> str:
+        """
+        
+        
+        :return: Either 'long' or 'short'.
+        """
         return self.__directive_style
 
     @directive_style.setter
-    def directive_style(self, new_style: str):
+    def directive_style(self, new_style: str) -> None:
+        """
+        Set the directive style, either 'long' or 'short', case is ignored.
+        
+        :param new_style: The new directive style, either 'long' or 'short'.
+        :return: Nothing.
+        """
         if new_style.lower() not in {'short', 'long'}:
             raise ValueError()
         else:
@@ -95,7 +97,7 @@ class BatchInput:
         return self.__modules
 
     def add_modules(self, *args: Union[str, Iterable[str]]) -> None:
-        if _is_any_not_string(args):
+        if is_any_not_string(args):
             raise TypeError('Modules added should all be strings! Check your type!')
         if not args:  # If nothing is provided
             raise ValueError('No modules are added!')
@@ -106,7 +108,7 @@ class BatchInput:
             print("Modules {0} are added!".format(', '.join(args)))
 
     def remove_modules(self, *args) -> None:
-        if _is_any_not_string(args):
+        if is_any_not_string(args):
             raise TypeError('Modules removed should all be strings! Check your type!')
         self.__modules = remove_elements_from_set(self.__modules, args)
 
@@ -141,8 +143,9 @@ class BatchInput:
         """
 
         :param outfile: A path redirects to the output file you want.
-        :param path_prefix:
-        :return:
+        :param path_prefix: The path which is prefix to your *outfile*, default is ``''``, which means: store the
+            *outfile* in current working directory.
+        :return: Nothing.
         """
         file_path: str = path_generator(outfile, path_prefix)
 

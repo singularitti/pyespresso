@@ -22,9 +22,9 @@ AtomicPosition = NamedTuple('AtomicPosition', [('name', str), ('position', np.nd
 KPoints: KPoints = namedtuple('KPoints', ['grid', 'offsets'])
 
 AtomicSpecies: AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
-AtomicSpecies.__doc__ = \
-    """Note that the word 'species' serves as singular and plural both.
-    So here though suffixed with a 's', it is for one atom and thus is singular."""
+AtomicSpecies.__doc__ = """\
+Note that the word 'species' serves as singular and plural both. 
+So here though suffixed with a 's', it is for one atom and thus is singular."""
 
 AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
 
@@ -49,7 +49,7 @@ def print_pw_input(obj: object):
 
 
 # ========================================= define useful data structures =========================================
-class _Option(LabeledDescriptor):
+class _OptionWithWarning(LabeledDescriptor):
     def __set__(self, instance, new_option: str):
         if not new_option:  # if new_option is None:
             warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
@@ -60,19 +60,19 @@ class _Option(LabeledDescriptor):
 
 # ========================================= most important data structures =========================================
 class PWscfStandardInput(metaclass=MetaDescriptorOwner):
-    atomic_positions_option = _Option()
-    cell_parameters_option = _Option()
+    atomic_positions_option = _OptionWithWarning()
+    cell_parameters_option = _OptionWithWarning()
 
     @LazyWritableProperty
-    def control(self):
+    def control_namelist(self):
         pass
 
     @LazyWritableProperty
-    def system(self):
+    def system_namelist(self):
         pass
 
     @LazyWritableProperty
-    def electrons(self):
+    def electrons_namelist(self):
         pass
 
     @LazyWritableProperty
@@ -102,27 +102,47 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
 
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
-            for k, v in self.control.items():
+            for k, v in self.control_namelist.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&SYSTEM\n")
-            for k, v in self.system.items():
+            for k, v in self.system_namelist.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n&ELECTRONS\n")
-            for k, v in self.electrons.items():
+            for k, v in self.electrons_namelist.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\nCELL_PARAMETERS\n")
-            f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters,
+            f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
                                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
             f.write("\nATOMIC_SPECIES\n")
             for row in self.atomic_species:
                 f.write(' '.join(map(str, row)) + "\n")
             f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self.atomic_positions_option))
             for row in self.atomic_positions:
-                f.write(' '.join(row) + "\n")
+                f.write(' '.join(str(tuple(row))) + "\n")
             f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
 
-        print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(outfile_path)))
+        print("Object '{0}' is written to file {1}!".format(type(self).__name__, os.path.abspath(outfile_path)))
+
+    # TODO: finish this method
+    def to_json(self) -> None:
+        pass
+
+
+class SCFStandardInput(PWscfStandardInput):
+    pass
+
+
+class VCRelaxStandardInput(PWscfStandardInput):
+    @LazyWritableProperty
+    def ions_namelist(self):
+        pass
+
+    @LazyWritableProperty
+    def cell_namelist(self):
+        pass
+
+    # cell_namelist.__name__ = 'CELL Namelist'
 
 
 class PHononStandardInput:
@@ -131,7 +151,7 @@ class PHononStandardInput:
         pass
 
     @LazyWritableProperty
-    def inputph(self):
+    def inputph_namelist(self):
         pass
 
     @LazyWritableProperty
@@ -148,15 +168,19 @@ class PHononStandardInput:
         with open(outfile_path, 'w') as f:
             f.write(self.title)
             f.write("/\n&INPUTPH\n")
-            for k, v in self.inputph.items():
+            for k, v in self.inputph_namelist.items():
                 f.write("{0} = {1}\n".format(k, v))
             f.write("/\n")
             if self.single_q_point:
                 f.write(' '.join(self.single_q_point))
                 f.write("\n")
             elif self.q_points:
-                f.write(re.sub("[\[\]]", ' ', np.array2string(self.q_points,
-                                                              formatter={
-                                                                  'float_kind': lambda x: "{:20.10f}".format(x)})))
+                f.write(re.sub("[\[\]]", ' ',
+                               np.array2string(self.q_points,
+                                               formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
             else:
                 print("Object '{0}' is written to file {1}!".format(self.__name__, os.path.abspath(outfile_path)))
+
+    # TODO: finish this method
+    def to_json(self) -> None:
+        pass

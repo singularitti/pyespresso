@@ -7,7 +7,7 @@
 .. module dicts
    :platform: Unix, Windows, Mac, Linux
    :synopsis: Analyze and convert dictionaries.
-.. moduleauthor Qi Zhang <qz2280@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 
@@ -56,3 +56,7 @@ def is_dict_like(obj: object) -> bool:
         False
     """
     return hasattr(obj, '__getitem__') and hasattr(obj, 'keys')
+
+
+def list_public_attributes(obj: object):
+    return [k for k, v in vars(obj).items() if not (k.startswith('_') or callable(v))]

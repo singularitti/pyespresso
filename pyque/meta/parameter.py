@@ -120,6 +120,10 @@ class ParameterGeneric:
 
 
 class Namelist:
+    """
+    This will build a constant instance which is a constant. So the names of such instances should be all capitalized.
+    """
+
     def __init__(self, namelist_name: str, names: List[str], default_values: List):
         self.__name__ = namelist_name
         self._names = names
@@ -128,7 +132,7 @@ class Namelist:
     @property
     def names(self) -> List[str]:
         """
-        This is a list of names for a namelist.
+        This is a list of names for a namelist. Read-only attribute.
 
         :return:
         """
@@ -137,7 +141,7 @@ class Namelist:
     @property
     def default_values(self) -> List[Union[str, int, float, bool]]:
         """
-        This is a list of QE default values for a namelist.
+        This is a list of QE default values for a namelist. Read-only attribute.
 
         :return:
         """
@@ -146,7 +150,7 @@ class Namelist:
     @property
     def value_types(self) -> List[Type[Union[str, int, float, bool]]]:
         """
-        This is a list of types of each default value for a namelist.
+        This is a list of types of each default value for a namelist. Read-only attribute.
 
         :return:
         """
@@ -155,8 +159,8 @@ class Namelist:
     @property
     def default_parameters(self) -> DefaultParameters:
         """
-        This is a `DefaultDict` of `(QE default value, types of each default value)` tuples for a namelist, with those
-        names to be its keys.
+        This is a ``DefaultDict`` of ``(QE default value, types of each default value)`` tuples for a namelist,
+        with those names to be its keys. Read-only attribute.
 
         :return:
         """

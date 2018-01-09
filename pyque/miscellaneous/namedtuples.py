@@ -7,7 +7,7 @@
 .. module string
    :platform: Unix, Windows, Mac, Linux
    :synopsis: Analyze and convert namedtuple.
-.. moduleauthor Qi Zhang <qz2280@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 from collections import namedtuple

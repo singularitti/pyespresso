@@ -7,7 +7,7 @@
 .. module strings
    :platform: Unix, Windows, Mac, Linux
    :synopsis: Analyze text and convert strings.
-.. moduleauthor Qi Zhang <qz2280@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 import re
@@ -199,3 +199,13 @@ def is_string_like(obj: object) -> bool:
         False
     """
     return isinstance(obj, str)
+
+
+def is_any_not_string(iterable: Iterable) -> bool:
+    """
+    If any element of an iterable is not a string, return `True`.
+
+    :param iterable: Can be a set, a tuple, a list, etc.
+    :return: Whether any element of an iterable is not a string.
+    """
+    return any(is_string_like(_) for _ in iterable)

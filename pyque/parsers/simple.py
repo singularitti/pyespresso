@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
+from collections import namedtuple
+
 from pyque.meta.text import TextStream
 from pyque.miscellaneous.strings import *
 
 # ================================= These are some type aliases or type definitions. =================================
 Namelist = TypeVar('Namelist')
+ValueWithComment = NamedTuple('ValueWithComment', [('value', Union[str, int, bool, float]), ('comment', str)])
+
+ValueWithComment: ValueWithComment = namedtuple('ValueWithComment', ['value', 'comment'])
 
 
 def is_namelist(obj: object):
@@ -105,7 +110,7 @@ class SimpleParser(TextStream):
         return dict(zip(keys, values))
 
 
-class NamelistParserGeneric:
+class NamelistParser:
     def __init__(self, infile: str, namelist: object):
         """
         Match card between card title and the following '/' character.
@@ -160,6 +165,10 @@ class NamelistParserGeneric:
                 k, v = s.split('=', maxsplit=1)
                 k: str = k.strip()
                 v: str = v.strip().rstrip(',').strip()  # Ignore trailing comma of the line
+                try:
+                    v, v_comment = v.split('!')
+                except ValueError:
+                    v_comment = ''
                 # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we neet to
                 # separate them.
                 if '(' in k:
@@ -168,7 +177,7 @@ class NamelistParserGeneric:
                 else:
                     k_prefix = k
                 if k_prefix in namelist_names:
-                    filled_namelist.update({k: v})
+                    filled_namelist.update({k: ValueWithComment(v.strip(), v_comment)})
                 else:
                     raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.__name__))
 

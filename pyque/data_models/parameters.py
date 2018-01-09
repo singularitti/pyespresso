@@ -119,8 +119,8 @@ INPUTPH_NAMELIST = Namelist(
 # =================================== I am a cut line ===================================
 class _Parameter(ParameterGeneric):
     """
-    This is a generic for building a parameter for one of 'CONTROL', 'SYSTEM', `ELECTRONS`, `IONS`, or `CELL` namelists.
-    You only need to provide the name of your parameter, the value of it, and the parameter `dict` it belongs to.
+    This is a prototype for a parameter.
+    You only need to provide the name of your parameter, the value of it, and the parameter ``dict`` it belongs to.
     """
 
     def __init__(self, name: str, value: str, namelist: Namelist):

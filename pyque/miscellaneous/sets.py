@@ -7,7 +7,7 @@
 .. module sets
    :platform: Unix, Windows, Mac, Linux
    :synopsis: Analyze and convert sets.
-.. moduleauthor Qi Zhang <qz2280@columbia.edu>
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 
