@@ -13,10 +13,10 @@ PyQuE: the missing processing toolkit for QE
    install
    contributing
    overview
+   tutorials
    Intro to Data Structures
    api
    style
-   test
 
 Indices and tables
 ==================
