@@ -1,0 +1,10 @@
+Scheduler: SLURM
+Necessary modules to be loades (if any): module load intel-parallel-studio/2017, module load anaconda/3-4.4.0
+Number of nodes: 1
+Number of processors: 24
+#!/bin/sh
+#SBATCH -A nil
+#SBATCH -N 1
+#SBATCH --tasks-per-node=24
+#SBATCH -J job
+#SBATCH --time=12:00:00

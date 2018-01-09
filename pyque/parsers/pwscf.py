@@ -3,7 +3,7 @@
 
 from pyque.data_models.parameters import *
 from pyque.data_models.qe_input import *
-from pyque.readers.simple import *
+from pyque.parsers.simple import *
 
 
 def write_to_file(obj: object, out_file: str):

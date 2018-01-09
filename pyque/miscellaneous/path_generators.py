@@ -12,8 +12,7 @@ from typing import Optional
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
-ERROR_INVALID_NAME.__doc__ = """\
-Windows-specific error code indicating an invalid pathname.
+"""Windows-specific error code indicating an invalid pathname.
 
 .. seealso::
 

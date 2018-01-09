@@ -5,7 +5,7 @@ import numpy as np
 
 from pyque.data_models.parameters import INPUTPH_NAMELIST
 from pyque.miscellaneous.strings import *
-from pyque.readers.simple import *
+from pyque.parsers.simple import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]

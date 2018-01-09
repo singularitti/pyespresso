@@ -5,8 +5,8 @@ from pyque.data_models.parameters import *
 from pyque.data_models.qe_input import PHononStandardInput
 from pyque.data_models.qe_input import PWscfStandardInput
 from pyque.miscellaneous.strings import *
-from pyque.readers.phonon import PHononInputParser
-from pyque.readers.pwscf import PWscfStandardInputParser
+from pyque.parsers.phonon import PHononInputParser
+from pyque.parsers.pwscf import PWscfStandardInputParser
 
 
 def build_pw_input(in_file: str) -> PWscfStandardInput:

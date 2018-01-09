@@ -4,8 +4,6 @@
 from io import StringIO
 from typing import Optional, Iterator
 
-from lazy_property import LazyProperty
-
 
 class TextStream:
     def __init__(self, instr: Optional[str] = None, infile: Optional[str] = None):
@@ -35,10 +33,16 @@ class TextStream:
                 for line in f:
                     yield line
 
-    @LazyProperty
-    def to_string_io(self):
+    def to_string_io(self) -> StringIO:
         if self.instream:
             return StringIO(self.instream)
         else:
             with open(self.infile, 'r') as f:
                 return StringIO(f.read())
+
+    def __str__(self):
+        if self.instream:
+            return self.instream
+        else:
+            with open(self.infile, 'r') as f:
+                return f.read()

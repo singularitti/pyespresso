@@ -11,7 +11,7 @@ import time
 import numpy as np
 from scipy.optimize import curve_fit
 
-from pyque.readers.job_head import *
+from pyque.parsers.batch import *
 from . import flow
 
 
@@ -24,7 +24,7 @@ class VCRelaxSubmitter:
         self.error = 'CRASH'
         self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self._fit_crude_guess()
         # Scheduling
-        tree = JobHeadParser(job_head).tree
+        tree = BatchTemplateParser(job_head).tree
         self.cores_num = tree['cores_num']
         self.nodes_num = tree['nodes_num']
         self.modules = tree['modules']

@@ -56,7 +56,7 @@ _comment = Comment  # Alias
 
 
 # ========================================= The following are core classes. =========================================
-class JobInput:
+class BatchInput:
     def __init__(self, scheduler_name: str, directive_style: str = 'short'):
         """
 

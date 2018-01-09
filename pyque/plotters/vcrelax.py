@@ -2,7 +2,7 @@
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
 from pyque.plotters.plot_basic import *
-from pyque.readers.elasticity import *
+from pyque.parsers.elasticity import *
 
 
 class PlotVCRelaxOutput(SingleAxes):

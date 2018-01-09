@@ -7,7 +7,7 @@ from operator import itemgetter
 
 import numpy as np
 
-from pyque.readers.simple import *
+from pyque.parsers.simple import *
 
 
 class VCRelaxOutfileReader:

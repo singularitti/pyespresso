@@ -8,7 +8,7 @@ from typing import *
 
 import numpy as np
 
-from pyque.readers.simple import *
+from pyque.parsers.simple import SimpleParser
 
 
 class ElasticityOutputParser(SimpleParser):
