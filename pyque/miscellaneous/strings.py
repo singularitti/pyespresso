@@ -13,7 +13,7 @@ import re
 from typing import *
 
 
-def _strs_to_(strs: List[str], f: Callable) -> List:
+def _strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     """
     Convert a list of strings to a list of certain form, specified by *f*.
 
@@ -21,10 +21,11 @@ def _strs_to_(strs: List[str], f: Callable) -> List:
     :param f: a function that converts your string
     :return: type undefined, but specified by `to_type`
     """
-    return list(map(f, strs))
+    container = type(strs)
+    return container(map(f, strs))
 
 
-def strs_to_ints(strs: List[str]) -> List[int]:
+def strs_to_ints(strs: Iterable[str]) -> Iterable[int]:
     """
     Convert a list of strings to a list of integers.
 
@@ -39,7 +40,7 @@ def strs_to_ints(strs: List[str]) -> List[int]:
     return _strs_to_(strs, lambda x: int(float(x)))
 
 
-def strs_to_floats(strs: List[str]) -> List[float]:
+def strs_to_floats(strs: Iterable[str]) -> Iterable[float]:
     """
     Convert a list of strings to a list of floats.
 
