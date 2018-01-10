@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Nov 17, 2017 3:56 PM by Qi Zhang
 """
 :mod:`strings` -- Toolkit for strings
 =====================================

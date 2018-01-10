@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Oct 24, 2017 6:17 PM by Qi Zhang
 """
 :mod:`tensors` -- Toolkit for tensors
 =====================================

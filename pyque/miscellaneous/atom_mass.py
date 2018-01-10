@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created by Michel, changed on Aug 9 at 2017 12:46 PM by Qi Zhang
 """
 :mod:`atom_mass` -- Atomic mass for elements
 ============================================
@@ -12,7 +11,7 @@
 """
 
 # Dictionary of atomic mass
-atom_mass = {'H': 1.00800000,
+ATOM_MASS = {'H': 1.00800000,
              'He': 4.00260200,
              'Li': 6.94000000,
              'Be': 9.01218310,
@@ -104,4 +103,4 @@ def get_atom_mass(name: str) -> float:
     :param name: The name of an element.
     :return: The atomic mass of an element.
     """
-    return atom_mass[name]
+    return ATOM_MASS[name]

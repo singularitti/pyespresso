@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Nov 28, 2017 2:08 PM by Qi Zhang
 """
 :mod:`namedtuples` -- Toolkit for namedtuples
 =============================================

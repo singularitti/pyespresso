@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-# created at Aug 7, 2017 2:22 PM by Qi Zhang
 """
-This module contains several unit-converters. You may find it helpful.
+:mod:`converters` -- unit converting
+====================================
+
+.. module converters
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: This module contains several unit-converters. You may find it helpful.
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 from typing import *
@@ -170,7 +175,7 @@ class MoleConverter(UnitConverter):
         return options[option]().simple_converter(num / self.avogadro_const, from_unit, to_unit)
 
 
-def call_simple_converter(physical_quantity: str, numeric: Union[int, float, List, np.ndarray], from_unit: str,
+def call_simple_converter(physical_quantity: str, numeric: Union[int, float, list, np.ndarray], from_unit: str,
                           to_unit: str) -> Union[float, List[float], np.ndarray]:
     """
     This is a polymorphism function, it can apply to any object that defined simple_converter method.

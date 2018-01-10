@@ -5,4 +5,4 @@ Tutorials
 *********
 
 .. include:: linux.rst
-.. include:: Habanero.rst
+.. include:: habanero.rst

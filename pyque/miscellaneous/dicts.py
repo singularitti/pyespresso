@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Oct 22, 2017 12:05 AM by Qi Zhang
 """
 :mod:`dicts` -- Toolkit for dictionaries
 ========================================

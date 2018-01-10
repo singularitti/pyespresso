@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-# Created on Jan 4, 2018 at 14:27 by Qi Zhang
 """
-Code referenced from
-`here <https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta/>`_.
+:mod:`path_generators` -- System path generator
+===============================================
+
+.. module sets
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: Code referenced from
+   `here <https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta/>`_.
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 import errno

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Dec 28, 2017 2:45 PM by Qi Zhang
 """
 :mod:`sets` -- Toolkit for sets
 ===============================

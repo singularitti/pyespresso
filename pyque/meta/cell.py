@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-# created at Nov 28, 2017 12:52 AM by Qi Zhang
 """
-This module integrates spglib for Python API, and built 2 classes: ``SimpleCell`` for simply storing some basic
-information about a cell, and ``Cell`` for much more complex functional extension.
+:mod:`cell` -- An adaptive for ``spglib`` library
+=================================================
+
+.. module:: atom_mass
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: This module integrates spglib for Python API, and built 2 classes: ``SimpleCell`` for simply storing some basic
+   information about a cell, and ``Cell`` for much more complex functional extension.
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
 import os

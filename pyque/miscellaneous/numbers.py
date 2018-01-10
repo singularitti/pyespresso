@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-# created at Dec 3, 2017 2:35 AM by Qi Zhang
+"""
+:mod:`numbers` -- Toolkit for numbers
+=====================================
+
+.. module numbers
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: Analyze and convert namedtuple.
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
 
 from numbers import Number
 

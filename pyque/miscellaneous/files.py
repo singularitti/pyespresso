@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-# created at Dec 1, 2017 2:25 PM by Qi Zhang
+"""
+:mod:`files` -- Dealing with files
+==================================
+
+.. module sets
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis:
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
 
 
 def is_file_like(obj: object) -> bool:
