@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-# created at Dec 24, 2017 7:34 PM by Qi Zhang
 
 from typing import Iterable, Union, Set, List, Optional
 
-from lazy_property import *
+from lazy_property import LazyWritableProperty, LazyProperty
 
 from pyque.data_models.scheduler import available_schedulers, SchedulerSystem
 from pyque.miscellaneous.path_generators import path_generator
 from pyque.miscellaneous.sets import add_elements_to_set, remove_elements_from_set
 from pyque.miscellaneous.strings import is_any_not_string
+
+# ========================================= What can be exported? =========================================
+__all__ = ['Comment', 'BatchInput']
 
 
 # ========================================= These are some useful classes. =========================================
@@ -41,9 +43,6 @@ class Comment:
         return "\n".join(comment)
 
     __repr__ = __str__
-
-
-_comment = Comment  # Alias
 
 
 # ========================================= The following are core classes. =========================================
@@ -129,7 +128,7 @@ class BatchInput:
 
     @staticmethod
     def add_comment(raw_comment: str) -> str:
-        return str(_comment(raw_comment))
+        return str(Comment(raw_comment))
 
     @property
     def commands(self):

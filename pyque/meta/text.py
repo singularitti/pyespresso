@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# Created on Jan 5, 2018 at 20:02 by Qi Zhang
 
 from io import StringIO
 from typing import Optional, Iterator
+
+# ========================================= What can be exported? =========================================
+__all__ = ['TextStream']
 
 
 class TextStream:
@@ -10,11 +12,11 @@ class TextStream:
         """
 
 
-        :param instr: If this is given, `infile` argument will be ignored.
-        :param infile: If `instream` is not given, this argument will be used.
+        :param instr: If this is given, *infile* argument will be ignored.
+        :param infile: If *instream* is not given, this argument will be used.
         """
         if instr is None and infile is None:
-            raise TypeError('instream and infile cannot be both None! You must specify one of them!')
+            raise TypeError('Arguments ``instream`` and ``infile`` cannot be both None! You must specify one of them!')
         if isinstance(instr, str):
             self.instream: str = instr
             self.infile = None
@@ -25,10 +27,10 @@ class TextStream:
             raise TypeError('The type of one argument is wrong! They should all be str!')
 
     def stream_generator(self) -> Iterator[str]:
-        if self.instream:  # If `instream` is given and thus not `None`
+        if self.instream:  # If *instream* is given and thus not ``None``
             for line in self.instream.split("\n"):
                 yield line
-        else:  # If `infile` is given and thus not `None`
+        else:  # If *infile* is given and thus not ``None``
             with open(self.infile, 'r') as f:
                 for line in f:
                     yield line

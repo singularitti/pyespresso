@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:19 PM by Qi Zhang
 
+from typing import *
+
 import numpy as np
 
-from pyque.data_models.parameters import INPUTPH_NAMELIST
-from pyque.miscellaneous.strings import *
-from pyque.parsers.simple import *
+from pyque.miscellaneous.strings import strs_to_floats
+from pyque.meta.parameter import INPUTPH_NAMELIST
+from pyque.parsers.simple import SimpleParser, NamelistParser
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]

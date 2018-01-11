@@ -11,7 +11,7 @@ import time
 import numpy as np
 from scipy.optimize import curve_fit
 
-from pyque.parsers.batch import *
+from pyque.parsers.batch import BatchTemplateParser
 from . import flow
 
 

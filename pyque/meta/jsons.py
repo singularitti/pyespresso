@@ -5,6 +5,9 @@ from typing import *
 
 from json_tricks import load, loads
 
+# ========================================= What can be exported? =========================================
+__all__ = ['JsonStr']
+
 
 class JsonStr:
     """

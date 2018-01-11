@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Dec 29, 2017 9:17 PM by Qi Zhang
 
 import warnings
 from time import strptime
@@ -9,6 +8,9 @@ from lazy_property import LazyWritableProperty, LazyProperty
 
 from pyque.default_configuerations.scheduler import DEFAULT_SLURM_CONFIG
 from pyque.meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
+
+# ========================================= What can be exported? =========================================
+__all__ = ['SlurmSystem', 'available_schedulers']
 
 
 class _NodesNumber(LabeledDescriptor):

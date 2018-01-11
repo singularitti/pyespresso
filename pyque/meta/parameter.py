@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
-# created at Nov 20, 2017 8:18 PM by Qi Zhang
+"""
+:mod:`parameter` -- title
+========================================
 
-from collections import defaultdict, namedtuple
-from typing import DefaultDict, Type, Union, Tuple, List, Callable, Dict, NamedTuple, Any
+.. module parameter
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: doc
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
+
+from collections import namedtuple
+from typing import Union, Type, Dict, Callable, NamedTuple
+
+from pyque.meta.namelist import Namelist, CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, \
+    CELL_NAMELIST, INPUTPH_NAMELIST
+
+# ========================================= What can be exported? =========================================
+__all__ = ['CONTROLParameter', 'SYSTEMParameter', 'ELECTRONSParameter', 'IONSParameter', 'CELLParameter',
+           'INPUTPHParameter']
 
 # ================================= These are some type aliases or type definitions. =================================
-DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
-SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Any), ('type', str)])
+SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Union[str, int, float, bool]), ('type', str)])
 
 # ========================================= define useful data structures =========================================
 SimpleParameter: SimpleParameter = namedtuple('SimpleParameter', ['name', 'value', 'type'])
@@ -100,11 +114,11 @@ class ParameterGeneric:
         return self._in_namelist
 
     def to_qe_str(self) -> str:
-        recipe: Dict[Type[Union[str, int, float, bool]], Callable] = {str: _str_to_qe_str,
-                                                                      int: _int_to_qe_str,
-                                                                      float: _float_to_qe_str,
-                                                                      bool: _bool_to_qe_str}
-        return recipe[self.type](self.value)
+        recipe: Dict[str, Callable] = {'str': _str_to_qe_str,
+                                       'int': _int_to_qe_str,
+                                       'float': _float_to_qe_str,
+                                       'bool': _bool_to_qe_str}
+        return recipe[self.type.__name__](self.value)
 
     def __str__(self) -> str:
         """
@@ -119,54 +133,68 @@ class ParameterGeneric:
         return str(SimpleParameter(self._name, self.value, self.type))
 
 
-class Namelist:
+class _Parameter(ParameterGeneric):
     """
-    This will build a constant instance which is a constant. So the names of such instances should be all capitalized.
+    This is a prototype for a parameter.
+    You only need to provide the name of your parameter, the value of it, and the parameter ``dict`` it belongs to.
     """
 
-    def __init__(self, namelist_name: str, names: List[str], default_values: List):
-        self.__name__ = namelist_name
-        self._names = names
-        self._default_values = default_values
+    def __init__(self, name: str, value: str, namelist: Namelist):
+        self._default_value, value_type = namelist.default_parameters[name]
+        super().__init__(name, value, value_type)
+        self._in_namelist = namelist.__name__
 
-    @property
-    def names(self) -> List[str]:
-        """
-        This is a list of names for a namelist. Read-only attribute.
 
-        :return:
-        """
-        return self._names
+class CONTROLParameter(_Parameter):
+    """
+    To build a parameter for 'CONTROL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
 
-    @property
-    def default_values(self) -> List[Union[str, int, float, bool]]:
-        """
-        This is a list of QE default values for a namelist. Read-only attribute.
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value, CONTROL_NAMELIST)
 
-        :return:
-        """
-        return self._default_values
 
-    @property
-    def value_types(self) -> List[Type[Union[str, int, float, bool]]]:
-        """
-        This is a list of types of each default value for a namelist. Read-only attribute.
+class SYSTEMParameter(_Parameter):
+    """
+    To build a parameter for 'SYSTEM' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
 
-        :return:
-        """
-        return [type(x) for x in self._default_values]
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value, SYSTEM_NAMELIST)
 
-    @property
-    def default_parameters(self) -> DefaultParameters:
-        """
-        This is a ``DefaultDict`` of ``(QE default value, types of each default value)`` tuples for a namelist,
-        with those names to be its keys. Read-only attribute.
 
-        :return:
-        """
-        default_parameters: DefaultParameters = defaultdict(tuple)
-        default_values: List = self._default_values
-        value_types: List = self.value_types
-        for i, k in enumerate(self._names):
-            default_parameters[k] = (default_values[i], value_types[i])
-        return default_parameters
+class ELECTRONSParameter(_Parameter):
+    """
+    To build a parameter for 'ELECTRONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value, ELECTRONS_NAMELIST)
+
+
+class IONSParameter(_Parameter):
+    """
+    To build a parameter for 'IONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value, IONS_NAMELIST)
+
+
+class CELLParameter(_Parameter):
+    """
+    To build a parameter for 'CELL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value, CELL_NAMELIST)
+
+
+class INPUTPHParameter(_Parameter):
+    def __init__(self, name, value):
+        super().__init__(name, value, INPUTPH_NAMELIST)

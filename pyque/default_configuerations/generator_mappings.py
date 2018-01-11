@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-# created on Jan 6, 2018 at 02:33 by Qi Zhang
 
 from functools import partialmethod
 
-from pyque.data_models.parameters import *
+from pyque.meta.parameter import CONTROLParameter, SYSTEMParameter, CELLParameter
 from pyque.miscellaneous.strings import strs_to_ints
 
 

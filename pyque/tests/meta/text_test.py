@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# created on Jan 5, 2018 at 23:29 by Qi Zhang
 
 from unittest import TestCase
-from meta.text import TextStream
+from pyque.meta.text import TextStream
 
 
 class StreamTester(TestCase):
@@ -14,7 +13,8 @@ class StreamTester(TestCase):
 
     def test_print(self):
         for line in self.stream.stream_generator():
+            print(1)
             print(line)
 
     def test_to_string_io(self):
-        print(next(self.stream.to_string_io))
+        print(next(self.stream.to_string_io()))

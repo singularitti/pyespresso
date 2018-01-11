@@ -13,7 +13,7 @@
 from subprocess import call
 from typing import *
 
-from lazy_property import *
+from lazy_property import LazyWritableProperty
 
 
 class SlurmSystemMonitor:

@@ -9,10 +9,6 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
-import subprocess
-import shlex
-from lazy_property import LazyWritableProperty
-
 
 class Submitter:
     # def submit(self):

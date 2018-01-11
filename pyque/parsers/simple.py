@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
+import re
 from collections import namedtuple
+from typing import *
 
+from pyque.meta.namelist import Namelist
 from pyque.meta.text import TextStream
-from pyque.miscellaneous.strings import *
 
 # ================================= These are some type aliases or type definitions. =================================
-Namelist = TypeVar('Namelist')
+
 ValueWithComment = NamedTuple('ValueWithComment', [('value', Union[str, int, bool, float]), ('comment', str)])
 
 ValueWithComment: ValueWithComment = namedtuple('ValueWithComment', ['value', 'comment'])

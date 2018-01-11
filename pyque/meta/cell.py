@@ -16,8 +16,12 @@ from typing import *
 
 import numpy as np
 import spglib
-from json_tricks import *
+from json_tricks import dump
 from lazy_property import LazyProperty
+
+# ========================================= What can be exported? =========================================
+__all__ = ['is_simple_cell', 'is_cell', 'get_symmetry_from_database', 'get_spacegroup_type',
+           'get_hall_number_from_symmetry', 'Cell', 'SimpleCell', 'simple_cell_to_cell', 'print_cell']
 
 # ================================= These are some type aliases or type definitions. =================================
 CellInitialValue = TypeVar('CellInitialValue', list, np.ndarray, float, bool, int, None)

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-# created at Oct 19, 2017 11:21 PM by Qi Zhang
 """
 This module calculates elastic tensor, compliance tensor, bulk modulus, shear modulus, etc., using different rules.
 """
 
+from typing import *
+
+import numpy as np
 from numpy.linalg import inv
 
-from pyque.miscellaneous.tensors import *
-from pyque.parsers.elasticity import *
+from pyque.miscellaneous.tensors import crystal_classes
+from pyque.parsers.elasticity import ElasticityOutputParser
 
 
 class ElasticityCalculator:
