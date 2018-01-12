@@ -3,7 +3,7 @@
 from functools import partialmethod
 
 from pyque.meta.parameter import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
-from pyque.miscellaneous.strings import strs_to_ints
+from pyque.miscellaneous.strings import strings_to_integers
 
 
 def partialclass(cls, *args, **kwds):
@@ -25,8 +25,8 @@ PWSCF_GENERATOR_CONFIG = {
     'occupations': partialclass(SYSTEMNamelistParameter, 'occupations'),
     'degauss': partialclass(SYSTEMNamelistParameter, 'degauss'),
     'scratch folder': partialclass(CONTROLNamelistParameter, 'outdir'),
-    'k-points': strs_to_ints,
-    'shift': strs_to_ints
+    'k-points': strings_to_integers,
+    'shift': strings_to_integers
 }
 
 

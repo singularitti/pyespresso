@@ -10,7 +10,7 @@ import numpy as np
 from pyque.data_models.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfStandardInput
 from pyque.meta.namelist import CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, CELL_NAMELIST
 from pyque.meta.text import TextStream
-from pyque.miscellaneous.strings import strs_to_floats, strs_to_ints
+from pyque.miscellaneous.strings import strings_to_floats, strings_to_integers
 from pyque.parsers.simple import SimpleParser, NamelistParser
 
 # ========================================= What can be exported? =========================================
@@ -101,7 +101,7 @@ class PWscfInputParser(TextStream):
                     option = 'bohr'
                 for i in range(3):
                     line = next(generator)
-                    cell_params[i] = strs_to_floats(line.split())
+                    cell_params[i] = strings_to_floats(line.split())
                 return cell_params, option
         else:
             warnings.warn(
@@ -128,7 +128,7 @@ class PWscfInputParser(TextStream):
                 if not option:  # if option is None:
                     option = 'tpiba'
                 try:
-                    ks: List[int] = strs_to_ints(next(generator).split())
+                    ks: List[int] = strings_to_integers(next(generator).split())
                 except (ValueError, TypeError):
                     raise ValueError('This line is not a line of strings that can be converted into integers!')
                 try:
@@ -176,7 +176,7 @@ class PWscfInputParser(TextStream):
                     name, coord1, coord2, coord3 = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)",
                                                             next(generator).strip()).groups()
                     atomic_positions.append(
-                        AtomicPosition(name, np.array(strs_to_floats([coord1, coord2, coord3]))))
+                        AtomicPosition(name, np.array(strings_to_floats([coord1, coord2, coord3]))))
                 return atomic_positions, option
         else:
             warnings.warn("No 'ATOMIC_POSITIONS' is found in your input! Check it!")

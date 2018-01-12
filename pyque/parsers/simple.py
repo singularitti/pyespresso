@@ -144,7 +144,7 @@ class NamelistParser:
             if section_flag:
                 yield line
 
-    def read_namelist(self) -> Dict[str, str]:
+    def read_namelist(self) -> Dict[str, ValueWithComment]:
         """
         A generic method to read a namelist.
         Note you cannot write more than one parameter in each line!

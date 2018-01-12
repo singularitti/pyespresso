@@ -13,11 +13,11 @@ import re
 from typing import *
 
 # ========================================= What can be exported? =========================================
-__all__ = ['strs_to_', 'strs_to_ints', 'strs_to_floats', 'str_to_double_precision_float', 'str_to_float',
-           'match_one_string', 'match_one_pattern', 'is_string_like', 'is_any_not_string']
+__all__ = ['strings_to_', 'strings_to_integers', 'strings_to_floats', 'string_to_double_precision_float',
+           'string_to_general_float', 'match_one_string', 'match_one_pattern', 'is_string_like', 'is_any_not_string']
 
 
-def strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
+def strings_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     """
     Convert a list of strings to a list of certain form, specified by *f*.
 
@@ -25,10 +25,12 @@ def strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     :param f: a function that converts your string
     :return: type undefined, but specified by `to_type`
     """
+    if is_any_not_string(strs):
+        raise TypeError('All have to be strings!')
     return type(strs)(map(f, strs))  # ``type(strs)`` is the container of *strs*.
 
 
-def strs_to_ints(strs: Iterable[str]) -> Iterable[int]:
+def strings_to_integers(strs: Iterable[str]) -> Iterable[int]:
     """
     Convert a list of strings to a list of integers.
 
@@ -37,13 +39,13 @@ def strs_to_ints(strs: Iterable[str]) -> Iterable[int]:
 
     .. doctest::
 
-        >>> strs_to_ints(['1', '1.0', '-0.2'])
+        >>> strings_to_integers(['1', '1.0', '-0.2'])
         [1, 1, 0]
     """
-    return strs_to_(strs, lambda x: int(float(x)))
+    return strings_to_(strs, lambda x: int(float(x)))
 
 
-def strs_to_floats(strs: Iterable[str]) -> Iterable[float]:
+def strings_to_floats(strs: Iterable[str]) -> Iterable[float]:
     """
     Convert a list of strings to a list of floats.
 
@@ -52,13 +54,13 @@ def strs_to_floats(strs: Iterable[str]) -> Iterable[float]:
 
     .. doctest::
 
-        >>> strs_to_floats(['1', '1.0', '-0.2'])
+        >>> strings_to_floats(['1', '1.0', '-0.2'])
         [1.0, 1.0, -0.2]
     """
-    return strs_to_(strs, float)
+    return strings_to_(strs, float)
 
 
-def str_to_double_precision_float(s: str) -> float:
+def string_to_double_precision_float(s: str) -> float:
     """
     Double precision float in Fortran file will have form 'x.ydz' or 'x.yDz', this cannot be convert directly to float
     by Python ``float`` function, so I wrote this function to help conversion. For example,
@@ -68,20 +70,20 @@ def str_to_double_precision_float(s: str) -> float:
 
     .. doctest::
 
-        >>> str_to_double_precision_float('1d-82')
+        >>> string_to_double_precision_float('1d-82')
         1e-82
-        >>> str_to_double_precision_float('1.0D-82')
+        >>> string_to_double_precision_float('1.0D-82')
         1e-82
-        >>> str_to_double_precision_float('0.8D234')
+        >>> string_to_double_precision_float('0.8D234')
         8e+233
-        >>> str_to_double_precision_float('.8d234')
+        >>> string_to_double_precision_float('.8d234')
         8e+233
     """
     first, second, exponential = re.match("(-?\d*)\.?(-?\d*)d(-?\d+)", s, re.IGNORECASE).groups()
     return float(first + '.' + second + 'e' + exponential)
 
 
-def str_to_float(s: str) -> float:
+def string_to_general_float(s: str) -> float:
     """
     Convert a string to corresponding single or double precision scientific number.
 
@@ -90,20 +92,20 @@ def str_to_float(s: str) -> float:
 
     .. doctest::
 
-        >>> str_to_float('1.0D-5')
+        >>> string_to_general_float('1.0D-5')
         1e-05
-        >>> str_to_float('1Dx')
+        >>> string_to_general_float('1Dx')
         Traceback (most recent call last):
             ...
         ValueError: The string '1Dx' does not corresponds to a double precision number!
-        >>> str_to_float('.8d234')
+        >>> string_to_general_float('.8d234')
         8e+233
-        >>> str_to_float('0.1')
+        >>> string_to_general_float('0.1')
         0.1
     """
     if 'D' in s.upper():  # Possible double precision number
         try:
-            return str_to_double_precision_float(s)
+            return string_to_double_precision_float(s)
         except ValueError:
             raise ValueError("The string '{0}' does not corresponds to a double precision number!".format(s))
     else:

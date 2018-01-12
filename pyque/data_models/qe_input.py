@@ -11,7 +11,7 @@ from lazy_property import LazyWritableProperty
 
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 from pyque.meta.namelist import ELECTRONS_NAMELIST, CONTROL_NAMELIST, SYSTEM_NAMELIST, DefaultParameters
-from pyque.meta.parameter import ELECTRONSNamelistParameter, to_qe_str
+from pyque.meta.parameter import to_qe_str
 from pyque.miscellaneous.path_generators import path_generator
 from pyque.miscellaneous.strings import *
 from pyque.parsers.simple import ValueWithComment
@@ -60,14 +60,6 @@ def print_pw_input(obj: object):
         raise TypeError("{0} is not a {1} object!".format(obj, type(obj).__name__))
 
 
-def to_float(obj):
-    if isinstance(obj, ValueWithComment):
-        return str_to_float(obj.value)
-    elif isinstance(obj, str):
-        return str_to_float(obj)
-    raise TypeError
-
-
 # ========================================= define useful data structures =========================================
 class _OptionWithWarning(LabeledDescriptor):
     def __set__(self, instance, new_option: str):
@@ -76,6 +68,10 @@ class _OptionWithWarning(LabeledDescriptor):
                           category=DeprecationWarning)
         else:
             instance.__dict__[self.label] = new_option
+
+
+class _CONTROLNamelist(LabeledDescriptor):
+    pass
 
 
 # ========================================= most important data structures =========================================
@@ -123,13 +119,13 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
             for k, v in self.control_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
             f.write("/\n&SYSTEM\n")
             for k, v in self.system_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
             f.write("/\n&ELECTRONS\n")
             for k, v in self.electrons_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
             f.write("/\nCELL_PARAMETERS\n")
             f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
                                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
@@ -152,9 +148,9 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
         d = {}
         for k, v in self.control_namelist.items():
             if control_default_parameters[k][1] is float:
-                d.update({k: str_to_float(v)})
+                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
             else:
-                d.update({k: control_default_parameters[k][1](v)})
+                d.update({k: ValueWithComment(control_default_parameters[k][1](v.value), v.comment)})
         self.control_namelist = d
         d = {}
         for k, v in self.system_namelist.items():
@@ -164,17 +160,16 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
             else:
                 k_prefix = k
             if system_default_parameters[k_prefix][1] is float:
-                d.update({k: str_to_float(v)})
+                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
             else:
-                d.update({k: system_default_parameters[k_prefix][1](v)})
+                d.update({k: ValueWithComment(system_default_parameters[k_prefix][1](v.value), v.comment)})
         self.system_namelist = d
         d = {}
-
         for k, v in self.electrons_namelist.items():
             if electrons_default_parameters[k][1] is float:
-                d.update({k: str_to_float(v)})
+                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
             else:
-                d.update({k: ELECTRONSNamelistParameter(k, v)})
+                d.update({k: ValueWithComment(electrons_default_parameters[k][1](v.value), v.comment)})
         self.electrons_namelist = d
         return self
 

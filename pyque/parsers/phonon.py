@@ -6,7 +6,7 @@ from typing import *
 import numpy as np
 
 from pyque.meta.namelist import INPUTPH_NAMELIST
-from pyque.miscellaneous.strings import strs_to_floats
+from pyque.miscellaneous.strings import strings_to_floats
 from pyque.parsers.simple import SimpleParser, NamelistParser
 
 # Type aliases
@@ -46,7 +46,7 @@ class PHononInputParser(SimpleParser):
                 # Read next line, and parse the 3 q point coordinates.
                 line = f.readline()
                 if len(line.strip().split()) == 3:
-                    return np.array(strs_to_floats(line.strip().split()))
+                    return np.array(strings_to_floats(line.strip().split()))
 
     def parse_q_points(self):
         with open(self.infile, 'r') as f:
@@ -59,7 +59,7 @@ class PHononInputParser(SimpleParser):
                     q_points_num = int(line.strip().split()[0])
                     q_points = np.empty([q_points_num, 3])
                     for i in range(q_points_num):
-                        q_points[i] = strs_to_floats(line.strip().split())
+                        q_points[i] = strings_to_floats(line.strip().split())
                     return q_points
 
 
@@ -139,7 +139,7 @@ class PlotbandParser(SimpleParser):
         :return: 2 lists of floats, the first is the coordinates in q-space, the second is the energy.
         """
         coordinates, bands = self.read_two_columns()
-        return strs_to_floats(coordinates), strs_to_floats(bands)
+        return strings_to_floats(coordinates), strings_to_floats(bands)
 
 
 class DOSParser(SimpleParser):
@@ -151,4 +151,4 @@ class DOSParser(SimpleParser):
         :return: 2 lists of floats, the first is the energies, the second is the density of states.
         """
         frequencies, dos = self.read_two_columns()  # Tuple[List[str], List[str]]
-        return strs_to_floats(frequencies), strs_to_floats(dos)
+        return strings_to_floats(frequencies), strings_to_floats(dos)

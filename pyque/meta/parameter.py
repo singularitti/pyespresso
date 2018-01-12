@@ -16,6 +16,7 @@ from lazy_property import LazyProperty, LazyWritableProperty
 
 from pyque.meta.namelist import Namelist, CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, \
     CELL_NAMELIST, INPUTPH_NAMELIST
+from pyque.parsers.simple import ValueWithComment
 
 # ========================================= What can be exported? =========================================
 __all__ = ['CONTROLNamelistParameter', 'SYSTEMNamelistParameter', 'ELECTRONSNamelistParameter', 'IONSNamelistParameter',
@@ -35,8 +36,13 @@ def to_qe_str(obj):
         if obj:  # If *obj* is ``True``.
             return '.true.'
         return '.false.'  # If *obj* is ``False``.
-    elif isinstance(obj, NamelistParameterMeta):
-        return to_qe_str(obj.value)
+    # elif isinstance(obj, NamelistParameterMeta):
+    #     return to_qe_str(obj.value)
+    elif isinstance(obj, ValueWithComment):
+        if obj.comment:
+            return '   !'.join([to_qe_str(obj.value), obj.comment])
+        else:
+            return to_qe_str(obj.value)
     raise TypeError('Type {0} given is not legal here!'.format(type(obj).__name__))
 
 
@@ -84,8 +90,7 @@ class NamelistParameterMeta:
 
         :return: a string showing `self.name` and `self.value`
         """
-        return "The parameter is '{0}', with value: {1}, and type: {2}.".format(self._name, self.value,
-                                                                                self.type)
+        return "The parameter is '{0}', with value: {1}, and type: {2}.".format(self._name, self.value, self.type)
 
     def __repr__(self):
         return str(SimpleParameter(self._name, self.value, self.type))
