@@ -10,13 +10,14 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
+import smtplib
 import subprocess
 import time
 from typing import *
 
 from lazy_property import LazyWritableProperty
+
 from pyque.core.email_sender import EmailSender
-import smtplib
 
 
 class SlurmSystemMonitor:
@@ -59,7 +60,12 @@ class SlurmSystemMonitor:
         pass
 
     def is_process_alive(self):
-        pass
+        job_status = subprocess.Popen(['squeue', '-j', self.job_id], stdout=subprocess.PIPE)
+        queue = job_status.stdout.read().split()
+        if self.job_id in queue:
+            print("Congratulations, the variable cell relaxation is done!")
+            return True
+        return False
 
     def queue_every_n_seconds(self, n: float):
         if self.is_process_alive():
@@ -73,6 +79,10 @@ class SlurmSystemMonitor:
         pass
 
     @LazyWritableProperty
+    def user_email_password(self):
+        pass
+
+    @LazyWritableProperty
     def job_name(self):
         pass
 
@@ -80,8 +90,8 @@ class SlurmSystemMonitor:
         if not self.is_process_alive():
             email_sender = EmailSender(self.user_email, self.user_email, 'Job {0} is done!'.format(self.job_id))
             email_sender.server = smtplib.SMTP('smtp.gmail.com', 587)
-            email_sender.message = "Your job with id {0} is done!".format(self.job_id)
-            email_sender.from_address_password = "xxxxx"
+            email_sender.message = "Your job with name {0} and job ID {1} is done!".format(self.job_name, self.job_id)
+            email_sender.from_address_password = self.user_email_password
             email_sender.send()
         else:
             time.sleep(n)

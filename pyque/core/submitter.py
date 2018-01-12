@@ -33,7 +33,7 @@ class Submitter:
             return self.get_job_id()
 
     def get_job_id(self):
-        return int(self.process.stdout.read().split()[-1])
+        return str(self.process.stdout.read().split()[-1])
 
     # def _distribute_task(self) -> int:
     #     """
