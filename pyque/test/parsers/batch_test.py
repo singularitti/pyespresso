@@ -4,7 +4,7 @@
 from os.path import join, pardir
 from unittest import TestCase
 
-from pyque.parsers.batch import BatchTemplateParser
+from pyque.lexer.batch import BatchTemplateParser
 
 
 class BatchTemplateParserTester(TestCase):

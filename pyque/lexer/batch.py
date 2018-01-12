@@ -5,7 +5,7 @@ import warnings
 from itertools import filterfalse
 from typing import *
 
-from pyque.parsers.simple import SimpleParser
+from pyque.lexer.simple import SimpleParser
 
 
 class BatchTemplateParser(SimpleParser):

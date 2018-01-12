@@ -3,7 +3,7 @@
 from functools import partialmethod
 
 from pyque.meta.parameter import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
-from pyque.miscellaneous.strings import strings_to_integers
+from pyque.util.strings import strings_to_integers
 
 
 def partialclass(cls, *args, **kwds):

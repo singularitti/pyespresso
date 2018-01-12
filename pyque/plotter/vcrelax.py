@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
-from pyque.plotters.plot_basic import *
-from pyque.parsers.elasticity import *
+from pyque.plotter.plot_basic import *
+from pyque.lexer.elasticity import *
 
 
 class PlotVCRelaxOutput(SingleAxes):

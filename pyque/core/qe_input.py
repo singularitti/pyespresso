@@ -12,9 +12,9 @@ from lazy_property import LazyWritableProperty
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 from pyque.meta.namelist import ELECTRONS_NAMELIST, CONTROL_NAMELIST, SYSTEM_NAMELIST, DefaultParameters
 from pyque.meta.parameter import to_qe_str
-from pyque.miscellaneous.path_generators import path_generator
-from pyque.miscellaneous.strings import *
-from pyque.parsers.simple import ValueWithComment
+from pyque.util.path_generators import path_generator
+from pyque.util.strings import *
+from pyque.lexer.simple import ValueWithComment
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pw_input', 'print_pw_input', 'PWscfStandardInput', 'SCFStandardInput', 'VCRelaxStandardInput',

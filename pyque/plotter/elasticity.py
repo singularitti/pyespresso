@@ -2,8 +2,8 @@
 # created at Oct 20, 2017 12:49 AM by Qi Zhang
 
 from matplotlib.lines import Line2D
-from pyque.calculators.elasticity import *
-from pyque.plotters.plot_basic import *
+from pyque.calculator.elasticity import *
+from pyque.plotter.plot_basic import *
 
 
 class ElasticityOutputPlotter(SingleAxes):

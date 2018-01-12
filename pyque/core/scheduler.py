@@ -114,6 +114,10 @@ class SlurmSystem(metaclass=DescriptorOwnerMeta):
     def exclusive(self):
         pass
 
+    @LazyProperty
+    def submit_prefix(self):
+        return 'sbatch'
+
 
 available_schedulers = {
     'slurm': SlurmSystem

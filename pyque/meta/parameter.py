@@ -16,7 +16,7 @@ from lazy_property import LazyProperty, LazyWritableProperty
 
 from pyque.meta.namelist import Namelist, CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, \
     CELL_NAMELIST, INPUTPH_NAMELIST
-from pyque.parsers.simple import ValueWithComment
+from pyque.lexer.simple import ValueWithComment
 
 # ========================================= What can be exported? =========================================
 __all__ = ['CONTROLNamelistParameter', 'SYSTEMNamelistParameter', 'ELECTRONSNamelistParameter', 'IONSNamelistParameter',

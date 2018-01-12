@@ -4,8 +4,8 @@
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-from pyque.calculators.phonon import *
-from pyque.parsers.elasticity import *
+from pyque.calculator.phonon import *
+from pyque.lexer.elasticity import *
 
 
 class PhononPlotData:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from pyque.data_models.qe_input import PHononStandardInput, PWscfStandardInput
-from pyque.parsers.phonon import PHononInputParser
-from pyque.parsers.pwscf import PWscfInputParser
+from pyque.core.qe_input import PHononStandardInput, PWscfStandardInput
+from pyque.lexer.phonon import PHononInputParser
+from pyque.lexer.pwscf import PWscfInputParser
 
 # ========================================= What can be exported? =========================================
 __all__ = ['build_all', 'PWscfInputBuilder', 'PHononInputBuilder']

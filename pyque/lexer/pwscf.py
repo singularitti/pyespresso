@@ -7,11 +7,11 @@ from typing import *
 
 import numpy as np
 
-from pyque.data_models.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfStandardInput
+from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfStandardInput
 from pyque.meta.namelist import CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, CELL_NAMELIST
 from pyque.meta.text import TextStream
-from pyque.miscellaneous.strings import strings_to_floats, strings_to_integers
-from pyque.parsers.simple import SimpleParser, NamelistParser
+from pyque.util.strings import strings_to_floats, strings_to_integers
+from pyque.lexer.simple import SimpleParser, NamelistParser
 
 # ========================================= What can be exported? =========================================
 __all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputParser', 'PWscfOutputParser']

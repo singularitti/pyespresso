@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
-import pyque.calculators.maths as mm
-from pyque.miscellaneous.converters import *
-from pyque.parsers.phonon import *
+import pyque.calculator.maths as mm
+from pyque.util.converters import *
+from pyque.lexer.phonon import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]

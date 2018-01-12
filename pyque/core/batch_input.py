@@ -4,10 +4,10 @@ from typing import Iterable, Union, Set, List, Optional
 
 from lazy_property import LazyWritableProperty, LazyProperty
 
-from pyque.data_models.scheduler import available_schedulers, SchedulerSystem
-from pyque.miscellaneous.path_generators import path_generator
-from pyque.miscellaneous.sets import add_elements_to_set, remove_elements_from_set
-from pyque.miscellaneous.strings import is_any_not_string
+from pyque.core.scheduler import available_schedulers, SchedulerSystem
+from pyque.util.path_generators import path_generator
+from pyque.util.sets import add_elements_to_set, remove_elements_from_set
+from pyque.util.strings import is_any_not_string
 
 # ========================================= What can be exported? =========================================
 __all__ = ['Comment', 'BatchInput']

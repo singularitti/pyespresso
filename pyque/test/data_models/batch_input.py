@@ -4,8 +4,8 @@
 from os.path import join, pardir
 from unittest import TestCase
 
-from pyque.data_models.batch_input import BatchInput
-from pyque.parsers.batch import BatchTemplateParser
+from pyque.core.batch_input import BatchInput
+from pyque.lexer.batch import BatchTemplateParser
 
 
 class BatchInputTester(TestCase):

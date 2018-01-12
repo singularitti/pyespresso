@@ -6,8 +6,8 @@ from typing import *
 import numpy as np
 
 from pyque.meta.namelist import INPUTPH_NAMELIST
-from pyque.miscellaneous.strings import strings_to_floats
-from pyque.parsers.simple import SimpleParser, NamelistParser
+from pyque.util.strings import strings_to_floats
+from pyque.lexer.simple import SimpleParser, NamelistParser
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
