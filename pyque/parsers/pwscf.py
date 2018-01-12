@@ -2,6 +2,7 @@
 
 import re
 import warnings
+from collections import namedtuple
 from typing import *
 
 import numpy as np
@@ -12,8 +13,17 @@ from pyque.meta.text import TextStream
 from pyque.miscellaneous.strings import strs_to_floats, strs_to_ints
 from pyque.parsers.simple import SimpleParser, NamelistParser
 
+# ========================================= What can be exported? =========================================
+__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputParser', 'PWscfOutputParser']
 
-def write_to_file(obj: object, out_file: str):
+# ================================= These are some type aliases or type definitions. =================================
+SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Union[str, int, float, bool]), ('type', str)])
+
+# ========================================= define useful data structures =========================================
+SimpleParameter: SimpleParameter = namedtuple('SimpleParameter', ['name', 'value', 'type'])
+
+
+def to_text_file(obj: object, out_file: str):
     if isinstance(obj, PWscfStandardInput):
         obj.to_text_file(out_file)
     else:
@@ -46,7 +56,7 @@ class CELLNamelistParser(NamelistParser):
         super().__init__(infile, CELL_NAMELIST)
 
 
-class PWscfStandardInputParser(TextStream):
+class PWscfInputParser(TextStream):
     """
     This class read an scf input file in, and parse it.
     """

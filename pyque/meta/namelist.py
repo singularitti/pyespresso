@@ -14,10 +14,18 @@ from typing import List, Union, Type, Tuple, DefaultDict
 
 # ========================================= What can be exported? =========================================
 __all__ = ['Namelist', 'CONTROL_NAMELIST', 'SYSTEM_NAMELIST', 'ELECTRONS_NAMELIST', 'CELL_NAMELIST', 'IONS_NAMELIST',
-           'INPUTPH_NAMELIST']
+           'INPUTPH_NAMELIST', 'DefaultParameters', 'is_namelist']
 
 # ================================= These are some type aliases or type definitions. =================================
 DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
+
+
+# ========================================= define useful functions =========================================
+def is_namelist(obj: object):
+    if hasattr(obj, 'names') and hasattr(obj, 'default_values') and hasattr(obj, 'value_types'):
+        return True
+    else:
+        return False
 
 
 class Namelist:

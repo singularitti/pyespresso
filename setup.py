@@ -5,9 +5,9 @@ from setuptools import setup
 from markdown import markdownFromFile
 
 setup(name='PyQuE',
-      version='0.1',
+      version='0.0.1',
       classifiers=[
-          'Development Status :: 0.1',
+          'Development Status :: 0.0.1',
           'License :: MIT License',
           'Programming Language :: Python :: 3.5',
       ],

@@ -27,13 +27,13 @@ class LabeledDescriptor:
         instance.__dict__[self.label] = value
 
 
-class MetaDescriptorOwner(type):
+class DescriptorOwnerMeta(type):
     def __new__(cls, name, bases, attrs):
         # find all descriptors, auto-set their labels
         for n, v in attrs.items():
             if isinstance(v, LabeledDescriptor):
                 v.label = n
-        return super(MetaDescriptorOwner, cls).__new__(cls, name, bases, attrs)
+        return super(DescriptorOwnerMeta, cls).__new__(cls, name, bases, attrs)
 
 
 class WeakDescriptor:

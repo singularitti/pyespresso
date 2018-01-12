@@ -12,8 +12,12 @@
 import re
 from typing import *
 
+# ========================================= What can be exported? =========================================
+__all__ = ['strs_to_', 'strs_to_ints', 'strs_to_floats', 'str_to_double_precision_float', 'str_to_float',
+           'match_one_string', 'match_one_pattern', 'is_string_like', 'is_any_not_string']
 
-def _strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
+
+def strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     """
     Convert a list of strings to a list of certain form, specified by *f*.
 
@@ -21,8 +25,7 @@ def _strs_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     :param f: a function that converts your string
     :return: type undefined, but specified by `to_type`
     """
-    container = type(strs)
-    return container(map(f, strs))
+    return type(strs)(map(f, strs))  # ``type(strs)`` is the container of *strs*.
 
 
 def strs_to_ints(strs: Iterable[str]) -> Iterable[int]:
@@ -37,7 +40,7 @@ def strs_to_ints(strs: Iterable[str]) -> Iterable[int]:
         >>> strs_to_ints(['1', '1.0', '-0.2'])
         [1, 1, 0]
     """
-    return _strs_to_(strs, lambda x: int(float(x)))
+    return strs_to_(strs, lambda x: int(float(x)))
 
 
 def strs_to_floats(strs: Iterable[str]) -> Iterable[float]:
@@ -52,7 +55,7 @@ def strs_to_floats(strs: Iterable[str]) -> Iterable[float]:
         >>> strs_to_floats(['1', '1.0', '-0.2'])
         [1.0, 1.0, -0.2]
     """
-    return _strs_to_(strs, float)
+    return strs_to_(strs, float)
 
 
 def str_to_double_precision_float(s: str) -> float:

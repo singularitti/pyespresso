@@ -5,8 +5,8 @@ from typing import *
 
 import numpy as np
 
+from pyque.meta.namelist import INPUTPH_NAMELIST
 from pyque.miscellaneous.strings import strs_to_floats
-from pyque.meta.parameter import INPUTPH_NAMELIST
 from pyque.parsers.simple import SimpleParser, NamelistParser
 
 # Type aliases

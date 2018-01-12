@@ -9,8 +9,12 @@ from typing import *
 import numpy as np
 from lazy_property import LazyWritableProperty
 
-from pyque.meta.descriptors import LabeledDescriptor, MetaDescriptorOwner
+from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
+from pyque.meta.namelist import ELECTRONS_NAMELIST, CONTROL_NAMELIST, SYSTEM_NAMELIST, DefaultParameters
+from pyque.meta.parameter import ELECTRONSNamelistParameter, to_qe_str
 from pyque.miscellaneous.path_generators import path_generator
+from pyque.miscellaneous.strings import *
+from pyque.parsers.simple import ValueWithComment
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pw_input', 'print_pw_input', 'PWscfStandardInput', 'SCFStandardInput', 'VCRelaxStandardInput',
@@ -30,6 +34,11 @@ Note that the word 'species' serves as singular and plural both.
 So here though suffixed with a 's', it is for one atom and thus is singular."""
 
 AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
+
+# ========================================= variables declaration =========================================
+control_default_parameters: DefaultParameters = CONTROL_NAMELIST.default_parameters
+system_default_parameters: DefaultParameters = SYSTEM_NAMELIST.default_parameters
+electrons_default_parameters: DefaultParameters = ELECTRONS_NAMELIST.default_parameters
 
 
 # ========================================= define useful functions =========================================
@@ -51,6 +60,14 @@ def print_pw_input(obj: object):
         raise TypeError("{0} is not a {1} object!".format(obj, type(obj).__name__))
 
 
+def to_float(obj):
+    if isinstance(obj, ValueWithComment):
+        return str_to_float(obj.value)
+    elif isinstance(obj, str):
+        return str_to_float(obj)
+    raise TypeError
+
+
 # ========================================= define useful data structures =========================================
 class _OptionWithWarning(LabeledDescriptor):
     def __set__(self, instance, new_option: str):
@@ -62,7 +79,7 @@ class _OptionWithWarning(LabeledDescriptor):
 
 
 # ========================================= most important data structures =========================================
-class PWscfStandardInput(metaclass=MetaDescriptorOwner):
+class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
     atomic_positions_option = _OptionWithWarning()
     cell_parameters_option = _OptionWithWarning()
 
@@ -106,13 +123,13 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
             for k, v in self.control_namelist.items():
-                f.write("{0} = {1}\n".format(k, v))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
             f.write("/\n&SYSTEM\n")
             for k, v in self.system_namelist.items():
-                f.write("{0} = {1}\n".format(k, v))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
             f.write("/\n&ELECTRONS\n")
             for k, v in self.electrons_namelist.items():
-                f.write("{0} = {1}\n".format(k, v))
+                f.write("{0} = {1}\n".format(k, to_qe_str(v.value)))
             f.write("/\nCELL_PARAMETERS\n")
             f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
                                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
@@ -121,7 +138,7 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
                 f.write(' '.join(map(str, row)) + "\n")
             f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self.atomic_positions_option))
             for row in self.atomic_positions:
-                f.write(' '.join(str(tuple(row))) + "\n")
+                f.write(re.sub("[\[\]]", '', ' '.join(map(str, row)) + "\n"))
             f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
 
@@ -130,6 +147,36 @@ class PWscfStandardInput(metaclass=MetaDescriptorOwner):
     # TODO: finish this method
     def to_json(self) -> None:
         pass
+
+    def beautify(self):
+        d = {}
+        for k, v in self.control_namelist.items():
+            if control_default_parameters[k][1] is float:
+                d.update({k: str_to_float(v)})
+            else:
+                d.update({k: control_default_parameters[k][1](v)})
+        self.control_namelist = d
+        d = {}
+        for k, v in self.system_namelist.items():
+            if '(' in k:
+                # Only take the part before the first '(' to deal with names like 'celldm(1)'.
+                k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
+            else:
+                k_prefix = k
+            if system_default_parameters[k_prefix][1] is float:
+                d.update({k: str_to_float(v)})
+            else:
+                d.update({k: system_default_parameters[k_prefix][1](v)})
+        self.system_namelist = d
+        d = {}
+
+        for k, v in self.electrons_namelist.items():
+            if electrons_default_parameters[k][1] is float:
+                d.update({k: str_to_float(v)})
+            else:
+                d.update({k: ELECTRONSNamelistParameter(k, v)})
+        self.electrons_namelist = d
+        return self
 
 
 class SCFStandardInput(PWscfStandardInput):

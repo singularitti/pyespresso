@@ -5,21 +5,17 @@ import re
 from collections import namedtuple
 from typing import *
 
-from pyque.meta.namelist import Namelist
+from pyque.meta.namelist import Namelist, is_namelist
 from pyque.meta.text import TextStream
 
-# ================================= These are some type aliases or type definitions. =================================
+# ========================================= What can be exported? =========================================
+__all__ = ['SimpleParser', 'NamelistParser', 'ValueWithComment']
 
+# ================================= These are some type aliases or type definitions. =================================
 ValueWithComment = NamedTuple('ValueWithComment', [('value', Union[str, int, bool, float]), ('comment', str)])
 
+# ========================================= define useful data structures =========================================
 ValueWithComment: ValueWithComment = namedtuple('ValueWithComment', ['value', 'comment'])
-
-
-def is_namelist(obj: object):
-    if hasattr(obj, 'names') and hasattr(obj, 'default_values') and hasattr(obj, 'value_types'):
-        return True
-    else:
-        return False
 
 
 class SimpleParser(TextStream):

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# created at Jan 3, 2018 7:51 PM by Qi Zhang
 
 import re
 import warnings
@@ -39,7 +38,6 @@ class BatchTemplateParser(SimpleParser):
         for line in self.stream_generator():
             if line.startswith('#!'):
                 line = next(line)
-
 
     def to_dict(self):
         return {'scheduler': self.parse_scheduler(),
@@ -96,5 +94,8 @@ class SlurmSystemBatchParser(SimpleParser):
 
         :return:
         """
-        predicate = lambda s: any(s.startswith(token) for token in ['#', '\n', 'module load'])
+
+        def predicate(s):
+            return any(s.startswith(token) for token in ['#', '\n', 'module load'])
+
         return [line.rstrip("\n") for line in filterfalse(predicate, self.stream_generator())]

@@ -2,7 +2,7 @@
 
 from functools import partialmethod
 
-from pyque.meta.parameter import CONTROLParameter, SYSTEMParameter, CELLParameter
+from pyque.meta.parameter import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
 from pyque.miscellaneous.strings import strs_to_ints
 
 
@@ -14,17 +14,17 @@ def partialclass(cls, *args, **kwds):
 
 
 PWSCF_GENERATOR_CONFIG = {
-    'pseudopotential directory': partialclass(CONTROLParameter, 'pseudo_dir'),
-    'prefix': partialclass(CONTROLParameter, 'prefix'),
-    'fictitious cell mass': partialclass(CELLParameter, 'wmass'),
-    'number of atoms': partialclass(SYSTEMParameter, 'nat'),
-    'number of atomic types': partialclass(SYSTEMParameter, 'ntyp'),
-    'energy cutoff': partialclass(SYSTEMParameter, 'ecutwfc'),
-    'density cutoff': partialclass(SYSTEMParameter, 'ecutrho'),
-    'smearing': partialclass(SYSTEMParameter, 'smearing'),
-    'occupations': partialclass(SYSTEMParameter, 'occupations'),
-    'degauss': partialclass(SYSTEMParameter, 'degauss'),
-    'scratch folder': partialclass(CONTROLParameter, 'outdir'),
+    'pseudopotential directory': partialclass(CONTROLNamelistParameter, 'pseudo_dir'),
+    'prefix': partialclass(CONTROLNamelistParameter, 'prefix'),
+    'fictitious cell mass': partialclass(CELLNamelistParameter, 'wmass'),
+    'number of atoms': partialclass(SYSTEMNamelistParameter, 'nat'),
+    'number of atomic types': partialclass(SYSTEMNamelistParameter, 'ntyp'),
+    'energy cutoff': partialclass(SYSTEMNamelistParameter, 'ecutwfc'),
+    'density cutoff': partialclass(SYSTEMNamelistParameter, 'ecutrho'),
+    'smearing': partialclass(SYSTEMNamelistParameter, 'smearing'),
+    'occupations': partialclass(SYSTEMNamelistParameter, 'occupations'),
+    'degauss': partialclass(SYSTEMNamelistParameter, 'degauss'),
+    'scratch folder': partialclass(CONTROLNamelistParameter, 'outdir'),
     'k-points': strs_to_ints,
     'shift': strs_to_ints
 }
