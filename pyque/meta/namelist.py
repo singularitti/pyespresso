@@ -180,9 +180,9 @@ class LazyNamelist(LazyWritableProperty):
 class NamelistDict(addict.Dict):
     def __setattr__(self, name, value):
         try:
-            object.__setattr__(self, name, eval(type(self[name]).__name__)(name, value))
-        except NameError:
-            raise NameError("The name '{0}' you set does not already exist!".format(name))
+            object.__setattr__(self, name, type(self[name])(name, value))
+        except ValueError:
+            raise KeyError("The name '{0}' you set does not already exist!".format(name))
 
     def beautify(self):
         d = dict()
