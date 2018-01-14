@@ -9,222 +9,375 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
-from collections import defaultdict
-from typing import List, Union, Type, Tuple, DefaultDict
+from abc import ABC, abstractmethod
+from collections import OrderedDict
+from typing import Union, List, DefaultDict, Tuple
 
 import addict
-from lazy_property import LazyWritableProperty
+from lazy_property import LazyProperty, LazyWritableProperty
 
-from pyque.meta.bijection import qe_string_to_builtin
+from pyque.default_configuerations.namelist import *
+from pyque.util.strings import string_to_general_float
 
 # ========================================= What can be exported? =========================================
-__all__ = ['Namelist', 'CONTROL_NAMELIST', 'SYSTEM_NAMELIST', 'ELECTRONS_NAMELIST', 'CELL_NAMELIST', 'IONS_NAMELIST',
-           'INPUTPH_NAMELIST', 'DefaultParameters', 'is_namelist', 'LazyNamelist']
-
-# ================================= These are some type aliases or type definitions. =================================
-DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
+__all__ = ['is_namelist', 'LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin']
 
 
-# ========================================= define useful functions =========================================
+# ========================================= These are some useful functions. =========================================
 def is_namelist(obj: object):
-    if hasattr(obj, 'names') and hasattr(obj, 'default_values') and hasattr(obj, 'value_types'):
+    if issubclass(type(obj), NamelistABC):
         return True
+    return False
+
+
+def is_namelist_parameter(obj: object):
+    if issubclass(type(obj), NamelistParameterABC):
+        return True
+    return False
+
+
+def builtin_to_qe_string(obj: Union[int, float, bool, str]):
+    """
+    An instance of a builtin type can be converted to a Quantum ESPRESSO legal string.
+
+    :param obj: Legal type of *obj* can be one of ``int``, ``str``, ``bool``, ``float``, cannot be anything else. If you
+        have, for example, a list of builtins, map this function on them.
+    :return: A Quantum ESPRESSO string.
+    """
+    if isinstance(obj, bool):
+        # You must check this at first, since ``bool`` is a subclass of ``int``, if you check this below
+        # the ``elif`` clause, then ``isinstance(True, bool)`` will be ``True``.
+        if obj:  # If *obj* is ``True``.
+            return '.true.'
+        return '.false.'  # If *obj* is ``False``.
+    elif isinstance(obj, (int, float, str)):
+        return str(obj)
     else:
-        return False
+        raise TypeError("Illegal type '{0}' is given!".format(type(obj).__name__))
 
 
-class Namelist:
+def qe_string_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
     """
-    This will build a constant instance which is a constant. So the names of such instances should be all capitalized.
+    A Quantum ESPRESSO legal string can be converted to an instance of a Python builtin type.
+
+    :param obj: Legal type of *obj* can be one of ``int``, ``str``, ``bool``, ``float``, cannot be anything else. This
+        maybe a little bit confusing because the name of this function is *qe_string_to_builtin*. However, it is for
+        compatibility consideration because you may already have a an instance of a Python builtin type.
+    :param desired_type: Should be a string indicating the type you want the *obj* to be converted to.
+    :return: An instance of a Python builtin type, converted from *obj*.
+    """
+    if desired_type not in {'int', 'str', 'bool', 'float'}:
+        raise ValueError("Unknown *desired_type* '{0}' is given!".format(desired_type))
+    if isinstance(obj, (int, float, bool)):  # In case that your data are already builtins.
+        if type(obj).__name__ == desired_type:
+            return obj
+        raise TypeError(
+            "The type of '{0}' ({1}) is inconsistent with *desired_type* {2}!".format(obj, type(obj).__name__,
+                                                                                      desired_type))
+    elif isinstance(obj, str):
+        if desired_type == 'bool':
+            try:
+                return {'.true.': True, '.false.': False}[obj]
+            except KeyError:
+                raise ValueError("The string '{0}' cannot be converted to a bool!".format(obj))
+        elif desired_type == 'int':
+            try:
+                return int(obj)
+            except ValueError:
+                raise ValueError('The string {0} cannot be converted to an integer!'.format(obj))
+        elif desired_type == 'float':
+            try:
+                return string_to_general_float(obj)
+            except ValueError:
+                raise ValueError('The string {0} cannot be converted to a float!'.format(obj))
+        elif desired_type == 'str':
+            return obj
+    else:  # Here *obj* is not ``int``, ``str``, ``bool``, ``float``.
+        raise TypeError("Illegal type '{0}' is given!".format(type(obj).__name__))
+
+
+# ========================================= define some crucial class =========================================
+class NamelistABC(ABC):
+    @abstractmethod
+    def names(self):
+        pass
+
+    @abstractmethod
+    def values(self):
+        pass
+
+    @abstractmethod
+    def value_types(self):
+        pass
+
+
+class DefaultNamelist(NamelistABC):
+    """
+    This will build a constant instance which is a constant. So the names of this class instances should be all
+    capitalized.
     """
 
-    def __init__(self, namelist_name: str, names: List[str], default_values: List):
-        self.__name__ = namelist_name
-        self._names = names
-        self._default_values = default_values
+    def __init__(self, caption: str, odict: OrderedDict):
+        self.__caption = caption
+        self.parameters = odict
 
-    @property
+    @LazyProperty
+    def caption(self):
+        return self.__caption
+
+    @LazyProperty
     def names(self) -> List[str]:
         """
         This is a list of names for a namelist. Read-only attribute.
 
         :return:
         """
-        return self._names
+        return list(self.parameters.keys())
 
-    @property
-    def default_values(self) -> List[Union[str, int, float, bool]]:
+    @LazyProperty
+    def values(self) -> List[Union[str, int, float, bool]]:
         """
         This is a list of QE default values for a namelist. Read-only attribute.
 
         :return:
         """
-        return self._default_values
+        return list(self.parameters.values())
 
-    @property
-    def value_types(self) -> List[Type[Union[str, int, float, bool]]]:
+    @LazyProperty
+    def value_types(self) -> List[str]:
         """
         This is a list of types of each default value for a namelist. Read-only attribute.
 
         :return:
         """
-        return [type(x) for x in self._default_values]
+        return [type(_).__name__ for _ in self.values]
 
-    @property
-    def default_parameters(self) -> DefaultParameters:
+    @LazyProperty
+    def typed_parameters(self) -> DefaultDict[str, Tuple[Union[str, int, float, bool], str]]:
         """
         This is a ``DefaultDict`` of ``(QE default value, types of each default value)`` tuples for a namelist,
         with those names to be its keys. Read-only attribute.
 
         :return:
         """
-        default_parameters: DefaultParameters = defaultdict(tuple)
-        default_values: List = self._default_values
-        value_types: List = self.value_types
-        for i, k in enumerate(self._names):
-            default_parameters[k] = (default_values[i], value_types[i])
-        return default_parameters
+        return OrderedDict(zip(self.names, zip(self.values, self.value_types)))
 
 
-# =================================== I am a cut line ===================================
-CONTROL_NAMELIST: Namelist = Namelist(
-    'CONTROL', [
-        'calculation', 'title', 'verbosity', 'restart_mode', 'wf_collect', 'nstep', 'iprint', 'tstress', 'tprnfor',
-        'dt', 'outdir', 'wfcdir', 'prefix', 'lkpoint_dir', 'max_seconds', 'etot_conv_thr', 'forc_conv_thr', 'disk_io',
-        'pseudo_dir', 'tefield', 'dipfield', 'lelfield', 'nberrycyc', 'lorbm', 'lberry', 'gdir', 'nppstr', 'lfcpopt',
-        'gate'
-    ], [
-        'scf', ' ', 'low', 'from_scratch', True, 1, 1, False, False,
-        20.0e0, './', './', 'pwscf', True, 1.0e7, 1.0e-4, 1.0e-3, 'medium',
-        '$ESPRESSO_PSEUDO', False, False, False, 1, False, False, 1, 1, False, False
-    ]
-)
-
-# =================================== I am a cut line ===================================
-SYSTEM_NAMELIST: Namelist = Namelist(
-    'SYSTEM', [
-        'ibrav', 'celldm', 'A', 'B', 'C', 'cosAB', 'cosAC', 'cosBC', 'nat', 'ntyp', 'nbnd', 'tot_charge',
-        'starting_charge',
-        'tot_magnetization', 'starting_magnetization', 'ecutwfc', 'ecutrho', 'ecutfock', 'nr1', 'nr2', 'nr3', 'nr1s',
-        'nr2s', 'nr3s', 'nosym', 'nosym_evc', 'noinv', 'no_t_rev', 'force_symmorphic', 'use_all_frac', 'occupations',
-        'one_atom_occupations', 'starting_spin_angle', 'degauss', 'smearing', 'nspin', 'noncolin', 'ecfixed', 'qcutz',
-        'q2sigma', 'input_dft', 'exx_fraction', 'screening_parameter', 'exxdiv_treatment', 'x_gamma_extrapolation',
-        'ecutvcut', 'nqx1', 'nqx2', 'nqx3', 'lda_plus_u', 'lda_plus_u_kind', 'Hubbard_U', 'Hubbard_J0', 'Hubbard_alpha',
-        'Hubbard_beta', 'Hubbard_J', 'starting_ns_eigenvalue', 'U_projection_type', 'edir', 'emaxpos',
-        'eopreg', 'eamp', 'angle1', 'angle2', 'constrained_magnetization', 'fixed_magnetization', 'lambda', 'report',
-        'lspinorb', 'assume_isolated', 'esm_bc', 'esm_w', 'esm_efield', 'esm_nfit', 'fcp_mu', 'vdw_corr', 'london',
-        'london_s6', 'london_c6', 'london_rvdw', 'london_rcut', 'ts_vdw_econv_thr', 'ts_vdw_isolated', 'xdm', 'xdm_a1',
-        'xdm_a2', 'space_group', 'uniqueb', 'origin_choice', 'rhombohedral', 'zgate', 'relaxz', 'block', 'block_1',
-        'block_2', 'block_height'
-    ], [
-        0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, 1, 1, 20, 0.0,
-        0.0,
-        -1.0, 0.0, 90.0, 360.0, 120.0, 24, 24, 24, 24,
-        24, 24, False, False, False, False, False, False, 'smearing',
-        False, False, 0.0e0, 'gaussian', 1, False, 0.0, 0.0,
-        0.1, 'PBE0', 0.25, 0.106, 'gygi-baldereschi', True,
-        0.0, 1, 1, 1, False, 0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, 0.0e0, -1.0e0, 'atomic', 1, 0.5e0,
-        0.1e0, 0.001, 0.0, 0.0, 'none', 0.0e0, 1.0e0, 100,
-        False, 'none', 'pbc', 0.0e0, 0.0e0, 4, 0.0e0, 'none', False,
-        0.75, 0.0e0, 0.0e0, 200, 1.0e-6, False, False, 0.6836,
-        1.5045, 0, False, 1, True, 0.5, False, False, 0.45,
-        0.55, 0.1
-    ]
-)
-
-# =================================== I am a cut line ===================================
-ELECTRONS_NAMELIST: Namelist = Namelist(
-    'ELECTRONS', [
-        'electron_maxstep', 'scf_must_converge', 'conv_thr', 'adaptive_thr', 'conv_thr_init', 'conv_thr_multi',
-        'mixing_mode', 'mixing_beta', 'mixing_ndim', 'mixing_fixed_ns', 'diagonalization', 'ortho_para',
-        'diago_thr_init',
-        'diago_cg_maxiter', 'diago_david_ndim', 'diago_full_acc', 'efield', 'efield_cart', 'efield_phase',
-        'startingpot', 'startingwfc', 'tqr'
-    ], [
-        100, True, 1.0e-6, False, 1.0e-3, 1.0e-1,
-        'plain', 0.7e0, 8, 0, 'david', 0,
-        1.0e-6,
-        400, 4, False, 0.0e0, (0.0e0, 0.0e0, 0.0e0), 'none',
-        'atomic', 'atomic+random', False
-    ]
-)
-
-# =================================== I am a cut line ===================================
-IONS_NAMELIST: Namelist = Namelist(
-    'IONS', [
-        'ion_dynamics', 'ion_positions', 'pot_extrapolation', 'wfc_extrapolation', 'remove_rigid_rot',
-        'ion_temperature',
-        'tempw', 'tolp', 'delta_t', 'nraise', 'refold_pos', 'upscale', 'bfgs_ndim', 'trust_radius_max',
-        'trust_radius_min', 'trust_radius_ini', 'w_1', 'w_2'
-    ], [
-        'bfgs', 'default', 'atomic', 'none', False,
-        'not_controlled',
-        300.0e0, 100.0e0, 1.0e0, 1, False, 100.0e0, 1, 0.8e0,
-        1.0e-3, 0.5e0, 0.01e0, 0.5e0
-    ]
-)
-
-# =================================== I am a cut line ===================================
-CELL_NAMELIST: Namelist = Namelist(
-    'CELL', [
-        'cell_dynamics', 'press', 'wmass', 'cell_factor', 'press_conv_thr', 'cell_dofree'
-    ], [
-        'none', 0.0e0, 0.001, 2.0, 0.5e0, 'all'
-    ]
-)
-
-# =================================== I am a cut line ===================================
-INPUTPH_NAMELIST = Namelist(
-    'INPUTPH', [
-        'amass', 'outdir', 'prefix', 'niter_ph', 'tr2_ph', 'alpha_mix', 'nmix_ph', 'verbosity', 'reduce_io',
-        'max_seconds', 'fildyn', 'fildrho', 'fildvscf', 'epsil', 'lrpa', 'lnoloc', 'trans', 'lraman',
-        'eth_rps',
-        'eth_ns', 'dek', 'recover', 'low_directory_check', 'only_init', 'qplot', 'q2d', 'q_in_band_form',
-        'electron_phonon', 'lshift_q', 'zeu', 'zue', 'elop', 'fpol', 'ldisp', 'nogg', 'asr', 'ldiag', 'lqdir',
-        'search_sym', 'nq1', 'nq2', 'nq3', 'nk1', 'nk2', 'nk3', 'k1', 'k2', 'k3', 'start_irr', 'last_irr',
-        'nat_todo', 'modenum', 'start_q', 'last_q', 'dvscf_star', 'drho_star'
-    ], [
-        0, './', 'pwscf', 100, 1e-12, 0.7, 4, 'val', False,
-        1e7, 'matdyn', '', '', False, False, False, True, False, 1e-9,
-        1e-12, 1e-3, False, False, False, False, False, False,
-        '', False, False, False, False, False, False, False, False, False, False,
-        True, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3,
-        0, 0, 1, 3, 'disabled', 'disabled'
-    ]
-)
-
-namelists = {
-    '_control_namelist': CONTROL_NAMELIST,
-    '_system_namelist': SYSTEM_NAMELIST,
-    '_electrons_namelist': ELECTRONS_NAMELIST,
-}
-
-
-class NamelistDict:
-    def name(self):
-        pass
-
-    def beautify(self):
-        d = {}
-        print(self.name)
-        for k, v in self.dicts.items():
-            d.update({k: qe_string_to_builtin(v, namelists[self.name].default_parameters[k][1].__name__)})
-        self.dicts = d
-
-
-# =================================== I am a cut line ===================================
 class LazyNamelist(LazyWritableProperty):
     def __set__(self, instance, value):
         """
 
-        :param instance: Here is a PWscfInput instance.
+        :param instance: For here it can be a PWscfInput instance.
         :param value: should be a dict or NamelistDict instance.
         :return:
         """
         if isinstance(value, dict):
-            d = NamelistDict()
-            d.dicts = value
-            d.name = str(self.cache_name)
-            super().__set__(instance, d)
+            super().__set__(instance, NamelistDict(value))
         else:
             raise ValueError('You should set it to be a dict!')
+
+
+class NamelistDict(addict.Dict):
+    def __setattr__(self, name, value):
+        try:
+            object.__setattr__(self, name, eval(type(self[name]).__name__)(name, value))
+        except NameError:
+            raise NameError("The name '{0}' you set does not already exist!".format(name))
+
+    def beautify(self):
+        d = dict()
+        for k, v in self.items():
+            d.update({k: type(v)(v.name, v.value)})
+        return NamelistDict(d)
+
+    def to_dict(self):
+        d = dict()
+        for k, v in self.items():
+            d.update({k: v.to_dict()})
+        return d
+
+    def to_text(self):
+        lines = []
+        for k, v in self.items():
+            lines.append("{0} = {1}".format(k, builtin_to_qe_string(v.value)))
+        return '\n'.join(lines)
+
+
+# ================================================= end of this block =================================================
+
+
+# =================================== instances of the crucial class ``Namelist`` ===================================
+DEFAULT_CONTROL_NAMELIST: DefaultNamelist = DefaultNamelist('CONTROL', CONTROL_NAMELIST_DICT)
+
+DEFAULT_SYSTEM_NAMELIST: DefaultNamelist = DefaultNamelist('SYSTEM', SYSTEM_NAMELIST_DICT)
+
+DEFAULT_ELECTRONS_NAMELIST: DefaultNamelist = DefaultNamelist('ELECTRONS', ELECTRONS_NAMELIST_DICT)
+
+DEFAULT_IONS_NAMELIST: DefaultNamelist = DefaultNamelist('IONS', IONS_NAMELIST_DICT)
+
+DEFAULT_CELL_NAMELIST: DefaultNamelist = DefaultNamelist('CELL', CELL_NAMELIST_DICT)
+
+DEFAULT_INPUTPH_NAMELIST = DefaultNamelist('INPUTPH', INPUTPH_NAMELIST_DICT)
+
+
+# ================================================= end of this block =================================================
+
+
+# ========================================= define other crucial classes =========================================
+class NamelistParameterABC(ABC):
+    @abstractmethod
+    def name(self):
+        pass
+
+    @property
+    @abstractmethod
+    def value(self):
+        pass
+
+    @value.setter
+    @abstractmethod
+    def value(self, new_value):
+        pass
+
+    @abstractmethod
+    def default_type(self):
+        pass
+
+    @abstractmethod
+    def in_namelist(self):
+        pass
+
+
+class NamelistParameter(NamelistParameterABC):
+    def __init__(self, name: str, value: Union[str, int, float, bool]):
+        """
+        Generate an `NamelistParameterMeta` object, which stores user given name, and value.
+
+        :param name: the name given by user in the card
+        :param value: a raw value given by user, has to be a string, it will be converted into exact type defined by
+            `self.type` parameter.
+        """
+        self.__name = name
+        self.__value = value
+
+    @LazyProperty
+    def name(self) -> str:
+        return self.__name
+
+    @LazyWritableProperty
+    def _default_type(self) -> str:
+        pass
+
+    @LazyProperty
+    def default_type(self) -> str:
+        return self._default_type
+
+    @property
+    def value(self) -> Union[str, int, float, bool]:
+        return self.__value
+
+    @value.setter
+    def value(self, new_value: Union[str, int, float, bool]) -> None:
+        self.__value = qe_string_to_builtin(new_value, self.default_type)
+
+    @LazyWritableProperty
+    def _default_value(self) -> Union[str, int, float, bool]:
+        pass
+
+    @LazyProperty
+    def default_value(self) -> Union[str, int, float, bool]:
+        return self._default_value
+
+    @LazyWritableProperty
+    def _in_namelist(self) -> str:
+        pass
+
+    @LazyProperty
+    def in_namelist(self) -> str:
+        return self._in_namelist
+
+    def to_qe_str(self) -> str:
+        return builtin_to_qe_string(self.value)
+
+    def to_dict(self):
+        return {'name': self.name, 'real_value': self.value, 'intrinsic_type': self.default_type}
+
+    def __str__(self) -> str:
+        """
+        Show `self.name` and `self.value`.
+
+        :return: a string showing `self.name` and `self.value`
+        """
+        return "The parameter is '{0}', with value: {1}, and default type: '{2}'.".format(self.name, self.value,
+                                                                                          self.default_type)
+
+    def __repr__(self) -> str:
+        return str((self.name, self.value, self.default_type, self.default_value, self.in_namelist))
+
+
+class CONTROLNamelistParameter(NamelistParameter):
+    """
+    To build a parameter for 'CONTROL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_CONTROL_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_CONTROL_NAMELIST.caption
+
+
+class SYSTEMNamelistParameter(NamelistParameter):
+    """
+    To build a parameter for 'SYSTEM' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_SYSTEM_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_SYSTEM_NAMELIST.caption
+
+
+class ELECTRONSNamelistParameter(NamelistParameter):
+    """
+    To build a parameter for 'ELECTRONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_ELECTRONS_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_ELECTRONS_NAMELIST.caption
+
+
+class IONSNamelistParameter(NamelistParameter):
+    """
+    To build a parameter for 'IONS' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_IONS_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_IONS_NAMELIST.caption
+
+
+class CELLNamelistParameter(NamelistParameter):
+    """
+    To build a parameter for 'CELL' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_CELL_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_CELL_NAMELIST.caption
+
+
+class INPUTPHNamelistParameter(NamelistParameter):
+    def __init__(self, name, value):
+        super().__init__(name, value)
+        self._default_value, self._default_type = DEFAULT_INPUTPH_NAMELIST.typed_parameters[name]
+        self._in_namelist = DEFAULT_INPUTPH_NAMELIST.caption
+# ================================================= end of this block =================================================

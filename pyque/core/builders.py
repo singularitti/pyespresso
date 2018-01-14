@@ -5,14 +5,14 @@ from pyque.lexer.phonon import PHononInputParser
 from pyque.lexer.pwscf import PWscfInputParser
 
 # ========================================= What can be exported? =========================================
-__all__ = ['build_all', 'PWscfInputBuilder', 'PHononInputBuilder']
+__all__ = ['auto_build', 'PWscfInputBuilder', 'PHononInputBuilder']
 
 
-def build_all(obj):
+def auto_build(obj):
     for attr in dir(obj):
         if attr.startswith('build_'):
             getattr(obj, attr)()
-    return obj.input_obj
+    return obj.input_obj.beautify()
 
 
 class PWscfInputBuilder:

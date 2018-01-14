@@ -7,7 +7,7 @@ from lazy_property import LazyWritableProperty, LazyProperty
 from pyque.core.scheduler import available_schedulers, SchedulerSystem
 from pyque.util.path_generators import path_generator
 from pyque.util.sets import add_elements_to_set, remove_elements_from_set
-from pyque.util.strings import is_any_not_string
+from pyque.util.strings import all_string_like
 
 # ========================================= What can be exported? =========================================
 __all__ = ['Comment', 'BatchInput']
@@ -96,7 +96,7 @@ class BatchInput:
         return self.__modules
 
     def add_modules(self, *args: Union[str, Iterable[str]]) -> None:
-        if is_any_not_string(args):
+        if all_string_like(args):
             raise TypeError('Modules added should all be strings! Check your type!')
         if not args:  # If nothing is provided
             raise ValueError('No modules are added!')
@@ -107,7 +107,7 @@ class BatchInput:
             print("Modules {0} are added!".format(', '.join(args)))
 
     def remove_modules(self, *args) -> None:
-        if is_any_not_string(args):
+        if all_string_like(args):
             raise TypeError('Modules removed should all be strings! Check your type!')
         self.__modules = remove_elements_from_set(self.__modules, args)
 

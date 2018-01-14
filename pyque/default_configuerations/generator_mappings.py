@@ -2,7 +2,7 @@
 
 from functools import partialmethod
 
-from pyque.meta.parameter import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
+from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
 from pyque.util.strings import strings_to_integers
 
 

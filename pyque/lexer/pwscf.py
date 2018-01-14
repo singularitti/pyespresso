@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import warnings
 from collections import namedtuple
@@ -8,10 +9,10 @@ from typing import *
 import numpy as np
 
 from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfInput
-from pyque.meta.namelist import CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, CELL_NAMELIST
+from pyque.lexer.simple import SimpleParser, NamelistParser
+from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIST, DEFAULT_ELECTRONS_NAMELIST, DEFAULT_IONS_NAMELIST, DEFAULT_CELL_NAMELIST
 from pyque.meta.text import TextStream
 from pyque.util.strings import strings_to_floats, strings_to_integers
-from pyque.lexer.simple import SimpleParser, NamelistParser
 
 # ========================================= What can be exported? =========================================
 __all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputParser', 'PWscfOutputParser']
@@ -33,27 +34,27 @@ def to_text_file(obj: object, out_file: str):
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, CONTROL_NAMELIST)
+        super().__init__(infile, DEFAULT_CONTROL_NAMELIST)
 
 
 class SYSTEMNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, SYSTEM_NAMELIST)
+        super().__init__(infile, DEFAULT_SYSTEM_NAMELIST)
 
 
 class ELECTRONSNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, ELECTRONS_NAMELIST)
+        super().__init__(infile, DEFAULT_ELECTRONS_NAMELIST)
 
 
 class IONSNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, IONS_NAMELIST)
+        super().__init__(infile, DEFAULT_IONS_NAMELIST)
 
 
 class CELLNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, CELL_NAMELIST)
+        super().__init__(infile, DEFAULT_CELL_NAMELIST)
 
 
 class PWscfInputParser(TextStream):
@@ -106,7 +107,6 @@ class PWscfInputParser(TextStream):
                     option = 'bohr'
                 for i in range(3):
                     line = next(generator)
-                    print(line)
                     cell_params[i] = strings_to_floats(line.split())
                 return cell_params, option
         else:
@@ -147,7 +147,7 @@ class PWscfInputParser(TextStream):
 
     def parse_atomic_species(self) -> Optional[List[AtomicSpecies]]:
         try:
-            atom_types_number = int(self.parse_system_namelist()['ntyp'][0])
+            atom_types_number = int(self.parse_system_namelist()['ntyp'].value)
         except KeyError:
             raise KeyError("The 'ntyp' parameter is not correctly given in SYSTEM namelist!")
         atomic_species = []
@@ -165,7 +165,7 @@ class PWscfInputParser(TextStream):
 
     def parse_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
         try:
-            atoms_number = int(self.parse_system_namelist()['nat'][0])
+            atoms_number = int(self.parse_system_namelist()['nat'].value)
         except KeyError:
             raise KeyError("The 'nat' parameter is not correctly given in SYSTEM namelist!")
         atomic_positions = []

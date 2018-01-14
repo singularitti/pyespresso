@@ -7,16 +7,13 @@ from collections import namedtuple
 from typing import *
 
 import numpy as np
+from json_tricks import dump, dumps
 from lazy_property import LazyWritableProperty
 
 from pyque.meta.card import LazyCard
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
-from pyque.meta.namelist import ELECTRONS_NAMELIST, CONTROL_NAMELIST, SYSTEM_NAMELIST, DefaultParameters
-from pyque.meta.namelist import LazyNamelist
-from pyque.meta.parameter import to_qe_str
-from pyque.meta.bijection import *
+from pyque.meta.namelist import LazyNamelist, NamelistDict
 from pyque.util.path_generators import path_generator
-from pyque.util.strings import *
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pw_input', 'print_pw_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
@@ -37,10 +34,8 @@ So here though suffixed with a 's', it is for one atom and thus is singular."""
 
 AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
 
+
 # ========================================= variables declaration =========================================
-control_default_parameters: DefaultParameters = CONTROL_NAMELIST.default_parameters
-system_default_parameters: DefaultParameters = SYSTEM_NAMELIST.default_parameters
-electrons_default_parameters: DefaultParameters = ELECTRONS_NAMELIST.default_parameters
 
 
 # ========================================= define useful functions =========================================
@@ -110,35 +105,33 @@ class PWscfInput(metaclass=DescriptorOwnerMeta):
         pass
 
     def beautify(self):
-        self.control_namelist.beautify()
-        self.system_namelist.beautify()
-        self.electrons_namelist.beautify()
+        for attr in dir(self):
+            if attr.endswith('_namelist'):
+                setattr(self, attr, getattr(self, attr).beautify())
+        return self
 
     def to_dict(self):
         d = dict()
         for attr in dir(self):
-            if isinstance(attr, LazyNamelist):
-                d.update({attr.__name__: getattr(self, attr.__name__).to_dict()})
-            elif isinstance(attr, LazyCard):
-                d.update({attr.__name__: getattr(self, attr.__name__)})
+            if isinstance(getattr(self, attr), NamelistDict):
+                d.update({attr: getattr(self, attr).to_dict()})
+            elif isinstance(getattr(self, attr), (list, tuple)):
+                d.update({attr: getattr(self, attr)})
+        return d
 
-    def to_text_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
+    def to_text_file(self, outfile: str = '', path_prefix: Optional[str] = '') -> None:
         outfile_path = path_generator(outfile, path_prefix)
 
         k_points: KPoints = self.k_points
 
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
-            for k, v in self.control_namelist.dicts.items():
-                print(builtin_to_qe_string(v))
-                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
-            f.write("/\n&SYSTEM\n")
-            for k, v in self.system_namelist.dicts.items():
-                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
-            f.write("/\n&ELECTRONS\n")
-            for k, v in self.electrons_namelist.dicts.items():
-                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
-            f.write("/\nCELL_PARAMETERS\n")
+            f.write(self.control_namelist.to_text())
+            f.write("\n/\n&SYSTEM\n")
+            f.write(self.system_namelist.to_text())
+            f.write("\n/\n&ELECTRONS\n")
+            f.write(self.electrons_namelist.to_text())
+            f.write("\n/\nCELL_PARAMETERS\n")
             f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
                                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
             f.write("\nATOMIC_SPECIES\n")
@@ -150,40 +143,18 @@ class PWscfInput(metaclass=DescriptorOwnerMeta):
             f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
             f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
 
-        print("Object '{0}' is written to file {1}!".format(type(self).__name__, os.path.abspath(outfile_path)))
+        print("Object '{0}' is successfully written to file {1}!".format(type(self).__name__,
+                                                                         os.path.abspath(outfile_path)))
 
-    # TODO: finish this method
     def to_json(self) -> None:
-        pass
+        return dumps(self.to_dict())
 
-    # def beautify(self):
-    #     d = {}
-    #     for k, v in self.control_namelist.items():
-    #         if control_default_parameters[k][1] is float:
-    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-    #         else:
-    #             d.update({k: ValueWithComment(control_default_parameters[k][1](v.value), v.comment)})
-    #     self.control_namelist = d
-    #     d = {}
-    #     for k, v in self.system_namelist.items():
-    #         if '(' in k:
-    #             # Only take the part before the first '(' to deal with names like 'celldm(1)'.
-    #             k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
-    #         else:
-    #             k_prefix = k
-    #         if system_default_parameters[k_prefix][1] is float:
-    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-    #         else:
-    #             d.update({k: ValueWithComment(system_default_parameters[k_prefix][1](v.value), v.comment)})
-    #     self.system_namelist = d
-    #     d = {}
-    #     for k, v in self.electrons_namelist.items():
-    #         if electrons_default_parameters[k][1] is float:
-    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-    #         else:
-    #             d.update({k: ValueWithComment(electrons_default_parameters[k][1](v.value), v.comment)})
-    #     self.electrons_namelist = d
-    #     return self
+    def to_json_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
+        outfile_path = path_generator(outfile, path_prefix)
+        with open(outfile_path, 'w') as f:
+            dump(self.to_dict(), f)
+        print("Object '{0}' is successfully written to file {1}!".format(type(self).__name__,
+                                                                         os.path.abspath(outfile_path)))
 
 
 class SCFInput(PWscfInput):
@@ -191,15 +162,13 @@ class SCFInput(PWscfInput):
 
 
 class VCRelaxInput(PWscfInput):
-    @LazyWritableProperty
+    @LazyNamelist
     def ions_namelist(self):
         pass
 
-    @LazyWritableProperty
+    @LazyNamelist
     def cell_namelist(self):
         pass
-
-    # cell_namelist.__name__ = 'CELL Namelist'
 
 
 class PHononStandardInput:
@@ -207,7 +176,7 @@ class PHononStandardInput:
     def title(self):
         pass
 
-    @LazyWritableProperty
+    @LazyNamelist
     def inputph_namelist(self):
         pass
 

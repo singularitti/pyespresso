@@ -5,7 +5,7 @@ from typing import *
 
 import numpy as np
 
-from pyque.meta.namelist import INPUTPH_NAMELIST
+from pyque.meta.namelist import DEFAULT_INPUTPH_NAMELIST
 from pyque.util.strings import strings_to_floats
 from pyque.lexer.simple import SimpleParser, NamelistParser
 
@@ -15,7 +15,7 @@ IntArray = Union[int, List[int], np.ndarray]
 
 class INPUTPHNamelistParser(NamelistParser):
     def __init__(self, infile):
-        super().__init__(infile, INPUTPH_NAMELIST)
+        super().__init__(infile, DEFAULT_INPUTPH_NAMELIST)
 
 
 class PHononInputParser(SimpleParser):

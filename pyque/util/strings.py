@@ -11,30 +11,36 @@
 
 import re
 from typing import *
+import fortranformat as ff
 
 # ========================================= What can be exported? =========================================
 __all__ = ['strings_to_', 'strings_to_integers', 'strings_to_floats', 'string_to_double_precision_float',
-           'string_to_general_float', 'match_one_string', 'match_one_pattern', 'is_string_like', 'is_any_not_string']
+           'string_to_general_float', 'match_one_string', 'match_one_pattern', 'is_string_like', 'all_string_like']
 
 
-def strings_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
+def strings_to_(strings: Iterable[str], f: Callable) -> Iterable[Any]:
     """
     Convert a list of strings to a list of certain form, specified by *f*.
 
-    :param strs: a list of string
+    :param strings: a list of string
     :param f: a function that converts your string
     :return: type undefined, but specified by `to_type`
+
+    .. doctest::
+
+        >>> strings_to_(['0.333', '0.667', '0.250'], float)
+        [0.333, 0.667, 0.25]
     """
-    # if is_any_not_string(strs):
-    #     raise TypeError('All have to be strings!')
-    return type(strs)(map(f, strs))  # ``type(strs)`` is the container of *strs*.
+    if not all_string_like(strings):
+        raise TypeError('All have to be strings!')
+    return type(strings)(map(f, strings))  # ``type(strs)`` is the container of *strs*.
 
 
-def strings_to_integers(strs: Iterable[str]) -> Iterable[int]:
+def strings_to_integers(strings: Iterable[str]) -> Iterable[int]:
     """
     Convert a list of strings to a list of integers.
 
-    :param strs: a list of string
+    :param strings: a list of string
     :return: a list of converted integers
 
     .. doctest::
@@ -42,14 +48,14 @@ def strings_to_integers(strs: Iterable[str]) -> Iterable[int]:
         >>> strings_to_integers(['1', '1.0', '-0.2'])
         [1, 1, 0]
     """
-    return strings_to_(strs, lambda x: int(float(x)))
+    return strings_to_(strings, lambda x: int(float(x)))
 
 
-def strings_to_floats(strs: Iterable[str]) -> Iterable[float]:
+def strings_to_floats(strings: Iterable[str]) -> Iterable[float]:
     """
     Convert a list of strings to a list of floats.
 
-    :param strs: a list of string
+    :param strings: a list of string
     :return: a list of converted floats
 
     .. doctest::
@@ -57,7 +63,7 @@ def strings_to_floats(strs: Iterable[str]) -> Iterable[float]:
         >>> strings_to_floats(['1', '1.0', '-0.2'])
         [1.0, 1.0, -0.2]
     """
-    return strings_to_(strs, float)
+    return strings_to_(strings, float)
 
 
 def string_to_double_precision_float(s: str) -> float:
@@ -81,6 +87,8 @@ def string_to_double_precision_float(s: str) -> float:
     """
     first, second, exponential = re.match("(-?\d*)\.?(-?\d*)d(-?\d+)", s, re.IGNORECASE).groups()
     return float(first + '.' + second + 'e' + exponential)
+    # reader = ff.FortranRecordReader('(D64.32)')
+    # return reader.read(s)[0]
 
 
 def string_to_general_float(s: str) -> float:
@@ -198,7 +206,7 @@ def is_string_like(obj: object) -> bool:
 
     .. doctest::
 
-        >>> is_string_like("foo")
+        >>> is_string_like('foo')
         True
         >>> is_string_like(1)
         False
@@ -206,11 +214,18 @@ def is_string_like(obj: object) -> bool:
     return isinstance(obj, str)
 
 
-def is_any_not_string(iterable: Iterable) -> bool:
+def all_string_like(iterable: Iterable) -> bool:
     """
     If any element of an iterable is not a string, return `True`.
 
     :param iterable: Can be a set, a tuple, a list, etc.
     :return: Whether any element of an iterable is not a string.
+
+    .. doctest::
+
+        >>> all_string_like(['a', 'b', 'c', 3])
+        False
+        >>> all_string_like(('a', 'b', 'c', 'd'))
+        True
     """
-    return any(is_string_like(_) for _ in iterable)
+    return all(is_string_like(_) for _ in iterable)

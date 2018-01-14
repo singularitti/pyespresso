@@ -4,16 +4,21 @@
 import re
 from typing import *
 
-from pyque.meta.namelist import Namelist, is_namelist
+from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParameter, ELECTRONSNamelistParameter, \
+    DefaultNamelist, is_namelist
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
 __all__ = ['SimpleParser', 'NamelistParser']
 
-
 # ================================= These are some type aliases or type definitions. =================================
 
 # ========================================= define useful data structures =========================================
+namelist_parameters = {
+    'CONTROL': CONTROLNamelistParameter,
+    'SYSTEM': SYSTEMNamelistParameter,
+    'ELECTRONS': ELECTRONSNamelistParameter,
+}
 
 
 class SimpleParser(TextStream):
@@ -116,7 +121,7 @@ class NamelistParser:
         """
         self.infile = infile
         if is_namelist(namelist):
-            self.namelist: Namelist = namelist
+            self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
 
@@ -151,7 +156,7 @@ class NamelistParser:
         """
         namelist_names = set(self.namelist.names)
         filled_namelist: dict = {}
-        start_pattern = '&' + self.namelist.__name__.upper()
+        start_pattern = '&' + self.namelist.caption
 
         with open(self.infile, 'r') as f:
             generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
@@ -173,8 +178,9 @@ class NamelistParser:
                 else:
                     k_prefix = k
                 if k_prefix in namelist_names:
-                    filled_namelist.update({k: v.strip()})  # Only return value
+                    filled_namelist.update(
+                        {k: namelist_parameters[self.namelist.caption](k, v.strip())})  # Only return value, no comment
                 else:
-                    raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.__name__))
+                    raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.caption))
 
         return filled_namelist
