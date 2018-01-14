@@ -7,7 +7,7 @@ from typing import *
 
 import numpy as np
 
-from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfStandardInput
+from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfInput
 from pyque.meta.namelist import CONTROL_NAMELIST, SYSTEM_NAMELIST, ELECTRONS_NAMELIST, IONS_NAMELIST, CELL_NAMELIST
 from pyque.meta.text import TextStream
 from pyque.util.strings import strings_to_floats, strings_to_integers
@@ -24,7 +24,7 @@ SimpleParameter: SimpleParameter = namedtuple('SimpleParameter', ['name', 'value
 
 
 def to_text_file(obj: object, out_file: str):
-    if isinstance(obj, PWscfStandardInput):
+    if isinstance(obj, PWscfInput):
         obj.to_text_file(out_file)
     else:
         raise TypeError('Input object is not an {0}!'.format('SCFStandardInput'))
@@ -60,6 +60,11 @@ class PWscfInputParser(TextStream):
     """
     This class read an scf input file in, and parse it.
     """
+
+    @property
+    def identifiers(self):
+        return ['&CONTROL', '&SYSTEM', '&ELECTRONS', '&IONS', '&CELL', 'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS',
+                'CELL_PARAMETERS']
 
     def parse_control_namelist(self) -> Dict[str, str]:
         """
@@ -101,6 +106,7 @@ class PWscfInputParser(TextStream):
                     option = 'bohr'
                 for i in range(3):
                     line = next(generator)
+                    print(line)
                     cell_params[i] = strings_to_floats(line.split())
                 return cell_params, option
         else:

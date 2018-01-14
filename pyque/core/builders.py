@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pyque.core.qe_input import PHononStandardInput, PWscfStandardInput
+from pyque.core.qe_input import PHononStandardInput, PWscfInput
 from pyque.lexer.phonon import PHononInputParser
 from pyque.lexer.pwscf import PWscfInputParser
 
@@ -18,7 +18,7 @@ def build_all(obj):
 class PWscfInputBuilder:
     def __init__(self, infile):
         self.parser = PWscfInputParser(infile=infile)
-        self.input_obj = PWscfStandardInput()
+        self.input_obj = PWscfInput()
 
     def build_control_namelist(self):
         self.input_obj.control_namelist = self.parser.parse_control_namelist()

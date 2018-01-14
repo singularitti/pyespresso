@@ -9,15 +9,17 @@ from typing import *
 import numpy as np
 from lazy_property import LazyWritableProperty
 
+from pyque.meta.card import LazyCard
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 from pyque.meta.namelist import ELECTRONS_NAMELIST, CONTROL_NAMELIST, SYSTEM_NAMELIST, DefaultParameters
+from pyque.meta.namelist import LazyNamelist
 from pyque.meta.parameter import to_qe_str
+from pyque.meta.bijection import *
 from pyque.util.path_generators import path_generator
 from pyque.util.strings import *
-from pyque.lexer.simple import ValueWithComment
 
 # ========================================= What can be exported? =========================================
-__all__ = ['is_pw_input', 'print_pw_input', 'PWscfStandardInput', 'SCFStandardInput', 'VCRelaxStandardInput',
+__all__ = ['is_pw_input', 'print_pw_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
            'PHononStandardInput', 'AtomicSpecies', 'AtomicPosition', 'KPoints']
 
 # ========================================= type alias =========================================
@@ -70,36 +72,32 @@ class _OptionWithWarning(LabeledDescriptor):
             instance.__dict__[self.label] = new_option
 
 
-class _CONTROLNamelist(LabeledDescriptor):
-    pass
-
-
 # ========================================= most important data structures =========================================
-class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
+class PWscfInput(metaclass=DescriptorOwnerMeta):
     atomic_positions_option = _OptionWithWarning()
     cell_parameters_option = _OptionWithWarning()
 
-    @LazyWritableProperty
+    @LazyNamelist
     def control_namelist(self):
         pass
 
-    @LazyWritableProperty
+    @LazyNamelist
     def system_namelist(self):
         pass
 
-    @LazyWritableProperty
+    @LazyNamelist
     def electrons_namelist(self):
         pass
 
-    @LazyWritableProperty
+    @LazyCard
     def cell_parameters(self) -> np.ndarray:
         pass
 
-    @LazyWritableProperty
+    @LazyCard
     def atomic_species(self) -> List[NamedTuple]:
         pass
 
-    @LazyWritableProperty
+    @LazyCard
     def atomic_positions(self) -> List[NamedTuple]:
         pass
 
@@ -111,6 +109,19 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
     def k_points_option(self) -> str:
         pass
 
+    def beautify(self):
+        self.control_namelist.beautify()
+        self.system_namelist.beautify()
+        self.electrons_namelist.beautify()
+
+    def to_dict(self):
+        d = dict()
+        for attr in dir(self):
+            if isinstance(attr, LazyNamelist):
+                d.update({attr.__name__: getattr(self, attr.__name__).to_dict()})
+            elif isinstance(attr, LazyCard):
+                d.update({attr.__name__: getattr(self, attr.__name__)})
+
     def to_text_file(self, outfile: str, path_prefix: Optional[str] = '') -> None:
         outfile_path = path_generator(outfile, path_prefix)
 
@@ -118,14 +129,15 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
 
         with open(outfile_path, 'w') as f:
             f.write("&CONTROL\n")
-            for k, v in self.control_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
+            for k, v in self.control_namelist.dicts.items():
+                print(builtin_to_qe_string(v))
+                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
             f.write("/\n&SYSTEM\n")
-            for k, v in self.system_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
+            for k, v in self.system_namelist.dicts.items():
+                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
             f.write("/\n&ELECTRONS\n")
-            for k, v in self.electrons_namelist.items():
-                f.write("{0} = {1}\n".format(k, to_qe_str(v)))
+            for k, v in self.electrons_namelist.dicts.items():
+                f.write("{0} = {1}\n".format(k, builtin_to_qe_string(v)))
             f.write("/\nCELL_PARAMETERS\n")
             f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
                                                           formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
@@ -144,41 +156,41 @@ class PWscfStandardInput(metaclass=DescriptorOwnerMeta):
     def to_json(self) -> None:
         pass
 
-    def beautify(self):
-        d = {}
-        for k, v in self.control_namelist.items():
-            if control_default_parameters[k][1] is float:
-                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-            else:
-                d.update({k: ValueWithComment(control_default_parameters[k][1](v.value), v.comment)})
-        self.control_namelist = d
-        d = {}
-        for k, v in self.system_namelist.items():
-            if '(' in k:
-                # Only take the part before the first '(' to deal with names like 'celldm(1)'.
-                k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
-            else:
-                k_prefix = k
-            if system_default_parameters[k_prefix][1] is float:
-                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-            else:
-                d.update({k: ValueWithComment(system_default_parameters[k_prefix][1](v.value), v.comment)})
-        self.system_namelist = d
-        d = {}
-        for k, v in self.electrons_namelist.items():
-            if electrons_default_parameters[k][1] is float:
-                d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
-            else:
-                d.update({k: ValueWithComment(electrons_default_parameters[k][1](v.value), v.comment)})
-        self.electrons_namelist = d
-        return self
+    # def beautify(self):
+    #     d = {}
+    #     for k, v in self.control_namelist.items():
+    #         if control_default_parameters[k][1] is float:
+    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
+    #         else:
+    #             d.update({k: ValueWithComment(control_default_parameters[k][1](v.value), v.comment)})
+    #     self.control_namelist = d
+    #     d = {}
+    #     for k, v in self.system_namelist.items():
+    #         if '(' in k:
+    #             # Only take the part before the first '(' to deal with names like 'celldm(1)'.
+    #             k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
+    #         else:
+    #             k_prefix = k
+    #         if system_default_parameters[k_prefix][1] is float:
+    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
+    #         else:
+    #             d.update({k: ValueWithComment(system_default_parameters[k_prefix][1](v.value), v.comment)})
+    #     self.system_namelist = d
+    #     d = {}
+    #     for k, v in self.electrons_namelist.items():
+    #         if electrons_default_parameters[k][1] is float:
+    #             d.update({k: ValueWithComment(string_to_general_float(v.value), v.comment)})
+    #         else:
+    #             d.update({k: ValueWithComment(electrons_default_parameters[k][1](v.value), v.comment)})
+    #     self.electrons_namelist = d
+    #     return self
 
 
-class SCFStandardInput(PWscfStandardInput):
+class SCFInput(PWscfInput):
     pass
 
 
-class VCRelaxStandardInput(PWscfStandardInput):
+class VCRelaxInput(PWscfInput):
     @LazyWritableProperty
     def ions_namelist(self):
         pass

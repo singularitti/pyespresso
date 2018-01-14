@@ -25,8 +25,8 @@ def strings_to_(strs: Iterable[str], f: Callable) -> Iterable[Any]:
     :param f: a function that converts your string
     :return: type undefined, but specified by `to_type`
     """
-    if is_any_not_string(strs):
-        raise TypeError('All have to be strings!')
+    # if is_any_not_string(strs):
+    #     raise TypeError('All have to be strings!')
     return type(strs)(map(f, strs))  # ``type(strs)`` is the container of *strs*.
 
 

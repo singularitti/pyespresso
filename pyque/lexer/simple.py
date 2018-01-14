@@ -2,20 +2,18 @@
 # created at Oct 20, 2017 6:13 PM by Qi Zhang
 
 import re
-from collections import namedtuple
 from typing import *
 
 from pyque.meta.namelist import Namelist, is_namelist
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParser', 'NamelistParser', 'ValueWithComment']
+__all__ = ['SimpleParser', 'NamelistParser']
+
 
 # ================================= These are some type aliases or type definitions. =================================
-ValueWithComment = NamedTuple('ValueWithComment', [('value', Union[str, int, bool, float]), ('comment', str)])
 
 # ========================================= define useful data structures =========================================
-ValueWithComment: ValueWithComment = namedtuple('ValueWithComment', ['value', 'comment'])
 
 
 class SimpleParser(TextStream):
@@ -144,7 +142,7 @@ class NamelistParser:
             if section_flag:
                 yield line
 
-    def read_namelist(self) -> Dict[str, ValueWithComment]:
+    def read_namelist(self) -> Dict[str, str]:
         """
         A generic method to read a namelist.
         Note you cannot write more than one parameter in each line!
@@ -175,7 +173,7 @@ class NamelistParser:
                 else:
                     k_prefix = k
                 if k_prefix in namelist_names:
-                    filled_namelist.update({k: ValueWithComment(v.strip(), v_comment)})
+                    filled_namelist.update({k: v.strip()})  # Only return value
                 else:
                     raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.__name__))
 

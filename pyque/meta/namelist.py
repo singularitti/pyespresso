@@ -12,9 +12,14 @@
 from collections import defaultdict
 from typing import List, Union, Type, Tuple, DefaultDict
 
+import addict
+from lazy_property import LazyWritableProperty
+
+from pyque.meta.bijection import qe_string_to_builtin
+
 # ========================================= What can be exported? =========================================
 __all__ = ['Namelist', 'CONTROL_NAMELIST', 'SYSTEM_NAMELIST', 'ELECTRONS_NAMELIST', 'CELL_NAMELIST', 'IONS_NAMELIST',
-           'INPUTPH_NAMELIST', 'DefaultParameters', 'is_namelist']
+           'INPUTPH_NAMELIST', 'DefaultParameters', 'is_namelist', 'LazyNamelist']
 
 # ================================= These are some type aliases or type definitions. =================================
 DefaultParameters = DefaultDict[str, Tuple[Union[str, int, float, bool], Type[Union[str, int, float, bool]]]]
@@ -187,3 +192,39 @@ INPUTPH_NAMELIST = Namelist(
         0, 0, 1, 3, 'disabled', 'disabled'
     ]
 )
+
+namelists = {
+    '_control_namelist': CONTROL_NAMELIST,
+    '_system_namelist': SYSTEM_NAMELIST,
+    '_electrons_namelist': ELECTRONS_NAMELIST,
+}
+
+
+class NamelistDict:
+    def name(self):
+        pass
+
+    def beautify(self):
+        d = {}
+        print(self.name)
+        for k, v in self.dicts.items():
+            d.update({k: qe_string_to_builtin(v, namelists[self.name].default_parameters[k][1].__name__)})
+        self.dicts = d
+
+
+# =================================== I am a cut line ===================================
+class LazyNamelist(LazyWritableProperty):
+    def __set__(self, instance, value):
+        """
+
+        :param instance: Here is a PWscfInput instance.
+        :param value: should be a dict or NamelistDict instance.
+        :return:
+        """
+        if isinstance(value, dict):
+            d = NamelistDict()
+            d.dicts = value
+            d.name = str(self.cache_name)
+            super().__set__(instance, d)
+        else:
+            raise ValueError('You should set it to be a dict!')
