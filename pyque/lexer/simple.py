@@ -111,41 +111,39 @@ class SimpleParser(TextStream):
         return dict(zip(keys, values))
 
 
-class NamelistParser:
-    def __init__(self, infile: str, namelist: object):
+class NamelistParser(TextStream):
+    def __init__(self, namelist: object, instr=None, infile=None):
         """
         Match card between card title and the following '/' character.
 
-        :param infile:
         :param namelist: a card has many names defined by Quantum ESPRESSO
         """
-        self.infile = infile
         if is_namelist(namelist):
             self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
+        super().__init__(instr, infile)
 
-    @staticmethod
-    def _section_with_bounds(infile, start_pattern, end_pattern) -> Iterator[str]:
+    def _section_with_bounds(self, start_pattern, end_pattern) -> Iterator[str]:
         """
         Search in file for the contents between 2 patterns. Referenced from
         [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
 
-        :param infile: file to be read
         :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
             ignored
         :param end_pattern: the pattern labels where the content is to an end
         :return: an iterator that can read the file
         """
         section_flag = False
-        for line in infile:
+        generator = self.stream_generator()
+        for line in generator:
             if re.match(start_pattern, line, re.IGNORECASE):
                 section_flag = True
-                line = infile.readline()  # If the line is the `start_pattern` itself, we do not parse this line
+                line = next(line)  # If the line is the `start_pattern` itself, we do not parse this line
             if line.startswith(end_pattern):
                 section_flag = False
             if section_flag:
-                yield line
+                print(line)
 
     def read_namelist(self) -> Dict[str, str]:
         """
@@ -155,11 +153,12 @@ class NamelistParser:
         :return: a dictionary that stores the inputted information of the intended card
         """
         namelist_names = set(self.namelist.names)
-        filled_namelist: dict = {}
+        filled_namelist = dict()
         start_pattern = '&' + self.namelist.caption
 
         with open(self.infile, 'r') as f:
             generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
+            print(f.readlines())
             for line in generator:  # Read each line in the namelist until '/'
                 s: str = line.strip()
                 # Use '=' as the delimiter, split the stripped line into a key and a value.
@@ -182,5 +181,4 @@ class NamelistParser:
                         {k: namelist_parameters[self.namelist.caption](k, v.strip())})  # Only return value, no comment
                 else:
                     raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.caption))
-
         return filled_namelist

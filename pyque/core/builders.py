@@ -9,9 +9,8 @@ __all__ = ['auto_build', 'PWscfInputBuilder', 'PHononInputBuilder']
 
 
 def auto_build(obj):
-    for attr in dir(obj):
-        if attr.startswith('build_'):
-            getattr(obj, attr)()
+    if isinstance(obj, PWscfInputBuilder):
+        obj.auto_build()
     return obj.input_obj.beautify()
 
 
@@ -29,17 +28,26 @@ class PWscfInputBuilder:
     def build_electrons_namelist(self):
         self.input_obj.electrons_namelist = self.parser.parse_electrons_namelist()
 
-    def build_cell_parameters(self):
-        self.input_obj.cell_parameters = self.parser.parse_cell_parameters()
-
-    def build_k_points(self):
-        self.input_obj.k_points, self.input_obj.k_points_option = self.parser.parse_k_points()
-
     def build_atomic_species(self):
         self.input_obj.atomic_species = self.parser.parse_atomic_species()
 
     def build_atomic_positions(self):
         self.input_obj.atomic_positions, self.input_obj.atomic_positions_option = self.parser.parse_atomic_positions()
+
+    def build_k_points(self):
+        self.input_obj.k_points, self.input_obj.k_points_option = self.parser.parse_k_points()
+
+    def build_cell_parameters(self):
+        self.input_obj.cell_parameters = self.parser.parse_cell_parameters()
+
+    def auto_build(self):
+        self.build_control_namelist()
+        self.build_system_namelist()
+        self.build_electrons_namelist()
+        self.build_atomic_species()
+        self.build_atomic_positions()
+        self.build_k_points()
+        self.build_cell_parameters()
 
 
 class PHononInputBuilder:

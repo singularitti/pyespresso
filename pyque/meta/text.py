@@ -2,6 +2,7 @@
 
 from io import StringIO
 from typing import Optional, Iterator
+from lazy_property import LazyProperty
 
 # ========================================= What can be exported? =========================================
 __all__ = ['TextStream']
@@ -28,7 +29,7 @@ class TextStream:
 
     def stream_generator(self) -> Iterator[str]:
         if self.instream:  # If *instream* is given and thus not ``None``
-            for line in self.instream.split("\n"):
+            for line in self.instream.split("\R"):
                 yield line
         else:  # If *infile* is given and thus not ``None``
             with open(self.infile, 'r') as f:
@@ -42,7 +43,8 @@ class TextStream:
             with open(self.infile, 'r') as f:
                 return StringIO(f.read())
 
-    def __str__(self):
+    @LazyProperty
+    def contents(self):
         if self.instream:
             return self.instream
         else:
