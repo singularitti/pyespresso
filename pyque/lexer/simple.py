@@ -9,7 +9,7 @@ from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParamete
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParser', 'NamelistParser']
+__all__ = ['SimpleParser', 'NamelistLexer']
 
 # ================================= These are some type aliases or type definitions. =================================
 
@@ -111,8 +111,8 @@ class SimpleParser(TextStream):
         return dict(zip(keys, values))
 
 
-class NamelistParser(TextStream):
-    def __init__(self, namelist: object, instr=None, infile=None):
+class NamelistLexer(TextStream):
+    def __init__(self, instr, namelist: object):
         """
         Match card between card title and the following '/' character.
 
@@ -122,28 +122,7 @@ class NamelistParser(TextStream):
             self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
-        super().__init__(instr, infile)
-
-    def _section_with_bounds(self, start_pattern, end_pattern) -> Iterator[str]:
-        """
-        Search in file for the contents between 2 patterns. Referenced from
-        [here](https://stackoverflow.com/questions/11156259/how-to-grep-lines-between-two-patterns-in-a-big-file-with-python).
-
-        :param start_pattern: the pattern labels where the content is going to start, the line contain this pattern is
-            ignored
-        :param end_pattern: the pattern labels where the content is to an end
-        :return: an iterator that can read the file
-        """
-        section_flag = False
-        generator = self.stream_generator()
-        for line in generator:
-            if re.match(start_pattern, line, re.IGNORECASE):
-                section_flag = True
-                line = next(line)  # If the line is the `start_pattern` itself, we do not parse this line
-            if line.startswith(end_pattern):
-                section_flag = False
-            if section_flag:
-                print(line)
+        super().__init__(instr, infile=None)
 
     def read_namelist(self) -> Dict[str, str]:
         """
@@ -153,32 +132,27 @@ class NamelistParser(TextStream):
         :return: a dictionary that stores the inputted information of the intended card
         """
         namelist_names = set(self.namelist.names)
-        filled_namelist = dict()
-        start_pattern = '&' + self.namelist.caption
-
-        with open(self.infile, 'r') as f:
-            generator: Iterator[str] = self._section_with_bounds(f, start_pattern, '/')  # '/' separates each namelist
-            print(f.readlines())
-            for line in generator:  # Read each line in the namelist until '/'
-                s: str = line.strip()
-                # Use '=' as the delimiter, split the stripped line into a key and a value.
-                k, v = s.split('=', maxsplit=1)
-                k: str = k.strip()
-                v: str = v.strip().rstrip(',').strip()  # Ignore trailing comma of the line
-                try:
-                    v, v_comment = v.split('!')
-                except ValueError:
-                    v_comment = ''
-                # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we neet to
-                # separate them.
-                if '(' in k:
-                    # Only take the part before the first '('
-                    k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
-                else:
-                    k_prefix = k
-                if k_prefix in namelist_names:
-                    filled_namelist.update(
-                        {k: namelist_parameters[self.namelist.caption](k, v.strip())})  # Only return value, no comment
-                else:
-                    raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.caption))
-        return filled_namelist
+        parsed_result = dict()
+        generator = self.stream_generator()
+        for line in generator:  # Read each line in the namelist until '/'
+            s: str = line.strip()
+            # Use '=' as the delimiter, split the stripped line into a key and a value.
+            # Skip this line if a line starts with '&' (namelist caption) or '!' (comment) or this line is empty ('').
+            if s.startswith('&') or s.startswith('!') or not s:
+                continue
+            k, v = s.split('=', maxsplit=1)
+            k: str = k.strip()
+            v: str = v.strip().rstrip(',').strip().split('!')[0]  # Ignore trailing comma of the line
+            # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we need to
+            # separate them.
+            if '(' in k:
+                # Only take the part before the first '('
+                k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
+            else:
+                k_prefix = k
+            if k_prefix in namelist_names:
+                # Only capture the value, ignore possible comment
+                parsed_result.update({k: namelist_parameters[self.namelist.caption](k_prefix, v.strip())})
+            else:
+                raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.caption))
+        return parsed_result

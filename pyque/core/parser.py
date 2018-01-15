@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 
-from pyque.core.qe_input import PHononStandardInput, PWscfInput
-from pyque.lexer.phonon import PHononInputParser
-from pyque.lexer.pwscf import PWscfInputParser
+from pyque.core.qe_input import PHononInput, PWscfInput
+from pyque.lexer.pwscf import PWscfInputLexer
 
 # ========================================= What can be exported? =========================================
-__all__ = ['auto_build', 'PWscfInputBuilder', 'PHononInputBuilder']
+__all__ = ['auto_build', 'PWscfInputParser', 'PHononInputParser']
 
 
 def auto_build(obj):
-    if isinstance(obj, PWscfInputBuilder):
+    if isinstance(obj, PWscfInputParser):
         obj.auto_build()
     return obj.input_obj.beautify()
 
 
-class PWscfInputBuilder:
+class PWscfInputParser:
     def __init__(self, infile):
-        self.parser = PWscfInputParser(infile=infile)
+        self.parser = PWscfInputLexer(infile=infile)
         self.input_obj = PWscfInput()
 
     def build_control_namelist(self):
@@ -50,13 +49,13 @@ class PWscfInputBuilder:
         self.build_cell_parameters()
 
 
-class PHononInputBuilder:
+class PHononInputParser:
     def __init__(self, in_file):
         self.parser = PHononInputParser(in_file)
-        self.input_obj = PHononStandardInput()
+        self.input_obj = PHononInput()
 
     def build_inputph_namelist(self):
-        self.input_obj.inputph_namelist = self.parser.parse_INPUTPH_namelist()
+        self.input_obj.inputph_namelist = self.parser.parse_inputph_namelist()
 
     def build_title(self):
         self.input_obj.__title__ = self.parser.parse_title()

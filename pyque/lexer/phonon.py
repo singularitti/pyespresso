@@ -7,13 +7,13 @@ import numpy as np
 
 from pyque.meta.namelist import DEFAULT_INPUTPH_NAMELIST
 from pyque.util.strings import strings_to_floats
-from pyque.lexer.simple import SimpleParser, NamelistParser
+from pyque.lexer.simple import SimpleParser, NamelistLexer
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class INPUTPHNamelistParser(NamelistParser):
+class INPUTPHNamelistLexer(NamelistLexer):
     def __init__(self, infile):
         super().__init__(infile, DEFAULT_INPUTPH_NAMELIST)
 
@@ -32,7 +32,7 @@ class PHononInputParser(SimpleParser):
         return next(s for s in self.file_content[0:end_index] if s)
 
     def parse_INPUTPH_namelist(self):
-        return INPUTPHNamelistParser(self.infile).read_namelist()
+        return INPUTPHNamelistLexer(self.infile).read_namelist()
 
     def parse_single_q_point(self) -> Optional[np.ndarray]:
         with open(self.infile, 'r') as f:

@@ -25,11 +25,11 @@ class TextStream:
             self.infile: str = infile
             self.instream = None
         else:
-            raise TypeError('The type of one argument is wrong! They should all be str!')
+            raise TypeError('The type of one argument is wrong! At least one should be string!')
 
     def stream_generator(self) -> Iterator[str]:
         if self.instream:  # If *instream* is given and thus not ``None``
-            for line in self.instream.split("\R"):
+            for line in self.instream.split("\n"):
                 yield line
         else:  # If *infile* is given and thus not ``None``
             with open(self.infile, 'r') as f:

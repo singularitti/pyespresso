@@ -17,12 +17,11 @@ from pyque.util.path_generators import path_generator
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pw_input', 'print_pw_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
-           'PHononStandardInput', 'AtomicSpecies', 'AtomicPosition', 'KPoints']
+           'PHononInput', 'AtomicSpecies', 'AtomicPosition', 'KPoints']
 
 # ========================================= type alias =========================================
 KPoints = NamedTuple('KPoints', [('grid', int), ('offsets', int)])
 AtomicSpecies = NamedTuple('AtomicSpecies', [('name', str), ('mass', float), ('pseudopotential', str)])
-AtomicPosition = NamedTuple('AtomicPosition', [('name', str), ('position', np.ndarray)])
 
 # ========================================= define useful data structures =========================================
 KPoints: KPoints = namedtuple('KPoints', ['grid', 'offsets'])
@@ -32,7 +31,7 @@ AtomicSpecies.__doc__ = """\
 Note that the word 'species' serves as singular and plural both. 
 So here though suffixed with a 's', it is for one atom and thus is singular."""
 
-AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position'])
+AtomicPosition = namedtuple('AtomicPosition', ['name', 'x', 'y', 'z', 'if_pos1', 'if_pos2', 'if_pos3'])
 
 
 # ========================================= variables declaration =========================================
@@ -40,10 +39,9 @@ AtomicPosition: AtomicPosition = namedtuple('AtomicPosition', ['name', 'position
 
 # ========================================= define useful functions =========================================
 def is_pw_input(obj: object):
-    if all(hasattr(obj, attr) for attr in ['CONTROL', 'SYSTEM', 'ELECTRONS', 'CELL_PARAMETERS']):
+    if isinstance(obj, PWscfInput):
         return True
-    else:
-        return False
+    return False
 
 
 def print_pw_input(obj: object):
@@ -171,7 +169,7 @@ class VCRelaxInput(PWscfInput):
         pass
 
 
-class PHononStandardInput:
+class PHononInput:
     @LazyWritableProperty
     def title(self):
         pass

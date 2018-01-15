@@ -11,14 +11,13 @@ import numpy as np
 from lazy_property import *
 
 from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfInput
-from pyque.lexer.simple import SimpleParser, NamelistParser
+from pyque.lexer.simple import SimpleParser, NamelistLexer
 from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIST, DEFAULT_ELECTRONS_NAMELIST, \
     DEFAULT_IONS_NAMELIST, DEFAULT_CELL_NAMELIST
 from pyque.meta.text import TextStream
-from pyque.util.strings import strings_to_floats, strings_to_integers
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputParser', 'PWscfOutputParser']
+__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputLexer', 'PWscfOutputParser']
 
 # ================================= These are some type aliases or type definitions. =================================
 SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Union[str, int, float, bool]), ('type', str)])
@@ -37,32 +36,32 @@ def to_text_file(obj: object, out_file: str):
 
 
 # ====================================== The followings are input readers. ======================================
-class CONTROLNamelistParser(NamelistParser):
-    def __init__(self, infile):
-        super().__init__(infile, DEFAULT_CONTROL_NAMELIST)
+class CONTROLNamelistLexer(NamelistLexer):
+    def __init__(self, instr):
+        super().__init__(instr, DEFAULT_CONTROL_NAMELIST)
 
 
-class SYSTEMNamelistParser(NamelistParser):
-    def __init__(self, infile):
-        super().__init__(infile, DEFAULT_SYSTEM_NAMELIST)
+class SYSTEMNamelistLexer(NamelistLexer):
+    def __init__(self, instr):
+        super().__init__(instr, DEFAULT_SYSTEM_NAMELIST)
 
 
-class ELECTRONSNamelistParser(NamelistParser):
-    def __init__(self, infile):
-        super().__init__(infile, DEFAULT_ELECTRONS_NAMELIST)
+class ELECTRONSNamelistLexer(NamelistLexer):
+    def __init__(self, instr):
+        super().__init__(instr, DEFAULT_ELECTRONS_NAMELIST)
 
 
-class IONSNamelistParser(NamelistParser):
-    def __init__(self, infile):
-        super().__init__(infile, DEFAULT_IONS_NAMELIST)
+class IONSNamelistLexer(NamelistLexer):
+    def __init__(self, instr):
+        super().__init__(instr, DEFAULT_IONS_NAMELIST)
 
 
-class CELLNamelistParser(NamelistParser):
-    def __init__(self, infile):
-        super().__init__(infile, DEFAULT_CELL_NAMELIST)
+class CELLNamelistLexer(NamelistLexer):
+    def __init__(self, instr):
+        super().__init__(instr, DEFAULT_CELL_NAMELIST)
 
 
-class PWscfInputParser(TextStream):
+class PWscfInputLexer(TextStream):
     """
     This class read an scf input file in, and parse it.
     """
@@ -128,14 +127,20 @@ class PWscfInputParser(TextStream):
     def find_namelist(self, identifier):
         try:
             begin, end = self.namelist_identifier_positions[identifier]
-        except KeyError:
+        except KeyError:  # This namelist does not exist.
+            if identifier in {'&CONTROL', '&SYSTEM', '&ELECTRONS'}:
+                warnings.warn(
+                    "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
             return ''
         return re.split(self.linesep, self.contents[begin:end])
 
     def find_card(self, identifier):
         try:
             begin, end = self.card_identifier_positions[identifier]
-        except KeyError:
+        except KeyError:  # This card does not exist.
+            if identifier in {'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS'}:
+                warnings.warn(
+                    "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
             return ''
         return re.split(self.linesep, self.contents[begin:end])
 
@@ -215,7 +220,7 @@ class PWscfInputParser(TextStream):
 
         :return: a dictionary that stores the inputted information of 'CONTROL' card
         """
-        return CONTROLNamelistParser(self.infile).read_namelist()
+        return CONTROLNamelistLexer(self.plain_control_namelist).read_namelist()
 
     def parse_system_namelist(self) -> Dict[str, str]:
         """
@@ -223,7 +228,7 @@ class PWscfInputParser(TextStream):
 
         :return: a dictionary that stores the inputted information of 'SYSTEM' card
         """
-        return SYSTEMNamelistParser(self.infile).read_namelist()
+        return SYSTEMNamelistLexer(self.plain_system_namelist).read_namelist()
 
     def parse_electrons_namelist(self) -> Dict[str, str]:
         """
@@ -231,53 +236,58 @@ class PWscfInputParser(TextStream):
 
         :return: a dictionary that stores the inputted information of 'ELECTRONS' card
         """
-        return ELECTRONSNamelistParser(self.infile).read_namelist()
+        return ELECTRONSNamelistLexer(self.plain_electrons_namelist).read_namelist()
 
     def parse_atomic_species(self) -> Optional[List[AtomicSpecies]]:
-        print(self.parse_system_namelist()['ntyp'])
-        try:
-            atom_types_number = self.parse_system_namelist()['ntyp'].value
-        except KeyError:
-            raise KeyError("The 'ntyp' parameter is not correctly given in SYSTEM namelist!")
         atomic_species = []
-        generator: Iterator = self.stream_generator()
-        for line in generator:
-            if 'ATOMIC_SPECIES' in line.upper():
-                for _ in range(atom_types_number):
-                    if not line.strip():  # if this line is followed by an empty line
-                        line = next(generator)
-                    name, mass, pseudopotential = next(generator).strip().split()
-                    atomic_species.append(AtomicSpecies(name, float(mass), pseudopotential))
-                return atomic_species
-        else:
-            warnings.warn("No 'ATOMIC_SPECIES' is found in your input! Check it!")
+        for line in self.find_atomic_species():
+            # Skip the title line, any empty line, or a line of comment.
+            if 'ATOMIC_SPECIES' in line.upper() or not line.strip() or line.strip().startswith('!'):
+                continue
+            match = re.match(r"(\S+)\s*(-?\d*\.?\d*)\s*(\S+)\s*", line.strip())
+            if match is None:
+                warnings.warn("No match found in the line {0}!".format(line))
+            else:
+                name, mass, pseudopotential = match.groups()
+                atomic_species.append(AtomicSpecies(name, mass, pseudopotential))
+        return atomic_species
 
     def parse_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
-        try:
-            atoms_number = self.parse_system_namelist()['nat'].value
-        except KeyError:
-            raise KeyError("The 'nat' parameter is not correctly given in SYSTEM namelist!")
         atomic_positions = []
-        generator: Iterator = self.stream_generator()
-        for line in generator:
+        for line in self.find_atomic_positions():
+            # If this line is an empty line or a line of comment.
+            if line.strip() == '' or line.strip().startswith('!'):
+                continue
             if 'ATOMIC_POSITIONS' in line.upper():
-                option = re.match("ATOMIC_POSITIONS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", line,
-                                  re.IGNORECASE).group(1)
-                if not option:  # if option is None:
+                match = re.match("ATOMIC_POSITIONS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", line,
+                                 re.IGNORECASE)
+                if match is None:
+                    raise RuntimeError("No match found in the line {0}! Something went wrong!".format(line))
+                else:
+                    option = match.group(1)
+                if option == '':
                     warnings.warn("No option is found, default option 'alat' will be set!")
                     option = 'alat'
-                for _ in range(atoms_number):
-                    if not line.strip():  # if this line is followed by an empty line
-                        line = next(generator)
-                    name, coord1, coord2, coord3 = re.match(
-                        "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)",
-                        next(generator).strip()).groups()
-                    atomic_positions.append(
-                        AtomicPosition(name, np.array(strings_to_floats([coord1, coord2, coord3]))))
-                return atomic_positions, option
-        else:
-            warnings.warn("No 'ATOMIC_POSITIONS' is found in your input! Check it!")
+                continue
+            if re.match("{.*}", line):
+                match = re.match(
+                    "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*((0|1))?\s*((0|1))?\s*((0|1))?\s*}",
+                    line.strip())
+                name, x, y, z, if_pos1, if_pos2, if_pos3 = match.groups()
+                atomic_positions.append(AtomicPosition(name, x, y, z, if_pos1, if_pos2, if_pos3))
+            else:
+                match = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)", line.strip())
+                if match is None:
+                    warnings.warn("No match found in the line {0}!".format(line))
+                else:
+                    name, x, y, z = match.groups()
+                    atomic_positions.append(AtomicPosition(name, x, y, z, 1, 1, 1))
+        try:
+            return atomic_positions, option
+        except NameError:
+            raise NameError("'ATOMIC_POSITIONS' caption is not found in this block so no option is found!")
 
+    # TODO: finish this method
     def parse_k_points(self) -> Optional[KPoints]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
@@ -290,48 +300,52 @@ class PWscfInputParser(TextStream):
 
         :return: a named tuple defined above
         """
-        generator: Iterator = self.stream_generator()
-        for line in generator:
-            if 'K_POINTS' in line.upper():
-                # The first parenthesized subgroup will be `option`.
-                option = re.match("K_POINTS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", line, re.IGNORECASE).group(1)
-                if not option:  # if option is None:
-                    option = 'tpiba'
-                try:
-                    ks: List[int] = strings_to_integers(next(generator).split())
-                except (ValueError, TypeError):
-                    raise ValueError(
-                        'This line is not a line of strings that can be converted into integers!')
-                try:
-                    grid, offsets = ks[0:3], ks[3:7]
-                except IndexError:
-                    raise IndexError('This line contains less than 6 integers!')
+        s = self.plain_k_points
+        match = re.match("K_POINTS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", s, flags=re.IGNORECASE)
+        if match is None:
+            raise RuntimeError("Match not found! Check your option!")
+        option = match.group(1)  # The first parenthesized subgroup will be `option`.
+        if option == '':
+            raise RuntimeError("Option is not given! you must give one!")
+        elif option == 'gamma':
+            return option
+        elif option == 'automatic':
+            for line in self.find_k_points():
+                if 'K_POINTS' in line.upper() or line.strip() == '' or line.strip().startswith('!'):
+                    continue
+                line = line.split()
+                grid, offsets = line[0:3], line[3:7]
                 return KPoints(grid=grid, offsets=offsets), option
+        elif option in {'tpiba', 'crystal', 'tpiba_b', 'crystal_b', 'tpiba_c', 'crystal_c'}:
+            pass
         else:
-            warnings.warn("No 'K_POINTS' is found in your input! Check it!")
+            raise ValueError("Unknown option '{0}' given!".format(option))
 
-    def parse_cell_parameters(self) -> Optional[Tuple[np.ndarray, str]]:
+    def parse_cell_parameters(self):
         """
         Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
         the real cell parameters!
 
         :return: a numpy array that stores the cell parameters
         """
-        cell_params = np.empty([3, 3])
-        generator: Iterator = self.stream_generator()
-        for line in generator:
+        cell_params = []
+        for line in self.find_cell_parameters():
+            print(line)
             if 'CELL_PARAMETERS' in line.upper():
-                option = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE).group(1)
-                if not option:  # if option is None:
+                match = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE)
+                if match is None:
+                    raise RuntimeError("No match found! Check you 'CELL_PARAMETERS' line!")
+                option = match.group(1)
+                if option == '':
+                    warnings.warn(
+                        'Not specifying unit or lattice parameter is DEPRECATED \
+                        and will no longer be allowed in the future!', category=DeprecationWarning)
                     option = 'bohr'
-                for i in range(3):
-                    line = next(generator)
-                    cell_params[i] = strings_to_floats(line.split())
-                return cell_params, option
-        else:
-            warnings.warn(
-                'Not specifying unit or lattice parameter is DEPRECATED and will no longer be allowed in the future!',
-                category=DeprecationWarning)
+                continue
+            if re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()):
+                v1, v2, v3 = re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()).groups()
+                cell_params.append([v1, v2, v3])
+        return cell_params, option
 
 
 # ====================================== The followings are output readers. ======================================
