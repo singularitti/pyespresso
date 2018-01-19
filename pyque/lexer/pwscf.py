@@ -17,7 +17,7 @@ from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIS
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputLexer', 'PWscfOutputParser']
+__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputLexer', 'PWscfOutputLexer']
 
 # ================================= These are some type aliases or type definitions. =================================
 SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Union[str, int, float, bool]), ('type', str)])
@@ -120,11 +120,11 @@ class PWscfInputLexer(TextStream):
         end_indices = list(map(lambda x: x - 1, start_indices[1:] + [len(s)]))
         return dict(zip(keys, (RangeIndices(begin=b, end=e) for b, e in zip(start_indices, end_indices))))
 
-    def find_comment(self, include_heading: bool = True, include_ending: bool = False):
+    def get_comment(self, include_heading: bool = True, include_ending: bool = False):
         pass
         # return self._section_with_bounds('!', '\R', include_heading, include_ending)
 
-    def find_namelist(self, identifier):
+    def get_namelist(self, identifier):
         try:
             begin, end = self.namelist_identifier_positions[identifier]
         except KeyError:  # This namelist does not exist.
@@ -134,7 +134,7 @@ class PWscfInputLexer(TextStream):
             return ''
         return re.split(self.linesep, self.contents[begin:end])
 
-    def find_card(self, identifier):
+    def get_card(self, identifier):
         try:
             begin, end = self.card_identifier_positions[identifier]
         except KeyError:  # This card does not exist.
@@ -144,103 +144,103 @@ class PWscfInputLexer(TextStream):
             return ''
         return re.split(self.linesep, self.contents[begin:end])
 
-    def find_control_namelist(self):
-        return self.find_namelist('&CONTROL')
+    def get_control_namelist(self):
+        return self.get_namelist('&CONTROL')
 
-    def find_system_namelist(self):
-        return self.find_namelist('&SYSTEM')
+    def get_system_namelist(self):
+        return self.get_namelist('&SYSTEM')
 
-    def find_electrons_namelist(self):
-        return self.find_namelist('&ELECTRONS')
+    def get_electrons_namelist(self):
+        return self.get_namelist('&ELECTRONS')
 
-    def find_atomic_species(self):
-        return self.find_card('ATOMIC_SPECIES')
+    def get_atomic_species(self):
+        return self.get_card('ATOMIC_SPECIES')
 
-    def find_atomic_positions(self):
-        return self.find_card('ATOMIC_POSITIONS')
+    def get_atomic_positions(self):
+        return self.get_card('ATOMIC_POSITIONS')
 
-    def find_k_points(self):
-        return self.find_card('K_POINTS')
+    def get_k_points(self):
+        return self.get_card('K_POINTS')
 
-    def find_cell_parameters(self):
-        return self.find_card('CELL_PARAMETERS')
+    def get_cell_parameters(self):
+        return self.get_card('CELL_PARAMETERS')
 
-    def find_occupations(self):
-        return self.find_card('OCCUPATIONS')
+    def get_occupations(self):
+        return self.get_card('OCCUPATIONS')
 
-    def find_constraints(self):
-        return self.find_card('CONSTRAINTS')
+    def get_constraints(self):
+        return self.get_card('CONSTRAINTS')
 
-    def find_atomic_forces(self):
-        return self.find_card('ATOMIC_FORCES')
+    def get_atomic_forces(self):
+        return self.get_card('ATOMIC_FORCES')
 
     @LazyProperty
     def plain_control_namelist(self):
-        return '\n'.join(self.find_control_namelist())
+        return '\n'.join(self.get_control_namelist())
 
     @LazyProperty
     def plain_system_namelist(self):
-        return '\n'.join(self.find_system_namelist())
+        return '\n'.join(self.get_system_namelist())
 
     @LazyProperty
     def plain_electrons_namelist(self):
-        return '\n'.join(self.find_electrons_namelist())
+        return '\n'.join(self.get_electrons_namelist())
 
     @LazyProperty
     def plain_atomic_species(self):
-        return '\n'.join(self.find_atomic_species())
+        return '\n'.join(self.get_atomic_species())
 
     @LazyProperty
     def plain_atomic_positions(self):
-        return '\n'.join(self.find_atomic_positions())
+        return '\n'.join(self.get_atomic_positions())
 
     @LazyProperty
     def plain_k_points(self):
-        return '\n'.join(self.find_k_points())
+        return '\n'.join(self.get_k_points())
 
     @LazyProperty
     def plain_cell_parameters(self):
-        return '\n'.join(self.find_cell_parameters())
+        return '\n'.join(self.get_cell_parameters())
 
     @LazyProperty
     def plain_occupations(self):
-        return '\n'.join(self.find_occupations())
+        return '\n'.join(self.get_occupations())
 
     @LazyProperty
     def plain_constraints(self):
-        return '\n'.join(self.find_constraints())
+        return '\n'.join(self.get_constraints())
 
     @LazyProperty
     def plain_atomic_forces(self):
-        return '\n'.join(self.find_atomic_forces())
+        return '\n'.join(self.get_atomic_forces())
 
-    def parse_control_namelist(self) -> Dict[str, str]:
+    def lex_control_namelist(self) -> Dict[str, str]:
         """
-        Read everything that falls within 'CONTROL' card.
+        Read everything that falls within 'CONTROL' namelist.
 
-        :return: a dictionary that stores the inputted information of 'CONTROL' card
+        :return: A dictionary that stores the information of 'CONTROL' namelist.
         """
-        return CONTROLNamelistLexer(self.plain_control_namelist).read_namelist()
+        return CONTROLNamelistLexer(self.plain_control_namelist).lex_namelist()
 
-    def parse_system_namelist(self) -> Dict[str, str]:
+    def lex_system_namelist(self) -> Dict[str, str]:
         """
-        Read everything that falls within 'SYSTEM' card.
+        Read everything that falls within 'SYSTEM' namelist.
 
-        :return: a dictionary that stores the inputted information of 'SYSTEM' card
+        :return: A dictionary that stores the inputted information of 'SYSTEM' namelist.
         """
-        return SYSTEMNamelistLexer(self.plain_system_namelist).read_namelist()
+        return SYSTEMNamelistLexer(self.plain_system_namelist).lex_namelist()
 
-    def parse_electrons_namelist(self) -> Dict[str, str]:
+    def lex_electrons_namelist(self) -> Dict[str, str]:
         """
-        Read everything that falls within 'ELECTRONS' card.
+        Read everything that falls within 'ELECTRONS' namelist.
 
-        :return: a dictionary that stores the inputted information of 'ELECTRONS' card
+        :return: A dictionary that stores the information of 'ELECTRONS' namelist.
         """
-        return ELECTRONSNamelistLexer(self.plain_electrons_namelist).read_namelist()
+        return ELECTRONSNamelistLexer(self.plain_electrons_namelist).lex_namelist()
 
-    def parse_atomic_species(self) -> Optional[List[AtomicSpecies]]:
+    def lex_atomic_species(self) -> Optional[List[AtomicSpecies]]:
         atomic_species = []
-        for line in self.find_atomic_species():
+        for line in self.get_atomic_species():
             # Skip the title line, any empty line, or a line of comment.
             if 'ATOMIC_SPECIES' in line.upper() or not line.strip() or line.strip().startswith('!'):
                 continue
@@ -252,9 +252,9 @@ class PWscfInputLexer(TextStream):
                 atomic_species.append(AtomicSpecies(name, mass, pseudopotential))
         return atomic_species
 
-    def parse_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
+    def lex_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
         atomic_positions = []
-        for line in self.find_atomic_positions():
+        for line in self.get_atomic_positions():
             # If this line is an empty line or a line of comment.
             if line.strip() == '' or line.strip().startswith('!'):
                 continue
@@ -288,7 +288,7 @@ class PWscfInputLexer(TextStream):
             raise NameError("'ATOMIC_POSITIONS' caption is not found in this block so no option is found!")
 
     # TODO: finish this method
-    def parse_k_points(self) -> Optional[KPoints]:
+    def lex_k_points(self) -> Optional[KPoints]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
         We allow options and comments on the same line as 'K_POINTS':
@@ -310,7 +310,7 @@ class PWscfInputLexer(TextStream):
         elif option == 'gamma':
             return option
         elif option == 'automatic':
-            for line in self.find_k_points():
+            for line in self.get_k_points():
                 if 'K_POINTS' in line.upper() or line.strip() == '' or line.strip().startswith('!'):
                     continue
                 line = line.split()
@@ -321,7 +321,7 @@ class PWscfInputLexer(TextStream):
         else:
             raise ValueError("Unknown option '{0}' given!".format(option))
 
-    def parse_cell_parameters(self):
+    def lex_cell_parameters(self):
         """
         Read 3 lines that follows 'CELL_PARAMETERS' string, so there must be no empty line between 'CELL_PARAMETERS' and
         the real cell parameters!
@@ -329,7 +329,7 @@ class PWscfInputLexer(TextStream):
         :return: a numpy array that stores the cell parameters
         """
         cell_params = []
-        for line in self.find_cell_parameters():
+        for line in self.get_cell_parameters():
             print(line)
             if 'CELL_PARAMETERS' in line.upper():
                 match = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE)
@@ -349,8 +349,8 @@ class PWscfInputLexer(TextStream):
 
 
 # ====================================== The followings are output readers. ======================================
-class PWscfOutputParser(SimpleParser):
-    def read_lattice_parameter(self) -> float:
+class PWscfOutputLexer(SimpleParser):
+    def lex_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.
 
@@ -359,7 +359,7 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float)
 
-    def read_total_energy(self) -> float:
+    def lex_total_energy(self) -> float:
         """
         Read total energy from pyque.the output file. The val unit is Rydberg.
 
@@ -367,7 +367,7 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float)
 
-    def read_cell_volume(self) -> float:
+    def lex_cell_volume(self) -> float:
         """
         Read the unit-cell volume, which is given at the beginning of the file.
         The val unit is $\text{bohr}^3$.
@@ -376,7 +376,7 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("unit-cell volume\s+=\s+(\d+\.\d+)", float)
 
-    def read_pressure(self) -> float:
+    def lex_pressure(self) -> float:
         """
         Read the pressure, which is at the bottom of the file.
         The val unit is kbar.
@@ -385,7 +385,7 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("P=\s+(-?\d+\.\d+)", float)
 
-    def read_kinetic_energy_cutoff(self) -> float:
+    def lex_kinetic_energy_cutoff(self) -> float:
         """
         Read kinetic-energy cutoff, at the beginning of the file.
 
@@ -393,7 +393,7 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float)
 
-    def read_charge_density_cutoff(self) -> float:
+    def lex_charge_density_cutoff(self) -> float:
         """
         Read charge density cutoff, at the beginning of the file.
 
@@ -401,65 +401,65 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("charge density cutoff\s+=\s*(-?\d+\.\d+)", float)
 
-    def read_atoms_num_per_cell(self) -> int:
+    def lex_atoms_num_per_cell(self) -> int:
         return self._match_one_pattern("number of atoms\/cell\s+=\s*(\d+)", int)
 
-    def read_atoms_types_num(self) -> int:
+    def lex_atoms_types_num(self) -> int:
         return self._match_one_pattern("number of atomic INPUTPH_types\s+=\s*(\d+)", int)
 
-    def read_electrons_num(self) -> float:
+    def lex_electrons_num(self) -> float:
         return self._match_one_pattern("number of electrons\s+=\s*(-?\d+\.\d+)", float)
 
-    def read_mixing_beta(self) -> float:
+    def lex_mixing_beta(self) -> float:
         return self._match_one_pattern("mixing beta\s+=\s*(-?\d*\.\d+)", float)
 
-    def read_nstep(self) -> int:
+    def lex_nstep(self) -> int:
         return self._match_one_pattern("nstep\s+=\s*(\d+)", int)
 
-    def read_iteration_num(self) -> int:
+    def lex_iteration_num(self) -> int:
         """
 
         :return: the number of iterations used to reach self-consistent convergence
         """
         return self._match_one_pattern("number of iterations used\s+=\s*(\d+)", int)
 
-    def read_kinetic_stress(self) -> np.ndarray:
-        return self._read_stress('kinetic')
+    def lex_kinetic_stress(self) -> np.ndarray:
+        return self._lex_stress('kinetic')
 
-    def read_local_stress(self) -> np.ndarray:
-        return self._read_stress('local')
+    def lex_local_stress(self) -> np.ndarray:
+        return self._lex_stress('local')
 
-    def read_nonlocal_stress(self) -> np.ndarray:
-        return self._read_stress('nonloc.')
+    def lex_nonlocal_stress(self) -> np.ndarray:
+        return self._lex_stress('nonloc.')
 
-    def read_hartree_stress(self) -> np.ndarray:
-        return self._read_stress('hartree')
+    def lex_hartree_stress(self) -> np.ndarray:
+        return self._lex_stress('hartree')
 
-    def read_exc_cor_stress(self) -> np.ndarray:
-        return self._read_stress('exc-cor')
+    def lex_exc_cor_stress(self) -> np.ndarray:
+        return self._lex_stress('exc-cor')
 
-    def read_corecor_stress(self) -> np.ndarray:
-        return self._read_stress('corecor')
+    def lex_corecor_stress(self) -> np.ndarray:
+        return self._lex_stress('corecor')
 
-    def read_ewald_stress(self) -> np.ndarray:
-        return self._read_stress('ewald')
+    def lex_ewald_stress(self) -> np.ndarray:
+        return self._lex_stress('ewald')
 
-    def read_hubbard_stress(self) -> np.ndarray:
-        return self._read_stress('hubbard')
+    def lex_hubbard_stress(self) -> np.ndarray:
+        return self._lex_stress('hubbard')
 
-    def read_london_stress(self) -> np.ndarray:
-        return self._read_stress('london')
+    def lex_london_stress(self) -> np.ndarray:
+        return self._lex_stress('london')
 
-    def read_xdm_stress(self) -> np.ndarray:
-        return self._read_stress('XDM')
+    def lex_xdm_stress(self) -> np.ndarray:
+        return self._lex_stress('XDM')
 
-    def read_dft_nl_stress(self) -> np.ndarray:
-        return self._read_stress('dft-nl')
+    def lex_dft_nl_stress(self) -> np.ndarray:
+        return self._lex_stress('dft-nl')
 
-    def read_ts_vdw_stress(self) -> np.ndarray:
-        return self._read_stress('TS-vdW')
+    def lex_ts_vdw_stress(self) -> np.ndarray:
+        return self._lex_stress('TS-vdW')
 
-    def read_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
+    def lex_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
         """
         Read the total stress, in 2 units, from pyque.the bottom of the output file.
 
@@ -478,7 +478,7 @@ class PWscfOutputParser(SimpleParser):
                         stress_kbar[i][:] = list(map(float, line.split()))[3:6]
         return stress[unit]
 
-    def read_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
+    def lex_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
         """
         This method can be used to read how many k-points are involved in a PWscf calculation from pyque.a file
         outputted by pw.x. Here regular expression is used. Different version of Quantum ESPRESSO may need different
@@ -525,7 +525,7 @@ class PWscfOutputParser(SimpleParser):
                     k_count += 1
         print('Reading done! File is stored at "{0}"'.format(os.path.abspath(out_file)))
 
-    def _read_stress(self, name) -> np.ndarray:
+    def _lex_stress(self, name) -> np.ndarray:
         """
         Read a stress specified by `name`.
 
@@ -553,7 +553,7 @@ class PWscfOutputParser(SimpleParser):
                         raise IndexError(error_message)
         return stress
 
-    def read_processors_num(self) -> int:
+    def lex_processors_num(self) -> int:
         """
         Read how many processors were used in this calculation, which is given at the beginning of the file.
 
@@ -561,10 +561,10 @@ class PWscfOutputParser(SimpleParser):
         """
         return self._match_one_pattern("running on\s*(\d+)\s+", int)
 
-    def read_symmetry_operations_num(self) -> int:
+    def lex_symmetry_operations_num(self) -> int:
         return self._match_one_pattern("(\d+)\s+Sym\. Ops.*found", int)
 
-    def read_fft_dimensions(self) -> List[int]:
+    def lex_fft_dimensions(self) -> List[int]:
         """
 
         :return: a list contains 3 integers that denotes the FFT grid we use

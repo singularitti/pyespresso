@@ -11,7 +11,7 @@
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Union, List, DefaultDict, Tuple
+from typing import Union, List, Tuple, MutableMapping
 
 import addict
 from lazy_property import LazyProperty, LazyWritableProperty
@@ -20,23 +20,55 @@ from pyque.default_configuerations.namelist import *
 from pyque.util.strings import string_to_general_float
 
 # ========================================= What can be exported? =========================================
-__all__ = ['is_namelist', 'LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin']
+__all__ = ['is_namelist', 'LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin',
+           'DEFAULT_CONTROL_NAMELIST', 'DEFAULT_SYSTEM_NAMELIST', 'DEFAULT_ELECTRONS_NAMELIST', 'DEFAULT_IONS_NAMELIST',
+           'DEFAULT_CELL_NAMELIST', 'DEFAULT_INPUTPH_NAMELIST', 'CONTROLNamelistParameter', 'SYSTEMNamelistParameter',
+           'ELECTRONSNamelistParameter', 'IONSNamelistParameter', 'CELLNamelistParameter', 'INPUTPHNamelistParameter']
+
+# ========================================= type alias =========================================
+NamelistParameterValue = Union[str, int, float, bool]
 
 
 # ========================================= These are some useful functions. =========================================
 def is_namelist(obj: object):
-    if issubclass(type(obj), NamelistABC):
+    """
+    If an object *obj* is an instance of a class, which is the subclass of abstract base class ``NamelistABC``, then the
+    object can be regarded as a namelist.
+
+    :param obj: The object to be examined.
+    :return: Whether *obj* is a namelist or not.
+
+    .. doctest::
+
+        >>> is_namelist(DEFAULT_CONTROL_NAMELIST)
+        True
+    """
+    if issubclass(obj.__class__, NamelistABC):
         return True
     return False
 
 
 def is_namelist_parameter(obj: object):
-    if issubclass(type(obj), NamelistParameterABC):
+    """
+    If an object *obj* is an instance of a class, which is the subclass of abstract base class ``NamelistParameterABC``,
+    then the object can be regarded as a namelist.
+
+    :param obj: The object to be examined.
+    :return: Whether *obj* is a namelist parameter or not.
+
+    .. doctest::
+
+        >>> is_namelist_parameter(CONTROLNamelistParameter('calculation', 'scf'))
+        True
+        >>> is_namelist_parameter(('calculation', 'scf', 'str', 'scf', 'CONTROL'))
+        False
+    """
+    if issubclass(obj.__class__, NamelistParameterABC):
         return True
     return False
 
 
-def builtin_to_qe_string(obj: Union[int, float, bool, str]):
+def builtin_to_qe_string(obj: object):
     """
     An instance of a builtin type can be converted to a Quantum ESPRESSO legal string.
 
@@ -53,7 +85,7 @@ def builtin_to_qe_string(obj: Union[int, float, bool, str]):
     elif isinstance(obj, (int, float, str)):
         return str(obj)
     else:
-        raise TypeError("Illegal type '{0}' is given!".format(type(obj).__name__))
+        raise TypeError("Invalid type '{0}' is given!".format(type(obj).__name__))
 
 
 def qe_string_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
@@ -93,7 +125,7 @@ def qe_string_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
         elif desired_type == 'str':
             return obj
     else:  # Here *obj* is not ``int``, ``str``, ``bool``, ``float``.
-        raise TypeError("Illegal type '{0}' is given!".format(type(obj).__name__))
+        raise TypeError("Invalid type '{0}' is given!".format(type(obj).__name__))
 
 
 # ========================================= define some crucial class =========================================
@@ -153,7 +185,7 @@ class DefaultNamelist(NamelistABC):
         return [type(_).__name__ for _ in self.values]
 
     @LazyProperty
-    def typed_parameters(self) -> DefaultDict[str, Tuple[Union[str, int, float, bool], str]]:
+    def typed_parameters(self) -> MutableMapping[str, Tuple[Union[str, int, float, bool], str]]:
         """
         This is a ``DefaultDict`` of ``(QE default value, types of each default value)`` tuples for a namelist,
         with those names to be its keys. Read-only attribute.
@@ -180,14 +212,14 @@ class LazyNamelist(LazyWritableProperty):
 class NamelistDict(addict.Dict):
     def __setattr__(self, name, value):
         try:
-            object.__setattr__(self, name, type(self[name])(name, value))
+            object.__setattr__(self, name, self[name].__class__(name, value))
         except ValueError:
             raise KeyError("The name '{0}' you set does not already exist!".format(name))
 
     def beautify(self):
         d = dict()
         for k, v in self.items():
-            d.update({k: type(v)(v.name, v.value)})
+            d.update({k: v.__class__(v.name, v.value)})
         return NamelistDict(d)
 
     def to_dict(self):
@@ -207,6 +239,7 @@ class NamelistDict(addict.Dict):
 
 
 # =================================== instances of the crucial class ``Namelist`` ===================================
+# These namelists are constants, do not change them.
 DEFAULT_CONTROL_NAMELIST: DefaultNamelist = DefaultNamelist('CONTROL', CONTROL_NAMELIST_DICT)
 
 DEFAULT_SYSTEM_NAMELIST: DefaultNamelist = DefaultNamelist('SYSTEM', SYSTEM_NAMELIST_DICT)
@@ -239,68 +272,78 @@ class NamelistParameterABC(ABC):
     def value(self, new_value):
         pass
 
-    @abstractmethod
-    def default_type(self):
-        pass
-
+    @property
     @abstractmethod
     def in_namelist(self):
         pass
 
+    @in_namelist.setter
+    @abstractmethod
+    def in_namelist(self, new_in_namelist):
+        pass
 
-class NamelistParameter(NamelistParameterABC):
-    def __init__(self, name: str, value: Union[str, int, float, bool]):
+
+class NamelistParameterGeneric(NamelistParameterABC):
+    def __init__(self, name: str, value: NamelistParameterValue):
         """
-        Generate an `NamelistParameterMeta` object, which stores user given name, and value.
+        Generate an `NamelistParameter` object, which stores user given name, and value.
 
-        :param name: the name given by user in the card
-        :param value: a raw value given by user, has to be a string, it will be converted into exact type defined by
-            `self.type` parameter.
+        :param name:
+        :param value:
         """
         self.__name = name
         self.__value = value
+        self.__default_type = None
+        self.__default_value = None
+        self.__in_namelist = None
 
-    @LazyProperty
+    @property
     def name(self) -> str:
         return self.__name
 
-    @LazyWritableProperty
-    def _default_type(self) -> str:
-        pass
-
-    @LazyProperty
+    @property
     def default_type(self) -> str:
-        return self._default_type
+        return self.__default_type
+
+    @default_type.setter
+    def default_type(self, new_default_type: str) -> None:
+        if new_default_type not in {'int', 'float', 'bool', 'str'}:
+            raise ValueError("Unknown default type {0} for name {1} is given!".format(new_default_type, self.__name))
+        self.__default_type = new_default_type
 
     @property
-    def value(self) -> Union[str, int, float, bool]:
+    def value(self) -> NamelistParameterValue:
         return self.__value
 
     @value.setter
-    def value(self, new_value: Union[str, int, float, bool]) -> None:
+    def value(self, new_value: NamelistParameterValue) -> None:
         self.__value = qe_string_to_builtin(new_value, self.default_type)
 
-    @LazyWritableProperty
-    def _default_value(self) -> Union[str, int, float, bool]:
-        pass
+    @property
+    def default_value(self) -> NamelistParameterValue:
+        return self.__default_value
 
-    @LazyProperty
-    def default_value(self) -> Union[str, int, float, bool]:
-        return self._default_value
+    @default_value.setter
+    def default_value(self, new_default_value: NamelistParameterValue) -> None:
+        if not isinstance(new_default_value, (int, float, bool, str)):
+            raise TypeError("Unknown default value {0} for name {1} is given!".format(new_default_value, self.__name))
+        self.__default_value = new_default_value
 
-    @LazyWritableProperty
-    def _in_namelist(self) -> str:
-        pass
+    @property
+    def in_namelist(self):
+        return self.__in_namelist
 
-    @LazyProperty
-    def in_namelist(self) -> str:
-        return self._in_namelist
+    @in_namelist.setter
+    def in_namelist(self, new_in_namelist: str) -> None:
+        if new_in_namelist not in {'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'INPUTPH'}:
+            raise ValueError("Unknown namelist caption '{0}' is given!".format(new_in_namelist))
+        self.__in_namelist = new_in_namelist
 
     def to_qe_str(self) -> str:
         return builtin_to_qe_string(self.value)
 
     def to_dict(self):
-        return {'name': self.name, 'real_value': self.value, 'intrinsic_type': self.default_type}
+        return {'name': self.name, 'value': self.value, 'default_type': self.default_type}
 
     def __str__(self) -> str:
         """
@@ -312,7 +355,20 @@ class NamelistParameter(NamelistParameterABC):
                                                                                           self.default_type)
 
     def __repr__(self) -> str:
-        return str((self.name, self.value, self.default_type, self.default_value, self.in_namelist))
+        return ' '.join(map(str, (self.name, self.value, self.default_type, self.default_value, self.in_namelist)))
+
+
+class NamelistParameter(NamelistParameterGeneric):
+    def __init__(self, default_namelist: DefaultNamelist, name: str, value: str):
+        super(NamelistParameter, self).__init__(name, value)
+        if not is_namelist(default_namelist):
+            raise ValueError("The 'default_namelist' given is not a namelist!")
+        try:
+            default_namelist.names[name]
+        except KeyError:
+            raise ValueError("The name '{0}' is not a valid name for namelist '{1}'!".format(name, type(self).__name__))
+        self.default_value, self.default_type = default_namelist.typed_parameters[name]
+        self.in_namelist = default_namelist.caption
 
 
 class CONTROLNamelistParameter(NamelistParameter):
@@ -322,9 +378,7 @@ class CONTROLNamelistParameter(NamelistParameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_CONTROL_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_CONTROL_NAMELIST.caption
+        super(CONTROLNamelistParameter, self).__init__(DEFAULT_CONTROL_NAMELIST, name, value)
 
 
 class SYSTEMNamelistParameter(NamelistParameter):
@@ -334,9 +388,7 @@ class SYSTEMNamelistParameter(NamelistParameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_SYSTEM_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_SYSTEM_NAMELIST.caption
+        super(SYSTEMNamelistParameter, self).__init__(DEFAULT_SYSTEM_NAMELIST, name, value)
 
 
 class ELECTRONSNamelistParameter(NamelistParameter):
@@ -346,9 +398,7 @@ class ELECTRONSNamelistParameter(NamelistParameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_ELECTRONS_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_ELECTRONS_NAMELIST.caption
+        super(ELECTRONSNamelistParameter, self).__init__(DEFAULT_ELECTRONS_NAMELIST, name, value)
 
 
 class IONSNamelistParameter(NamelistParameter):
@@ -358,9 +408,7 @@ class IONSNamelistParameter(NamelistParameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_IONS_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_IONS_NAMELIST.caption
+        super(IONSNamelistParameter, self).__init__(DEFAULT_IONS_NAMELIST, name, value)
 
 
 class CELLNamelistParameter(NamelistParameter):
@@ -370,14 +418,118 @@ class CELLNamelistParameter(NamelistParameter):
     """
 
     def __init__(self, name: str, value: str):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_CELL_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_CELL_NAMELIST.caption
+        super(CELLNamelistParameter, self).__init__(DEFAULT_CELL_NAMELIST, name, value)
 
 
 class INPUTPHNamelistParameter(NamelistParameter):
-    def __init__(self, name, value):
-        super().__init__(name, value)
-        self._default_value, self._default_type = DEFAULT_INPUTPH_NAMELIST.typed_parameters[name]
-        self._in_namelist = DEFAULT_INPUTPH_NAMELIST.caption
+    """
+    To build a parameter for 'INPUTPH' namelist, you only need to specify the name of the parameter, and its value.
+    The type of it will be automatically recognized by its name.
+    """
+
+    def __init__(self, name: str, value: str):
+        super(INPUTPHNamelistParameter, self).__init__(DEFAULT_INPUTPH_NAMELIST, name, value)
+
+
+class RawNamelistParameterGeneric(NamelistParameterABC):
+    """
+    This is used only in parser step.
+    """
+
+    def __init__(self, name: str, value: str):
+        self.__name = name
+        self.__value = value
+        self.__in_namelist = None
+
+    def name(self):
+        return self.__name
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, new_value: str):
+        if not isinstance(new_value, str):
+            raise TypeError("The type of this value should be 'str'!")
+        self.__value = new_value
+
+    @property
+    def in_namelist(self):
+        return self.__in_namelist
+
+    @in_namelist.setter
+    def in_namelist(self, new_in_namelist: str) -> None:
+        if new_in_namelist not in {'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'INPUTPH'}:
+            raise ValueError("Unknown namelist caption '{0}' is given!".format(new_in_namelist))
+        self.__in_namelist = new_in_namelist
+
+    @abstractmethod
+    def eval(self):
+        pass
+
+
+class RawNamelistParameter(RawNamelistParameterGeneric):
+    def __init__(self, default_namelist: DefaultNamelist, name: str, value: str):
+        super(RawNamelistParameter, self).__init__(name, value)
+        if not is_namelist(default_namelist):
+            raise ValueError("The 'default_namelist' given is not a namelist!")
+        try:
+            default_namelist.names[name]
+        except KeyError:
+            raise ValueError("The name '{0}' is not a valid name for namelist '{1}'!".format(name, self.__class__))
+        self.in_namelist = default_namelist.caption
+
+    @abstractmethod
+    def eval(self):
+        pass
+
+
+class RawCONTROLNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super(RawCONTROLNamelistParameter, self).__init__(DEFAULT_CONTROL_NAMELIST, name, value)
+
+    def eval(self):
+        return CONTROLNamelistParameter(self.__name, self.__value)
+
+
+class RawSYSTEMNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super(RawSYSTEMNamelistParameter, self).__init__(DEFAULT_SYSTEM_NAMELIST, name, value)
+
+    def eval(self):
+        return SYSTEMNamelistParameter(self.__name, self.__value)
+
+
+class RawELECTRONSNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super(RawELECTRONSNamelistParameter, self).__init__(DEFAULT_ELECTRONS_NAMELIST, name, value)
+
+    def eval(self):
+        return ELECTRONSNamelistParameter(self.__name, self.__value)
+
+
+class RawIONSNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super().__init__(DEFAULT_IONS_NAMELIST, name, value)
+
+    def eval(self):
+        return IONSNamelistParameter(self.__name, self.__value)
+
+
+class RawCELLNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super().__init__(DEFAULT_CELL_NAMELIST, name, value)
+
+    def eval(self):
+        return CELLNamelistParameter(self.__name, self.__value)
+
+
+class RawINPUTPHNamelistParameter(RawNamelistParameter):
+    def __init__(self, name: str, value: str):
+        super().__init__(DEFAULT_INPUTPH_NAMELIST, name, value)
+
+    def eval(self):
+        return INPUTPHNamelistParameter(self.__name, self.__value)
+
 # ================================================= end of this block =================================================

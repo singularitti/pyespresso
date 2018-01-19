@@ -15,38 +15,46 @@ def auto_build(obj):
 
 class PWscfInputParser:
     def __init__(self, infile):
-        self.parser = PWscfInputLexer(infile=infile)
+        self.lexer = PWscfInputLexer(infile=infile)
         self.input_obj = PWscfInput()
+        self.parse_dict = {
+            '&CONTROL': 'parse_control_namelist',
+            '&SYSTEM': 'parse_system_namelist',
+            '&ELECTRONS': 'parse_electrons_namelist',
+            'ATOMIC_SPECIES': 'parse_atomic_species',
+            'ATOMIC_POSITIONS': 'parse_atomic_positions',
+            'K_POINTS': 'parse_k_points',
+            'CELL_PARAMETERS': 'parse_cell_parameters'
+        }
 
     def build_control_namelist(self):
-        self.input_obj.control_namelist = self.parser.parse_control_namelist()
+        self.input_obj.control_namelist = self.lexer.parse_control_namelist()
 
     def build_system_namelist(self):
-        self.input_obj.system_namelist = self.parser.parse_system_namelist()
+        self.input_obj.system_namelist = self.lexer.parse_system_namelist()
 
     def build_electrons_namelist(self):
-        self.input_obj.electrons_namelist = self.parser.parse_electrons_namelist()
+        self.input_obj.electrons_namelist = self.lexer.parse_electrons_namelist()
 
     def build_atomic_species(self):
-        self.input_obj.atomic_species = self.parser.parse_atomic_species()
+        self.input_obj.atomic_species = self.lexer.parse_atomic_species()
 
     def build_atomic_positions(self):
-        self.input_obj.atomic_positions, self.input_obj.atomic_positions_option = self.parser.parse_atomic_positions()
+        self.input_obj.atomic_positions, self.input_obj.atomic_positions_option = self.lexer.parse_atomic_positions()
 
     def build_k_points(self):
-        self.input_obj.k_points, self.input_obj.k_points_option = self.parser.parse_k_points()
+        self.input_obj.k_points, self.input_obj.k_points_option = self.lexer.parse_k_points()
 
     def build_cell_parameters(self):
-        self.input_obj.cell_parameters = self.parser.parse_cell_parameters()
+        self.input_obj.cell_parameters = self.lexer.parse_cell_parameters()
 
     def auto_build(self):
-        self.build_control_namelist()
-        self.build_system_namelist()
-        self.build_electrons_namelist()
-        self.build_atomic_species()
-        self.build_atomic_positions()
-        self.build_k_points()
-        self.build_cell_parameters()
+        provided_namelists = self.lexer.namelist_identifier_positions.keys()
+        provided_cards = self.lexer.card_identifier_positions.keys()
+        methods_involved = [self.parse_dict[identifiers] for identifiers in provided_namelists] + [
+            self.parse_dict[identifiers] for identifiers in provided_cards]
+        for method in methods_involved:
+            pass
 
 
 class PHononInputParser:

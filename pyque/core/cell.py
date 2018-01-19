@@ -37,12 +37,12 @@ get_hall_number_from_symmetry: Callable[[np.ndarray, np.ndarray, float], int] = 
 # ========================================= These are some useful functions. =========================================
 def is_simple_cell(obj: object) -> bool:
     """
-    If an object has 3 attributes ``lattice``, ``positions``, and ``numbers``, then it can be regarded as a simple cell.
+    If an object is an instance of ``SimpleCell``, then it can be regarded as a simple cell.
 
     :param obj: The object to be checked.
     :return: Whether it is a simple cell.
     """
-    if all(hasattr(obj, attr) for attr in ['lattice', 'positions', 'numbers']) and not hasattr(obj, '_symprec'):
+    if isinstance(obj, SimpleCell):
         return True
     else:
         return False
@@ -50,15 +50,12 @@ def is_simple_cell(obj: object) -> bool:
 
 def is_cell(obj: object) -> bool:
     """
-    If an object has attributes ``lattice``, ``positions``, ``numbers``, ``magmoms``, ``_symprec``,
-    ``_angle_tolerance``, ``_symbol_type``, ``_eps``, and ``_silent``, then it can be regarded as a cell.
+    If an object is an instance of ``Cell``, then it can be regarded as a cell.
 
     :param obj: The object to be checked.
     :return: Whether it is a cell.
     """
-    if all(hasattr(obj, attr) for attr in
-           ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type', '_eps',
-            '_silent']):
+    if isinstance(obj, Cell):
         return True
     else:
         return False

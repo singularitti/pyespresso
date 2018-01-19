@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# created at Nov 25, 2017 12:18 AM by Qi Zhang
 
-from setuptools import setup
 from markdown import markdownFromFile
+from setuptools import setup
 
 setup(name='PyQuE',
       version='0.0.1',
