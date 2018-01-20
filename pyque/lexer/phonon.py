@@ -32,7 +32,7 @@ class PHononInputParser(SimpleParser):
         return next(s for s in self.file_content[0:end_index] if s)
 
     def parse_INPUTPH_namelist(self):
-        return INPUTPHNamelistLexer(self.infile).read_namelist()
+        return INPUTPHNamelistLexer(self.infile).lex_namelist()
 
     def parse_single_q_point(self) -> Optional[np.ndarray]:
         with open(self.infile, 'r') as f:

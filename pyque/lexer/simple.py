@@ -124,7 +124,7 @@ class NamelistLexer(TextStream):
             raise TypeError('{0} is not a namelist!'.format(namelist))
         super().__init__(instream, infile=None)
 
-    def read_namelist(self) -> Dict[str, str]:
+    def lex_namelist(self) -> Dict[str, str]:
         """
         A generic method to read a namelist.
         Note you cannot write more than one parameter in each line!

@@ -363,12 +363,11 @@ class NamelistParameter(NamelistParameterGeneric):
         super(NamelistParameter, self).__init__(name, value)
         if not is_namelist(default_namelist):
             raise ValueError("The 'default_namelist' given is not a namelist!")
-        try:
-            default_namelist.names[name]
-        except KeyError:
+        if name in default_namelist.names:
+            self.default_value, self.default_type = default_namelist.typed_parameters[name]
+            self.in_namelist = default_namelist.caption
+        else:
             raise ValueError("The name '{0}' is not a valid name for namelist '{1}'!".format(name, type(self).__name__))
-        self.default_value, self.default_type = default_namelist.typed_parameters[name]
-        self.in_namelist = default_namelist.caption
 
 
 class CONTROLNamelistParameter(NamelistParameter):
