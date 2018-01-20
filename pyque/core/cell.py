@@ -151,36 +151,36 @@ class Cell:
             raise TypeError(
                 'Only 1 optional positional argument ``magmoms`` is allowed, but {0} are given!'.format(len(args)))
 
-        self._symprec: float = 1e-5
-        self._angle_tolerance: float = -1.0
-        self._symbol_type: int = 0
-        self._eps: float = 1e-5
-        self._silent = False
+        self.__symprec: float = 1e-5
+        self.__angle_tolerance: float = -1.0
+        self.__symbol_type: int = 0
+        self.__eps: float = 1e-5
+        self.__silent = False
 
     # ============================== Code block for some "hidden" values ==============================
     @property
     def symprec(self):
-        return self._symprec
+        return self.__symprec
 
     @symprec.setter
     def symprec(self, new_symprec: float):
         if not self.silent:
             print('Be careful, setting symprec may affect the values of some attributes!')
-        self._symprec = new_symprec
+        self.__symprec = new_symprec
 
     @property
     def angle_tolerance(self):
-        return self._angle_tolerance
+        return self.__angle_tolerance
 
     @angle_tolerance.setter
     def angle_tolerance(self, new_angle_tolerance: float):
         if not self.silent:
             print('Be careful, setting angle_tolerance may affect the values of some attributes!')
-        self._angle_tolerance = new_angle_tolerance
+        self.__angle_tolerance = new_angle_tolerance
 
     @property
     def symbol_type(self):
-        return self._symbol_type
+        return self.__symbol_type
 
     @symbol_type.setter
     def symbol_type(self, new_symbol_type: int):
@@ -188,25 +188,25 @@ class Cell:
             raise TypeError('Symbol type should be an integer, but {0} given!'.format(type(new_symbol_type)))
         if not self.silent:
             print('Be careful, setting symbol_type may affect the values of some attributes!')
-        self._symbol_type = new_symbol_type
+        self.__symbol_type = new_symbol_type
 
     @property
     def eps(self):
-        return self._eps
+        return self.__eps
 
     @eps.setter
     def eps(self, new_eps: float):
         if not self.silent:
             print('Be careful, setting eps may affect the values of some attributes!')
-        self._eps = new_eps
+        self.__eps = new_eps
 
     @property
     def silent(self):
-        return self._silent
+        return self.__silent
 
     @silent.setter
     def silent(self, new_silent: bool):
-        self._silent = new_silent
+        self.__silent = new_silent
 
     # ========================================= end =========================================
 

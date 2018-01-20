@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-# created at Oct 20, 2017 6:17 PM by Qi Zhang
 
+import re
 import shlex
 from itertools import islice
 from operator import itemgetter
+from typing import *
 
 import numpy as np
 
-from pyque.lexer.simple import *
+from pyque.tools.strings import strings_to_floats
 
 
 class VCRelaxOutfileReader:
@@ -132,7 +133,7 @@ class VCRelaxOutfileReader:
                     cell_params = np.zeros((3, 3))
                     for i in range(3):
                         sp = f.readline().split()
-                        cell_params[i] = strs_to_floats(sp)
+                        cell_params[i] = strings_to_floats(sp)
                     cell_params_list.append(cell_params)
         return p_list, cell_params_list
 

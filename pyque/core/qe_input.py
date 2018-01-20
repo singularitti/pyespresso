@@ -13,10 +13,10 @@ from lazy_property import LazyWritableProperty
 from pyque.meta.card import LazyCard
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 from pyque.meta.namelist import LazyNamelist, NamelistDict
-from pyque.util.path_generators import path_generator
+from pyque.tools.path_generators import path_generator
 
 # ========================================= What can be exported? =========================================
-__all__ = ['is_pw_input', 'print_pw_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
+__all__ = ['is_pwscf_input', 'print_pwscf_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
            'PHononInput', 'AtomicSpecies', 'AtomicPosition', 'KPoints']
 
 # ========================================= type alias =========================================
@@ -38,14 +38,14 @@ AtomicPosition = namedtuple('AtomicPosition', ['name', 'x', 'y', 'z', 'if_pos1',
 
 
 # ========================================= define useful functions =========================================
-def is_pw_input(obj: object):
+def is_pwscf_input(obj: object):
     if isinstance(obj, PWscfInput):
         return True
     return False
 
 
-def print_pw_input(obj: object):
-    if is_pw_input(obj):
+def print_pwscf_input(obj: object):
+    if is_pwscf_input(obj):
         try:
             from beeprint import pp
             pp(obj)
@@ -102,10 +102,10 @@ class PWscfInput(metaclass=DescriptorOwnerMeta):
     def k_points_option(self) -> str:
         pass
 
-    def beautify(self):
+    def eval(self):
         for attr in dir(self):
             if attr.endswith('_namelist'):
-                setattr(self, attr, getattr(self, attr).beautify())
+                setattr(self, attr, getattr(self, attr).eval())
         return self
 
     def to_dict(self):

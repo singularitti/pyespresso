@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
-from pyque.plotter.plot_basic import *
+from pyque.plotting.plot_basic import *
 from pyque.lexer.elasticity import *
 
 

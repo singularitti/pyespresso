@@ -3,7 +3,7 @@
 
 from matplotlib.lines import Line2D
 from pyque.calculator.elasticity import *
-from pyque.plotter.plot_basic import *
+from pyque.plotting.plot_basic import *
 
 
 class ElasticityOutputPlotter(SingleAxes):

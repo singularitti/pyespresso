@@ -112,7 +112,7 @@ class SimpleParser(TextStream):
 
 
 class NamelistLexer(TextStream):
-    def __init__(self, instr, namelist: object):
+    def __init__(self, instream, namelist: object):
         """
         Match card between card title and the following '/' character.
 
@@ -122,7 +122,7 @@ class NamelistLexer(TextStream):
             self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
-        super().__init__(instr, infile=None)
+        super().__init__(instream, infile=None)
 
     def read_namelist(self) -> Dict[str, str]:
         """

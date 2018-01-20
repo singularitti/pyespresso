@@ -10,7 +10,7 @@ __all__ = ['auto_build', 'PWscfInputParser', 'PHononInputParser']
 def auto_build(obj):
     if isinstance(obj, PWscfInputParser):
         obj.auto_build()
-    return obj.input_obj.beautify()
+    return obj.input_obj.eval()
 
 
 class PWscfInputParser:

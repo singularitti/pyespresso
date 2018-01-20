@@ -37,28 +37,28 @@ def to_text_file(obj: object, out_file: str):
 
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistLexer(NamelistLexer):
-    def __init__(self, instr):
-        super().__init__(instr, DEFAULT_CONTROL_NAMELIST)
+    def __init__(self, instream):
+        super(CONTROLNamelistLexer, self).__init__(instream, DEFAULT_CONTROL_NAMELIST)
 
 
 class SYSTEMNamelistLexer(NamelistLexer):
-    def __init__(self, instr):
-        super().__init__(instr, DEFAULT_SYSTEM_NAMELIST)
+    def __init__(self, instream):
+        super().__init__(instream, DEFAULT_SYSTEM_NAMELIST)
 
 
 class ELECTRONSNamelistLexer(NamelistLexer):
-    def __init__(self, instr):
-        super().__init__(instr, DEFAULT_ELECTRONS_NAMELIST)
+    def __init__(self, instream):
+        super().__init__(instream, DEFAULT_ELECTRONS_NAMELIST)
 
 
 class IONSNamelistLexer(NamelistLexer):
-    def __init__(self, instr):
-        super().__init__(instr, DEFAULT_IONS_NAMELIST)
+    def __init__(self, instream):
+        super().__init__(instream, DEFAULT_IONS_NAMELIST)
 
 
 class CELLNamelistLexer(NamelistLexer):
-    def __init__(self, instr):
-        super().__init__(instr, DEFAULT_CELL_NAMELIST)
+    def __init__(self, instream):
+        super().__init__(instream, DEFAULT_CELL_NAMELIST)
 
 
 class PWscfInputLexer(TextStream):
@@ -66,10 +66,10 @@ class PWscfInputLexer(TextStream):
     This class read an scf input file in, and parse it.
     """
 
-    def __init__(self, instr: Optional[str] = None, infile: Optional[str] = None):
+    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
         self.linesep = "[\r\n]"
         self.namelist_sep = "/\s*[\r\n]"
-        super().__init__(instr, infile)
+        super().__init__(instream, infile)
 
     @LazyProperty
     def namelist_identifiers(self) -> List[str]:

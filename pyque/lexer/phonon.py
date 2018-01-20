@@ -6,7 +6,7 @@ from typing import *
 import numpy as np
 
 from pyque.meta.namelist import DEFAULT_INPUTPH_NAMELIST
-from pyque.util.strings import strings_to_floats
+from pyque.tools.strings import strings_to_floats
 from pyque.lexer.simple import SimpleParser, NamelistLexer
 
 # Type aliases

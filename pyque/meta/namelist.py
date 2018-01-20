@@ -17,7 +17,7 @@ import addict
 from lazy_property import LazyProperty, LazyWritableProperty
 
 from pyque.default_configuerations.namelist import *
-from pyque.util.strings import string_to_general_float
+from pyque.tools.strings import string_to_general_float
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_namelist', 'LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin',

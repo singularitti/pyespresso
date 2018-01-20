@@ -8,7 +8,7 @@ from typing import *
 import numpy as np
 from numpy.linalg import inv
 
-from pyque.util.tensors import crystal_classes
+from pyque.tools.tensors import crystal_classes
 from pyque.lexer.elasticity import ElasticityOutputParser
 
 

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-# created at Dec 2, 2017 2:58 AM by Qi Zhang
 
 import unittest
 
-from meta.cell import *
-from meta.unittests.cell_test_data import *
+import numpy as np
 
-rutile = Cell(*rutile_spglib_cell)
-rutile_distorted = Cell(*rutile_distorted_spglib_cell)
-simple_rutile = SimpleCell(*rutile_spglib_cell)
+from pyque.core.cell import *
+from pyque.tests.core.cell_test_data import rutile_spglib, rutile_distorted_spglib, rutile_symmetry, rutile_dataset, \
+    rutile_transformation_matrix
+
+rutile = Cell(*rutile_spglib)
+rutile_distorted = Cell(*rutile_distorted_spglib)
+simple_rutile = SimpleCell(*rutile_spglib)
 
 
 class CellTester(unittest.TestCase):
@@ -182,10 +184,6 @@ class CellTester(unittest.TestCase):
     def test_is_cell(self):
         self.assertTrue(is_cell(rutile))
         self.assertFalse(any(is_cell(x) for x in [1, 'test', {'lattice': 1, 'positions': 2, 'numbers': 3}]))
-
-    # @staticmethod
-    # def test_print_cell():
-    #     print_cell(rutile)
 
     @staticmethod
     def test_to_json():

@@ -2,7 +2,7 @@
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
 import pyque.calculator.maths as mm
-from pyque.util.converters import *
+from pyque.tools.converters import *
 from pyque.lexer.phonon import *
 
 # Type aliases
