@@ -17,7 +17,7 @@ from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIS
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['to_text_file', 'PWscfInputLexer', 'PWscfOutputLexer']
+__all__ = ['PWscfInputLexer', 'PWscfOutputLexer']
 
 
 # ========================================= define useful data structures =========================================
@@ -27,11 +27,6 @@ class RangeIndices(namedtuple('RangeIndices', ['begin', 'end'])):
 
 
 # ========================================= define useful functions =========================================
-def to_text_file(obj: object, out_file: str):
-    if isinstance(obj, PWscfInput):
-        obj.to_text_file(out_file)
-    else:
-        raise TypeError('Input object is not an {0}!'.format('SCFStandardInput'))
 
 
 # ====================================== The followings are input readers. ======================================
@@ -170,25 +165,19 @@ class PWscfInputLexer:
         pass
         # return self._section_with_bounds('!', '\R', include_heading, include_ending)
 
-    def __get_namelist(self, identifier):
-        try:
+    def __get_namelist(self, identifier) -> Optional[List[str]]:
+        if identifier in self.namelists_found:
             begin, end = self.__get_namelist_identifier_positions()[identifier]
-        except KeyError:  # This namelist does not exist.
-            if identifier in {'&CONTROL', '&SYSTEM', '&ELECTRONS'}:
-                warnings.warn(
-                    "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
-            return ''
-        return re.split(self.linesep, self.__text_stream.contents[begin:end])
+            return re.split(self.linesep, self.__text_stream.contents[begin:end])
+        else:
+            warnings.warn("Identifier '{0}' not found in input!".format(identifier), stacklevel=2)
 
-    def __get_card(self, identifier):
-        try:
+    def __get_card(self, identifier) -> Optional[List[str]]:
+        if identifier in self.cards_found:
             begin, end = self.__get_card_identifier_positions()[identifier]
-        except KeyError:  # This card does not exist.
-            if identifier in {'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS'}:
-                warnings.warn(
-                    "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
-            return ''
-        return re.split(self.linesep, self.__text_stream.contents[begin:end])
+            return re.split(self.linesep, self.__text_stream.contents[begin:end])
+        else:
+            warnings.warn("Identifier '{0}' not found in input!".format(identifier), stacklevel=2)
 
     def get_control_namelist(self):
         return self.__get_namelist('&CONTROL')
@@ -299,39 +288,39 @@ class PWscfInputLexer:
         return atomic_species
 
     def lex_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
-        atomic_positions = []
-        for line in self.get_atomic_positions():
-            # If this line is an empty line or a line of comment.
-            if line.strip() == '' or line.strip().startswith('!'):
-                continue
-            if 'ATOMIC_POSITIONS' in line.upper():
-                match = re.match("ATOMIC_POSITIONS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", line,
-                                 re.IGNORECASE)
-                if match is None:
-                    raise RuntimeError("No match found in the line {0}! Something went wrong!".format(line))
+        s: Optional[List[str]] = self.get_atomic_positions()
+        if not s:  # If the returned result is ``None``.
+            warnings.warn("'ATOMIC_POSITIONS' not found in input!", stacklevel=2)
+        else:
+            atomic_positions = []
+            title_line = s[0]
+            match = re.match("ATOMIC_POSITIONS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", title_line, flags=re.IGNORECASE)
+            if match is None:
+                raise RuntimeError("No match found in the line '{0}'! Something went wrong!".format(title_line))
+            option = match.group(1)
+            if option == '':
+                warnings.warn("No option is found, default option 'alat' will be set! "
+                              "Not specifying units is DEPRECATED and will no longer be allowed in the future",
+                              category=DeprecationWarning)
+                option = 'alat'
+            for line in s[1:]:
+                # If this line is an empty line or a line of comment.
+                if line.strip() == '' or line.strip().startswith('!'):
+                    continue
+                if re.match("{.*}", line):
+                    match = re.match(
+                        "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*((0|1))?\s*((0|1))?\s*((0|1))?\s*}",
+                        line.strip())
+                    name, x, y, z, if_pos1, if_pos2, if_pos3 = match.groups()
+                    atomic_positions.append(AtomicPosition(name, x, y, z, if_pos1, if_pos2, if_pos3))
                 else:
-                    option = match.group(1)
-                if option == '':
-                    warnings.warn("No option is found, default option 'alat' will be set!")
-                    option = 'alat'
-                continue
-            if re.match("{.*}", line):
-                match = re.match(
-                    "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*((0|1))?\s*((0|1))?\s*((0|1))?\s*}",
-                    line.strip())
-                name, x, y, z, if_pos1, if_pos2, if_pos3 = match.groups()
-                atomic_positions.append(AtomicPosition(name, x, y, z, if_pos1, if_pos2, if_pos3))
-            else:
-                match = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)", line.strip())
-                if match is None:
-                    warnings.warn("No match found in the line {0}!".format(line))
-                else:
-                    name, x, y, z = match.groups()
-                    atomic_positions.append(AtomicPosition(name, x, y, z, 1, 1, 1))
-        try:
+                    match = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)", line.strip())
+                    if match is None:
+                        warnings.warn("No match found in the line {0}!".format(line))
+                    else:
+                        name, x, y, z = match.groups()
+                        atomic_positions.append(AtomicPosition(name, x, y, z, 1, 1, 1))
             return atomic_positions, option
-        except NameError:
-            raise NameError("'ATOMIC_POSITIONS' caption is not found in this block so no option is found!")
 
     # TODO: finish this method
     def lex_k_points(self) -> Optional[KPoints]:
@@ -346,8 +335,9 @@ class PWscfInputLexer:
 
         :return: a named tuple defined above
         """
-        s = self.plain_k_points
-        match = re.match("K_POINTS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", s, flags=re.IGNORECASE)
+        s: Optional[List[str]] = self.get_k_points()
+        title_line = s[0]
+        match = re.match("K_POINTS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", title_line, flags=re.IGNORECASE)
         if match is None:
             raise RuntimeError("Match not found! Check your option!")
         option = match.group(1)  # The first parenthesized subgroup will be `option`.
@@ -356,8 +346,8 @@ class PWscfInputLexer:
         elif option == 'gamma':
             return option
         elif option == 'automatic':
-            for line in self.get_k_points():
-                if 'K_POINTS' in line.upper() or line.strip() == '' or line.strip().startswith('!'):
+            for line in s[1:]:
+                if line.strip() == '' or line.strip().startswith('!'):
                     continue
                 line = line.split()
                 grid, offsets = line[0:3], line[3:7]
@@ -374,23 +364,27 @@ class PWscfInputLexer:
 
         :return: a numpy array that stores the cell parameters
         """
-        cell_params = []
-        for line in self.get_cell_parameters():
-            if 'CELL_PARAMETERS' in line.upper():
-                match = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE)
-                if match is None:
-                    raise RuntimeError("No match found! Check you 'CELL_PARAMETERS' line!")
-                option = match.group(1)
-                if option == '':
-                    warnings.warn(
-                        'Not specifying unit or lattice parameter is DEPRECATED \
-                        and will no longer be allowed in the future!', category=DeprecationWarning)
-                    option = 'bohr'
-                continue
-            if re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()):
-                v1, v2, v3 = re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()).groups()
-                cell_params.append([v1, v2, v3])
-        return cell_params, option
+        if not self.get_cell_parameters():  # If returned result is ``None``.
+            warnings.warn("'CELL_PARAMETERS' not found in input!", stacklevel=2)
+        else:
+            cell_params = []
+            title_line = self.get_cell_parameters()[0]
+            match = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", title_line, re.IGNORECASE)
+            if match is None:
+                # The first line should be 'CELL_PARAMETERS blahblahblah', if it is not, either the regular expression
+                # wrong or something worse happened.
+                raise RuntimeError("No match found! Check you 'CELL_PARAMETERS' line!")
+            option = match.group(1)
+            if option == '':
+                warnings.warn(
+                    'Not specifying unit is DEPRECATED and will no longer be allowed in the future!',
+                    category=DeprecationWarning)
+                option = 'bohr'
+            for line in self.get_cell_parameters()[1:]:
+                if re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()):
+                    v1, v2, v3 = re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()).groups()
+                    cell_params.append([v1, v2, v3])
+            return cell_params, option
 
 
 # ====================================== The followings are output readers. ======================================
