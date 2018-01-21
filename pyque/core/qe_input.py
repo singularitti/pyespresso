@@ -3,13 +3,13 @@
 import os
 import re
 import warnings
-from collections import namedtuple
 from typing import *
 
 import numpy as np
 from json_tricks import dump, dumps
 from lazy_property import LazyWritableProperty
 
+from pyque.core.cards import *
 from pyque.meta.card import LazyCard
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 from pyque.meta.namelist import LazyNamelist, NamelistDict
@@ -17,21 +17,7 @@ from pyque.tools.path_generators import path_generator
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pwscf_input', 'print_pwscf_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
-           'PHononInput', 'AtomicSpecies', 'AtomicPosition', 'KPoints']
-
-# ========================================= type alias =========================================
-KPoints = NamedTuple('KPoints', [('grid', int), ('offsets', int)])
-AtomicSpecies = NamedTuple('AtomicSpecies', [('name', str), ('mass', float), ('pseudopotential', str)])
-
-# ========================================= define useful data structures =========================================
-KPoints: KPoints = namedtuple('KPoints', ['grid', 'offsets'])
-
-AtomicSpecies: AtomicSpecies = namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])
-AtomicSpecies.__doc__ = """\
-Note that the word 'species' serves as singular and plural both. 
-So here though suffixed with a 's', it is for one atom and thus is singular."""
-
-AtomicPosition = namedtuple('AtomicPosition', ['name', 'x', 'y', 'z', 'if_pos1', 'if_pos2', 'if_pos3'])
+           'PHononInput']
 
 
 # ========================================= variables declaration =========================================

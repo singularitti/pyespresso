@@ -10,7 +10,7 @@ from typing import *
 import numpy as np
 from lazy_property import LazyProperty
 
-from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfInput
+from pyque.core.cards import AtomicSpecies, AtomicPosition, KPoints
 from pyque.lexer.simple import SimpleLexer, NamelistLexer
 from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIST, DEFAULT_ELECTRONS_NAMELIST, \
     DEFAULT_IONS_NAMELIST, DEFAULT_CELL_NAMELIST
@@ -31,27 +31,27 @@ class RangeIndices(namedtuple('RangeIndices', ['begin', 'end'])):
 
 # ====================================== The followings are input readers. ======================================
 class CONTROLNamelistLexer(NamelistLexer):
-    def __init__(self, instream):
+    def __init__(self, instream: List[str]):
         super(CONTROLNamelistLexer, self).__init__(instream, DEFAULT_CONTROL_NAMELIST)
 
 
 class SYSTEMNamelistLexer(NamelistLexer):
-    def __init__(self, instream):
+    def __init__(self, instream: List[str]):
         super(SYSTEMNamelistLexer, self).__init__(instream, DEFAULT_SYSTEM_NAMELIST)
 
 
 class ELECTRONSNamelistLexer(NamelistLexer):
-    def __init__(self, instream):
+    def __init__(self, instream: List[str]):
         super(ELECTRONSNamelistLexer, self).__init__(instream, DEFAULT_ELECTRONS_NAMELIST)
 
 
 class IONSNamelistLexer(NamelistLexer):
-    def __init__(self, instream):
+    def __init__(self, instream: List[str]):
         super(IONSNamelistLexer, self).__init__(instream, DEFAULT_IONS_NAMELIST)
 
 
 class CELLNamelistLexer(NamelistLexer):
-    def __init__(self, instream):
+    def __init__(self, instream: List[str]):
         super(CELLNamelistLexer, self).__init__(instream, DEFAULT_CELL_NAMELIST)
 
 
@@ -188,6 +188,12 @@ class PWscfInputLexer:
     def get_electrons_namelist(self):
         return self.__get_namelist('&ELECTRONS')
 
+    def get_ions_namelist(self):
+        return self.__get_namelist('&IONS')
+
+    def get_cell_namelist(self):
+        return self.__get_namelist('&CELL')
+
     def get_atomic_species(self):
         return self.__get_card('ATOMIC_SPECIES')
 
@@ -209,53 +215,13 @@ class PWscfInputLexer:
     def get_atomic_forces(self):
         return self.__get_card('ATOMIC_FORCES')
 
-    @LazyProperty
-    def plain_control_namelist(self):
-        return '\n'.join(self.get_control_namelist())
-
-    @LazyProperty
-    def plain_system_namelist(self):
-        return '\n'.join(self.get_system_namelist())
-
-    @LazyProperty
-    def plain_electrons_namelist(self):
-        return '\n'.join(self.get_electrons_namelist())
-
-    @LazyProperty
-    def plain_atomic_species(self):
-        return '\n'.join(self.get_atomic_species())
-
-    @LazyProperty
-    def plain_atomic_positions(self):
-        return '\n'.join(self.get_atomic_positions())
-
-    @LazyProperty
-    def plain_k_points(self):
-        return '\n'.join(self.get_k_points())
-
-    @LazyProperty
-    def plain_cell_parameters(self):
-        return '\n'.join(self.get_cell_parameters())
-
-    @LazyProperty
-    def plain_occupations(self):
-        return '\n'.join(self.get_occupations())
-
-    @LazyProperty
-    def plain_constraints(self):
-        return '\n'.join(self.get_constraints())
-
-    @LazyProperty
-    def plain_atomic_forces(self):
-        return '\n'.join(self.get_atomic_forces())
-
     def lex_control_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' namelist.
 
         :return: A dictionary that stores the information of 'CONTROL' namelist.
         """
-        return CONTROLNamelistLexer(self.plain_control_namelist).lex_namelist()
+        return CONTROLNamelistLexer(self.get_control_namelist()).lex_namelist()
 
     def lex_system_namelist(self) -> Dict[str, str]:
         """
@@ -263,7 +229,7 @@ class PWscfInputLexer:
 
         :return: A dictionary that stores the inputted information of 'SYSTEM' namelist.
         """
-        return SYSTEMNamelistLexer(self.plain_system_namelist).lex_namelist()
+        return SYSTEMNamelistLexer(self.get_system_namelist()).lex_namelist()
 
     def lex_electrons_namelist(self) -> Dict[str, str]:
         """
@@ -271,7 +237,7 @@ class PWscfInputLexer:
 
         :return: A dictionary that stores the information of 'ELECTRONS' namelist.
         """
-        return ELECTRONSNamelistLexer(self.plain_electrons_namelist).lex_namelist()
+        return ELECTRONSNamelistLexer(self.get_electrons_namelist()).lex_namelist()
 
     def lex_atomic_species(self) -> Optional[List[AtomicSpecies]]:
         atomic_species = []
@@ -294,7 +260,7 @@ class PWscfInputLexer:
         else:
             atomic_positions = []
             title_line = s[0]
-            match = re.match("ATOMIC_POSITIONS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", title_line, flags=re.IGNORECASE)
+            match = re.match("ATOMIC_POSITIONS\s*(?:[({])?\s*(\w*)\s*(?:[)}])?", title_line, flags=re.IGNORECASE)
             if match is None:
                 raise RuntimeError("No match found in the line '{0}'! Something went wrong!".format(title_line))
             option = match.group(1)
@@ -309,7 +275,7 @@ class PWscfInputLexer:
                     continue
                 if re.match("{.*}", line):
                     match = re.match(
-                        "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*((0|1))?\s*((0|1))?\s*((0|1))?\s*}",
+                        "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*([01])?\s*([01])?\s*([01])?\s*}",
                         line.strip())
                     name, x, y, z, if_pos1, if_pos2, if_pos3 = match.groups()
                     atomic_positions.append(AtomicPosition(name, x, y, z, if_pos1, if_pos2, if_pos3))
@@ -323,7 +289,7 @@ class PWscfInputLexer:
             return atomic_positions, option
 
     # TODO: finish this method
-    def lex_k_points(self) -> Optional[KPoints]:
+    def lex_k_points(self) -> Union[None, str, Tuple[KPoints, str]]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
         We allow options and comments on the same line as 'K_POINTS':
@@ -337,7 +303,7 @@ class PWscfInputLexer:
         """
         s: Optional[List[str]] = self.get_k_points()
         title_line = s[0]
-        match = re.match("K_POINTS\s*(?:\(|{)?\s*(\w*)\s*(?:\)|})?", title_line, flags=re.IGNORECASE)
+        match = re.match("K_POINTS\s*(?:[({])?\s*(\w*)\s*(?:[)}])?", title_line, flags=re.IGNORECASE)
         if match is None:
             raise RuntimeError("Match not found! Check your option!")
         option = match.group(1)  # The first parenthesized subgroup will be `option`.

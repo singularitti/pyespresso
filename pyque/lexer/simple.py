@@ -4,8 +4,7 @@
 import re
 from typing import *
 
-from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParameter, ELECTRONSNamelistParameter, \
-    DefaultNamelist, is_namelist
+from pyque.meta.namelist import DefaultNamelist, is_namelist
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
@@ -44,18 +43,6 @@ class SimpleLexer(TextStream):
             else:  # If no match is found
                 print('Pattern {0} not found in string {1}!'.format(pattern, s))
                 return None
-
-    def read_line_by_line(self) -> List[str]:
-        """
-        This method reads each line simply from pyque.a file, and discards the '\n' character on the line end.
-
-        :return: a list contains all the lines of the file
-        """
-        line_list = []
-        with open(self.infile, 'r') as f:
-            for line in f:
-                line_list.append(re.split('\n', line)[0])
-        return line_list
 
     def _read_n_columns(self, n: int) -> List[List[str]]:
         """
@@ -118,7 +105,7 @@ class NamelistLexer:
             self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
-        self.__text_stream = TextStream(instream, infile=None)
+        self.instream: List[str] = instream
 
     def lex_namelist(self) -> Dict[str, str]:
         """
@@ -129,8 +116,7 @@ class NamelistLexer:
         """
         namelist_names = set(self.namelist.names)
         result = dict()
-        generator: Iterator[str] = self.__text_stream.stream_generator()
-        for line in generator:  # Read each line in the namelist until '/'
+        for line in self.instream:  # Read each line in the namelist until '/'
             s: str = line.strip()
             # Use '=' as the delimiter, split the stripped line into a key and a value.
             # Skip this line if a line starts with '&' (namelist caption) or '!' (comment) or this line is empty ('').
