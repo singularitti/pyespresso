@@ -9,7 +9,7 @@ from pyque.plotting.plot_basic import *
 class ElasticityOutputPlotter(SingleAxes):
     def __init__(self, file: str):
         super().__init__()
-        self._reo = ElasticityOutputParser(file)
+        self._reo = ElasticityOutputLexer(file)
         self._ec = ElasticityCalculator(file)
 
     def get_cijs(self, crystal_class):

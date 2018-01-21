@@ -4,30 +4,29 @@ import operator
 import os
 import re
 import warnings
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from typing import *
 
 import numpy as np
-from lazy_property import *
+from lazy_property import LazyProperty
 
 from pyque.core.qe_input import AtomicSpecies, AtomicPosition, KPoints, PWscfInput
-from pyque.lexer.simple import SimpleParser, NamelistLexer
+from pyque.lexer.simple import SimpleLexer, NamelistLexer
 from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIST, DEFAULT_ELECTRONS_NAMELIST, \
     DEFAULT_IONS_NAMELIST, DEFAULT_CELL_NAMELIST
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParameter', 'to_text_file', 'PWscfInputLexer', 'PWscfOutputLexer']
+__all__ = ['to_text_file', 'PWscfInputLexer', 'PWscfOutputLexer']
 
-# ================================= These are some type aliases or type definitions. =================================
-SimpleParameter = NamedTuple('SimpleParameter', [('name', str), ('value', Union[str, int, float, bool]), ('type', str)])
-RangeIndices = NamedTuple('RangeIndices', [('begin', int), ('end', int)])
 
 # ========================================= define useful data structures =========================================
-SimpleParameter: SimpleParameter = namedtuple('SimpleParameter', ['name', 'value', 'type'])
-RangeIndices: RangeIndices = namedtuple('RangeIndices', ['begin', 'end'])
+class RangeIndices(namedtuple('RangeIndices', ['begin', 'end'])):
+    def __str__(self) -> str:
+        return "'begin: {0}, end: {1}'".format(self.begin, self.end)
 
 
+# ========================================= define useful functions =========================================
 def to_text_file(obj: object, out_file: str):
     if isinstance(obj, PWscfInput):
         obj.to_text_file(out_file)
@@ -43,50 +42,62 @@ class CONTROLNamelistLexer(NamelistLexer):
 
 class SYSTEMNamelistLexer(NamelistLexer):
     def __init__(self, instream):
-        super().__init__(instream, DEFAULT_SYSTEM_NAMELIST)
+        super(SYSTEMNamelistLexer, self).__init__(instream, DEFAULT_SYSTEM_NAMELIST)
 
 
 class ELECTRONSNamelistLexer(NamelistLexer):
     def __init__(self, instream):
-        super().__init__(instream, DEFAULT_ELECTRONS_NAMELIST)
+        super(ELECTRONSNamelistLexer, self).__init__(instream, DEFAULT_ELECTRONS_NAMELIST)
 
 
 class IONSNamelistLexer(NamelistLexer):
     def __init__(self, instream):
-        super().__init__(instream, DEFAULT_IONS_NAMELIST)
+        super(IONSNamelistLexer, self).__init__(instream, DEFAULT_IONS_NAMELIST)
 
 
 class CELLNamelistLexer(NamelistLexer):
     def __init__(self, instream):
-        super().__init__(instream, DEFAULT_CELL_NAMELIST)
+        super(CELLNamelistLexer, self).__init__(instream, DEFAULT_CELL_NAMELIST)
 
 
-class PWscfInputLexer(TextStream):
+class PWscfInputLexer:
     """
-    This class read an scf input file in, and parse it.
+    This class reads a standard Quantum ESPRESSO PWscf input file or string in, and lex it.
     """
 
     def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
         self.linesep = "[\r\n]"
         self.namelist_sep = "/\s*[\r\n]"
-        super().__init__(instream, infile)
+        self.__text_stream = TextStream(instream=instream, infile=infile)
 
-    @LazyProperty
+    @property
     def namelist_identifiers(self) -> List[str]:
         return ['&CONTROL', '&SYSTEM', '&ELECTRONS', '&IONS', '&CELL']
 
-    @LazyProperty
+    @property
     def card_identifiers(self) -> List[str]:
         return ['ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS', 'CELL_PARAMETERS', 'OCCUPATIONS', 'CONSTRAINTS',
                 'ATOMIC_FORCES']
 
-    @LazyProperty
-    def namelist_identifier_positions(self, pos: int = 0, include_heading: bool = True,
-                                      include_ending: bool = False) -> Dict[str, RangeIndices]:
+    def __get_namelist_identifier_positions(self, pos: int = 0, include_heading: bool = True,
+                                            include_ending: bool = False) -> MutableMapping[str, RangeIndices]:
+        """
+        For example, a typical returned result will look like
+
+        .. code-block:: python
+
+            {'&CONTROL': 'begin: 1, end: 440', '&SYSTEM': 'begin: 443, end: 629', '&ELECTRONS': 'begin: 632, end: 684'}
+
+        :param pos:
+        :param include_heading:
+        :param include_ending:
+        :return:
+        """
         match_records = dict()
-        identifiers = self.namelist_identifiers
-        s = self.contents
+        identifiers: List[str] = self.namelist_identifiers
+        s: str = self.__text_stream.contents
         for pattern in identifiers:
+            # ``re.compile`` will produce a regular expression object, on which we can use its ``search`` method.
             m0 = re.compile(pattern, flags=re.IGNORECASE).search(s, match_records.get(pattern, pos))
             if not m0:
                 continue
@@ -102,15 +113,22 @@ class PWscfInputLexer(TextStream):
         # Tuples are compared lexicographically using comparison of corresponding elements, thus compared with their
         # *begin* entry.
         m: List[Tuple[str, RangeIndices]] = sorted(match_records.items(), key=operator.itemgetter(1))
-        return dict(m)
+        return OrderedDict(m)
 
-    @LazyProperty
-    def card_identifier_positions(self):
+    def __get_card_identifier_positions(self, pos: Optional[int] = None) -> MutableMapping[str, RangeIndices]:
+        """
+
+
+        :param pos:
+        :return:
+        """
         match_records = dict()
-        identifiers = self.card_identifiers
-        s = self.contents
+        identifiers: List[str] = self.card_identifiers
+        s: str = self.__text_stream.contents
+        if not pos:
+            pos = list(self.__get_namelist_identifier_positions().values())[-1].end
         for pattern in identifiers:
-            m = re.compile(pattern, flags=re.IGNORECASE).search(s, match_records.get(pattern, 500))
+            m = re.compile(pattern, flags=re.IGNORECASE).search(s, match_records.get(pattern, pos))
             if not m:
                 continue
             match_records[pattern] = m.start()
@@ -118,61 +136,89 @@ class PWscfInputLexer(TextStream):
         keys = list(map(operator.itemgetter(0), sorted_records))
         start_indices = list(map(operator.itemgetter(1), sorted_records))
         end_indices = list(map(lambda x: x - 1, start_indices[1:] + [len(s)]))
-        return dict(zip(keys, (RangeIndices(begin=b, end=e) for b, e in zip(start_indices, end_indices))))
+        return OrderedDict(zip(keys, (RangeIndices(begin=b, end=e) for b, e in zip(start_indices, end_indices))))
+
+    @LazyProperty
+    def namelists_found(self) -> Optional[Set[str]]:
+        """
+        Check whether an input contains all the namelists necessary for Quantum ESPRESSO to do computations. If the
+        input is validated, all namelists found in the input will be returned.
+
+        :return: All namelists found in the input.
+        """
+        keys = set(self.__get_namelist_identifier_positions().keys())
+        if keys < {'&CONTROL', '&SYSTEM', '&ELECTRONS'}:
+            warnings.warn('Not enough necessary namelists given!')
+        else:
+            return keys
+
+    @LazyProperty
+    def cards_found(self) -> Optional[Set[str]]:
+        """
+        Check whether an input contains all the cards necessary for Quantum ESPRESSO to do computations. If the
+        input is validated, all cards found in the input will be returned.
+
+        :return: All cards found in the input.
+        """
+        keys = set(self.__get_card_identifier_positions().keys())
+        if keys < {'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS'}:
+            warnings.warn('Not enough necessary namelists given!')
+        else:
+            return keys
 
     def get_comment(self, include_heading: bool = True, include_ending: bool = False):
         pass
         # return self._section_with_bounds('!', '\R', include_heading, include_ending)
 
-    def get_namelist(self, identifier):
+    def __get_namelist(self, identifier):
         try:
-            begin, end = self.namelist_identifier_positions[identifier]
+            begin, end = self.__get_namelist_identifier_positions()[identifier]
         except KeyError:  # This namelist does not exist.
             if identifier in {'&CONTROL', '&SYSTEM', '&ELECTRONS'}:
                 warnings.warn(
                     "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
             return ''
-        return re.split(self.linesep, self.contents[begin:end])
+        return re.split(self.linesep, self.__text_stream.contents[begin:end])
 
-    def get_card(self, identifier):
+    def __get_card(self, identifier):
         try:
-            begin, end = self.card_identifier_positions[identifier]
+            begin, end = self.__get_card_identifier_positions()[identifier]
         except KeyError:  # This card does not exist.
             if identifier in {'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS'}:
                 warnings.warn(
                     "Identifier '{0}' not found! You have have one it if you don't set values!".format(identifier))
             return ''
-        return re.split(self.linesep, self.contents[begin:end])
+        return re.split(self.linesep, self.__text_stream.contents[begin:end])
 
     def get_control_namelist(self):
-        return self.get_namelist('&CONTROL')
+        return self.__get_namelist('&CONTROL')
 
     def get_system_namelist(self):
-        return self.get_namelist('&SYSTEM')
+        return self.__get_namelist('&SYSTEM')
 
     def get_electrons_namelist(self):
-        return self.get_namelist('&ELECTRONS')
+        return self.__get_namelist('&ELECTRONS')
 
     def get_atomic_species(self):
-        return self.get_card('ATOMIC_SPECIES')
+        return self.__get_card('ATOMIC_SPECIES')
 
     def get_atomic_positions(self):
-        return self.get_card('ATOMIC_POSITIONS')
+        return self.__get_card('ATOMIC_POSITIONS')
 
     def get_k_points(self):
-        return self.get_card('K_POINTS')
+        return self.__get_card('K_POINTS')
 
     def get_cell_parameters(self):
-        return self.get_card('CELL_PARAMETERS')
+        return self.__get_card('CELL_PARAMETERS')
 
     def get_occupations(self):
-        return self.get_card('OCCUPATIONS')
+        return self.__get_card('OCCUPATIONS')
 
     def get_constraints(self):
-        return self.get_card('CONSTRAINTS')
+        return self.__get_card('CONSTRAINTS')
 
     def get_atomic_forces(self):
-        return self.get_card('ATOMIC_FORCES')
+        return self.__get_card('ATOMIC_FORCES')
 
     @LazyProperty
     def plain_control_namelist(self):
@@ -330,7 +376,6 @@ class PWscfInputLexer(TextStream):
         """
         cell_params = []
         for line in self.get_cell_parameters():
-            print(line)
             if 'CELL_PARAMETERS' in line.upper():
                 match = re.match("CELL_PARAMETERS\s*{?\s*(\w*)\s*}?", line, re.IGNORECASE)
                 if match is None:
@@ -349,7 +394,7 @@ class PWscfInputLexer(TextStream):
 
 
 # ====================================== The followings are output readers. ======================================
-class PWscfOutputLexer(SimpleParser):
+class PWscfOutputLexer(SimpleLexer):
     def lex_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.

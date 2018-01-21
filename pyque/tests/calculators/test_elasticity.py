@@ -6,9 +6,9 @@ If all tests are OK, it does not mean that the program has no bug.
 But if unittest does not pass, there must be bug(s) in the program.
 """
 
-from calculators.elasticity import *
-
 import unittest
+
+from pyque.calculator.elasticity import *
 
 
 class ElasticityCalculationTester(unittest.TestCase):
@@ -43,7 +43,3 @@ class ElasticityCalculationTester(unittest.TestCase):
         print(self.ec.derive_universal_elastic_anisotropy(self.ec.elastic_tensors[0], self.ec.compliance_tensors[0]))
         self.assertGreaterEqual(
             self.ec.derive_universal_elastic_anisotropy(self.ec.elastic_tensors[0], self.ec.compliance_tensors[0]), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()

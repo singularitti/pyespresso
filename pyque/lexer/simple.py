@@ -9,19 +9,15 @@ from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParamete
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleParser', 'NamelistLexer']
+__all__ = ['SimpleLexer', 'NamelistLexer']
+
 
 # ================================= These are some type aliases or type definitions. =================================
 
 # ========================================= define useful data structures =========================================
-namelist_parameters = {
-    'CONTROL': CONTROLNamelistParameter,
-    'SYSTEM': SYSTEMNamelistParameter,
-    'ELECTRONS': ELECTRONSNamelistParameter,
-}
 
 
-class SimpleParser(TextStream):
+class SimpleLexer(TextStream):
     def _match_one_string(self, pattern: str, *args):
         pass
 
@@ -111,7 +107,7 @@ class SimpleParser(TextStream):
         return dict(zip(keys, values))
 
 
-class NamelistLexer(TextStream):
+class NamelistLexer:
     def __init__(self, instream, namelist: object):
         """
         Match card between card title and the following '/' character.
@@ -122,7 +118,7 @@ class NamelistLexer(TextStream):
             self.namelist: DefaultNamelist = namelist
         else:
             raise TypeError('{0} is not a namelist!'.format(namelist))
-        super().__init__(instream, infile=None)
+        self.__text_stream = TextStream(instream, infile=None)
 
     def lex_namelist(self) -> Dict[str, str]:
         """
@@ -132,8 +128,8 @@ class NamelistLexer(TextStream):
         :return: a dictionary that stores the inputted information of the intended card
         """
         namelist_names = set(self.namelist.names)
-        parsed_result = dict()
-        generator = self.stream_generator()
+        result = dict()
+        generator: Iterator[str] = self.__text_stream.stream_generator()
         for line in generator:  # Read each line in the namelist until '/'
             s: str = line.strip()
             # Use '=' as the delimiter, split the stripped line into a key and a value.
@@ -152,7 +148,7 @@ class NamelistLexer(TextStream):
                 k_prefix = k
             if k_prefix in namelist_names:
                 # Only capture the value, ignore possible comment
-                parsed_result.update({k: namelist_parameters[self.namelist.caption](k_prefix, v.strip())})
+                result.update({k: v.strip()})
             else:
-                raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k, self.namelist.caption))
-        return parsed_result
+                raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k_prefix, self.namelist.caption))
+        return result

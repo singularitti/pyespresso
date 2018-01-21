@@ -240,17 +240,17 @@ class NamelistDict(addict.Dict):
 
 # =================================== instances of the crucial class ``Namelist`` ===================================
 # These namelists are constants, do not change them.
-DEFAULT_CONTROL_NAMELIST: DefaultNamelist = DefaultNamelist('CONTROL', CONTROL_NAMELIST_DICT)
+DEFAULT_CONTROL_NAMELIST: DefaultNamelist = DefaultNamelist('CONTROL', CONTROL_NAMELIST_ODICT)
 
-DEFAULT_SYSTEM_NAMELIST: DefaultNamelist = DefaultNamelist('SYSTEM', SYSTEM_NAMELIST_DICT)
+DEFAULT_SYSTEM_NAMELIST: DefaultNamelist = DefaultNamelist('SYSTEM', SYSTEM_NAMELIST_ODICT)
 
-DEFAULT_ELECTRONS_NAMELIST: DefaultNamelist = DefaultNamelist('ELECTRONS', ELECTRONS_NAMELIST_DICT)
+DEFAULT_ELECTRONS_NAMELIST: DefaultNamelist = DefaultNamelist('ELECTRONS', ELECTRONS_NAMELIST_ODICT)
 
-DEFAULT_IONS_NAMELIST: DefaultNamelist = DefaultNamelist('IONS', IONS_NAMELIST_DICT)
+DEFAULT_IONS_NAMELIST: DefaultNamelist = DefaultNamelist('IONS', IONS_NAMELIST_ODICT)
 
-DEFAULT_CELL_NAMELIST: DefaultNamelist = DefaultNamelist('CELL', CELL_NAMELIST_DICT)
+DEFAULT_CELL_NAMELIST: DefaultNamelist = DefaultNamelist('CELL', CELL_NAMELIST_ODICT)
 
-DEFAULT_INPUTPH_NAMELIST = DefaultNamelist('INPUTPH', INPUTPH_NAMELIST_DICT)
+DEFAULT_INPUTPH_NAMELIST = DefaultNamelist('INPUTPH', INPUTPH_NAMELIST_ODICT)
 
 
 # ================================================= end of this block =================================================

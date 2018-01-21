@@ -5,13 +5,13 @@ from os.path import join, pardir
 from unittest import TestCase
 
 from pyque.core.batch_input import BatchInput
-from pyque.lexer.batch import BatchTemplateParser
+from pyque.lexer.batch import BatchTemplateLexer
 
 
 class BatchInputTester(TestCase):
     def setUp(self):
         self.infile = join(pardir, 'data/sample_batch_template')
-        self.template_dict = BatchTemplateParser(infile=self.infile).to_dict()
+        self.template_dict = BatchTemplateLexer(infile=self.infile).to_dict()
         self.bi = BatchInput('slurm')
 
     def test_shebang(self):

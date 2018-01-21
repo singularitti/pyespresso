@@ -10,7 +10,7 @@ import unittest
 
 import numpy as np
 
-import calculators.phonon as mc
+import pyque.calculator.phonon as mc
 
 
 class TestCompute(unittest.TestCase):
@@ -39,7 +39,3 @@ class TestCompute(unittest.TestCase):
         # np.testing.assert_array_almost_equal(self.gp.generate_reciprocal_path([4, 4, 4, 3, 3]),
         #                                      self.gp.generate_reciprocal_path(np.array([4, 4, 4, 3, 3])))
         self.gp.generate_q_path(100, 'phonon_data/qpts')
-
-
-if __name__ == "__main__":
-    unittest.main()

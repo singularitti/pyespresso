@@ -3,10 +3,9 @@
 
 from unittest import TestCase
 
-from meta.jsons import JsonStr
+from pyque.meta.jsons import JsonStr
 
-instr = \
-    """
+instr = """\
     {
       "&control": {
         "calculation": "scf",

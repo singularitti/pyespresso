@@ -9,7 +9,7 @@ import numpy as np
 from numpy.linalg import inv
 
 from pyque.tools.tensors import crystal_classes
-from pyque.lexer.elasticity import ElasticityOutputParser
+from pyque.lexer.elasticity import ElasticityOutputLexer
 
 
 class ElasticityCalculator:
@@ -20,7 +20,7 @@ class ElasticityCalculator:
 
         :param file: a file giving an 6x6 elastic tensor under each pressure.
         """
-        eor = ElasticityOutputParser(file)
+        eor = ElasticityOutputLexer(file)
         self.pressures, self.elastic_tensors = eor.read_elastic_tensor()
         self.compliance_tensors = [self.create_compliance_tensor(e) for e in self.elastic_tensors]
 

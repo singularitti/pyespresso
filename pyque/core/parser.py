@@ -49,8 +49,8 @@ class PWscfInputParser:
         self.input_obj.cell_parameters = self.lexer.parse_cell_parameters()
 
     def auto_build(self):
-        provided_namelists = self.lexer.namelist_identifier_positions.keys()
-        provided_cards = self.lexer.card_identifier_positions.keys()
+        provided_namelists = self.lexer.__namelist_identifier_positions.keys()
+        provided_cards = self.lexer.__card_identifier_positions.keys()
         methods_involved = [self.parse_dict[identifiers] for identifiers in provided_namelists] + [
             self.parse_dict[identifiers] for identifiers in provided_cards]
         for method in methods_involved:
