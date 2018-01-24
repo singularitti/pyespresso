@@ -11,17 +11,17 @@
 
 import re
 from abc import ABC, abstractmethod
-from typing import Union, Dict
+from typing import Union, Dict, Set
 
 import addict
 from lazy_property import LazyWritableProperty
 
-from pyque.default_configuerations.namelist import *
+from pyque.default_configuerations.namelist import TYPED_NAMELISTS, NAMELISTS_NAMES
 from pyque.tools.strings import string_to_general_float, all_string_like
 
 # ========================================= What can be exported? =========================================
-__all__ = ['LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin', 'NamelistVariable',
-           'CONTROLNamelistVariable', 'SYSTEMNamelistVariable',
+__all__ = ['LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin', 'namelist_variable',
+           'NamelistVariable', 'CONTROLNamelistVariable', 'SYSTEMNamelistVariable',
            'ELECTRONSNamelistVariable', 'IONSNamelistVariable', 'CELLNamelistVariable', 'INPUTPHNamelistVariable']
 
 # ========================================= type alias =========================================
@@ -47,6 +47,42 @@ def is_namelist_variable(obj: object):
     return False
 
 
+def in_namelist(name: str, group_name: str) -> bool:
+    """
+
+
+    :param name:
+    :param group_name:
+    :return:
+
+    .. doctest::
+
+        >>> in_namelist('calculation', 'CONTROL')
+        True
+        >>> in_namelist('celldm(1)', 'SYSTEM')
+        True
+    """
+    # Some names have numbers as their labels, like 'celldm(1)'. So we need to separate them.
+    _: Set[str] = NAMELISTS_NAMES[group_name.upper()]
+    if '(' in name:
+        # Only take the part before the first '('
+        name_prefix = re.match("(\w+)\(?(\d*)\)?", name, flags=re.IGNORECASE).group(1)
+    else:
+        name_prefix = name
+    if name_prefix.lower() in _:
+        return True
+    return False
+
+
+def namelist_variable(group_name: str, name: str, value: NamelistVariableValue):
+    return {'CONTROL': CONTROLNamelistVariable,
+            'SYSTEM': SYSTEMNamelistVariable,
+            'ELECTRONS': ELECTRONSNamelistVariable,
+            'IONS': IONSNamelistVariable,
+            'CELL': CELLNamelistVariable,
+            'INPUTPH': INPUTPHNamelistVariable}[group_name](name, value)
+
+
 def builtin_to_qe_string(obj: object):
     """
     An instance of a builtin type can be converted to a Quantum ESPRESSO legal string.
@@ -61,8 +97,10 @@ def builtin_to_qe_string(obj: object):
         if obj:  # If *obj* is ``True``.
             return '.true.'
         return '.false.'  # If *obj* is ``False``.
-    elif isinstance(obj, (int, float, str)):
+    elif isinstance(obj, (int, str)):
         return str(obj)
+    elif isinstance(obj, float):
+        return re.sub('[eE]', 'D', str(obj))
     else:
         raise TypeError("Invalid type '{0}' is given!".format(type(obj).__name__))
 
@@ -109,17 +147,11 @@ def qe_string_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
 
 # ========================================= define some crucial class =========================================
 class LazyNamelist(LazyWritableProperty):
-    def __set__(self, instance, value):
-        """
-
-        :param instance: For here it can be a PWscfInput instance.
-        :param value: should be a dict or NamelistDict instance.
-        :return:
-        """
-        if isinstance(value, dict):
-            super().__set__(instance, NamelistDict(value))
-        else:
-            raise ValueError('You should set it to be a dict!')
+    def to_text(self):
+        d = dict()
+        for k, v in self.method.items():
+            d.update({k: builtin_to_qe_string(v)})
+        return '\n'.join(list(d.items()))
 
 
 class NamelistDict(addict.Dict):
@@ -129,21 +161,12 @@ class NamelistDict(addict.Dict):
         except ValueError:
             raise KeyError("The name '{0}' you set does not already exist!".format(name))
 
-    @LazyWritableProperty
-    def _group_name(self):
-        pass
-
-    def eval(self):
-        d = dict()
-        for k, v in self.items():
-            d.update({k: v.__class__(v.name, v.value)})
-        return NamelistDict(d)
+    def eval(self) -> None:
+        for v in self.values():
+            v.eval()
 
     def to_dict(self):
-        d = dict()
-        for k, v in self.items():
-            d.update({k: v.to_dict()})
-        return d
+        return super(NamelistDict, self).to_dict()
 
     def to_text(self):
         lines = []
@@ -190,6 +213,8 @@ class NamelistVariable(NamelistVariableABC):
         if not isinstance(value, (int, float, bool, str)):
             raise TypeError("Argument *value* is of wrong type '{0}'!".format(type(value)))
         # Validity checking
+        group_name = group_name.upper()  # In case that users input wrong case.
+        name = name.lower()  # In case that users input wrong case.
         if group_name not in {'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL', 'INPUTPH'}:
             raise ValueError("Unknown namelist caption '{0}' is given!".format(group_name))
         # Some names have numbers as their labels, like 'celldm(1)'. So we need to separate them.
@@ -217,11 +242,15 @@ class NamelistVariable(NamelistVariableABC):
 
     @property
     def value(self) -> NamelistVariableValue:
-        return self.__value
+        return qe_string_to_builtin(self.__value, self.default_type)
 
     @value.setter
     def value(self, new_value: NamelistVariableValue) -> None:
-        self.__value = qe_string_to_builtin(new_value, self.default_type)
+        self.__value = new_value
+
+    def eval(self) -> None:
+        # This will change the value!
+        self.__value = qe_string_to_builtin(self.__value, self.default_type)
 
     @property
     def in_namelist(self) -> str:
@@ -240,6 +269,11 @@ class NamelistVariable(NamelistVariableABC):
     def __ne__(self, other) -> bool:
         attributes = ['name', 'default_type', 'value', 'in_namelist']
         return any(getattr(self, attr) != getattr(other, attr) for attr in attributes)
+
+    def __str__(self):
+        return str(self.value)
+
+    __repr__ = __str__
 
 
 class CONTROLNamelistVariable(NamelistVariable):

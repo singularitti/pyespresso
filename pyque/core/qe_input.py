@@ -4,6 +4,7 @@ import os
 import re
 import warnings
 from typing import *
+import io
 
 import numpy as np
 from json_tricks import dump, dumps
@@ -52,72 +53,76 @@ class _OptionWithWarning(LabeledDescriptor):
 
 # ========================================= most important data structures =========================================
 class PWscfInput:
-    def _receive(self, value):
-        if isinstance(value, NamelistDict):
-            print(value._group_name)
-            setattr(self, _input_attr[], value)
-
     @LazyNamelist
-    def control_namelist(self):
+    def control_namelist(self) -> NamelistDict:
         """
         Input variables that control the flux of the calculation and the amount of I/O on disk and on the screen.
 
         :return:
         """
-        pass
+        return NamelistDict()
 
     @LazyNamelist
-    def system_namelist(self):
+    def system_namelist(self) -> NamelistDict:
         """
         Input variables that specify the system under study.
 
         :return:
         """
-        pass
+        return NamelistDict()
 
     @LazyNamelist
-    def electrons_namelist(self):
+    def electrons_namelist(self) -> NamelistDict:
         """
         input variables that control the algorithms used to reach the self-consistent solution of KS
         equations for the electrons.
 
         :return:
         """
-        pass
+        return NamelistDict()
+
+    @LazyNamelist
+    def ions_namelist(self) -> NamelistDict:
+        return NamelistDict()
+
+    @LazyNamelist
+    def cell_namelist(self) -> NamelistDict:
+        return NamelistDict()
 
     @LazyCard
-    def cell_parameters(self) -> np.ndarray:
-        pass
+    def cell_parameters(self) -> Dict:
+        return {'option': None, 'value': None}
 
     @LazyCard
-    def atomic_species(self) -> List[NamedTuple]:
+    def atomic_species(self) -> Dict:
         """
         name, mass and pseudopotential used for each atomic species present in the system
         :return:
         """
-        pass
+        return {'option': None, 'value': None}
 
     @LazyCard
-    def atomic_positions(self) -> List[NamedTuple]:
+    def atomic_positions(self) -> Dict:
         """
         type and coordinates of each atom in the unit cell
         :return:
         """
-        pass
+        return {'option': None, 'value': None}
 
     @LazyWritableProperty
-    def k_points(self) -> NamedTuple:
+    def k_points(self) -> Dict:
         """
         coordinates and weights of the k-points used for BZ integration
         :return:
         """
-        pass
+        return {'option': None, 'value': None}
 
     def eval(self):
         for attr in dir(self):
-            if attr.endswith('_namelist'):
-                setattr(self, attr, getattr(self, attr).eval())
-        return self
+            if hasattr(attr, 'eval'):
+                if getattr(self, attr) is None:
+                    continue
+                getattr(self, '_' + attr).eval()
 
     def to_dict(self):
         d = dict()
@@ -128,32 +133,46 @@ class PWscfInput:
                 d.update({attr: getattr(self, attr)})
         return d
 
-    # def to_text_file(self, outfile: str = '', path_prefix: Optional[str] = '') -> None:
-    #     outfile_path = path_generator(outfile, path_prefix)
-    #
-    #     k_points: AutomaticKPoints = self.k_points
-    #
-    #     with open(outfile_path, 'w') as f:
-    #         f.write("&CONTROL\n")
-    #         f.write(self.control_namelist.to_text())
-    #         f.write("\n/\n&SYSTEM\n")
-    #         f.write(self.system_namelist.to_text())
-    #         f.write("\n/\n&ELECTRONS\n")
-    #         f.write(self.electrons_namelist.to_text())
-    #         f.write("\n/\nCELL_PARAMETERS\n")
-    #         f.write(re.sub("[\[\]]", ' ', np.array2string(self.cell_parameters[0],
-    #                                                       formatter={'float_kind': lambda x: "{:20.10f}".format(x)})))
-    #         f.write("\nATOMIC_SPECIES\n")
-    #         for row in self.atomic_species:
-    #             f.write(' '.join(map(str, row)) + "\n")
-    #         f.write("ATOMIC_POSITIONS {{ {0} }}\n".format(self.atomic_positions_option))
-    #         for row in self.atomic_positions:
-    #             f.write(re.sub("[\[\]]", '', ' '.join(map(str, row)) + "\n"))
-    #         f.write("K_POINTS {{ {0} }}\n".format(self.k_points_option))
-    #         f.write(' '.join(map(str, (k_points.grid + k_points.offsets))))
-    #
-    #     print("Object '{0}' is successfully written to file {1}!".format(type(self).__name__,
-    #                                                                      os.path.abspath(outfile_path)))
+    def to_text(self):
+        s = list()
+        s.append("&CONTROL")
+        s.append(self.control_namelist.to_text())
+        s.append("/\n&SYSTEM")
+        s.append(self.system_namelist.to_text())
+        s.append("/\n&ELECTRONS")
+        s.append(self.electrons_namelist.to_text())
+        s.append("/\n&IONS")
+        if self.ions_namelist is None:
+            pass
+        else:
+            s.append(self.ions_namelist.to_text())
+        s.append("/\n&CELL")
+        if self.cell_namelist is None:
+            pass
+        else:
+            s.append(self.cell_namelist.to_text())
+        s.append("/\nATOMIC_SPECIES")
+        for row in self.atomic_species['value']:
+            s.append(str(row))
+        s.append("ATOMIC_POSITIONS {{ {0} }}".format(self.atomic_positions['option']))
+        for row in self.atomic_positions['value']:
+            s.append(str(row))
+        s.append("K_POINTS {{ {0} }}".format(self.k_points['option']))
+        s.append(str(self.k_points['value']))
+        if self.cell_parameters is None:
+            pass
+        else:
+            s.append("CELL_PARAMETERS {{ {0} }}".format(self.cell_parameters['option']))
+            s.append(re.sub("[\[\]']", ' ', np.array2string(self.cell_parameters['value'],
+                                                            formatter={'float_kind': lambda x: '{:20.10f}'.format(x)})))
+        return '\n'.join(s)
+
+    def to_text_file(self, outfile: str = '', path_prefix: Optional[str] = '') -> None:
+        outfile_path = path_generator(outfile, path_prefix)
+        with open(outfile_path, 'w') as f:
+            f.write(self.to_text())
+        print("Object '{0}' is successfully written to file {1}!".format(type(self).__name__,
+                                                                         os.path.abspath(outfile_path)))
 
     def to_json(self) -> None:
         return dumps(self.to_dict())
@@ -174,7 +193,9 @@ class VCRelaxInput(PWscfInput):
     @LazyNamelist
     def ions_namelist(self):
         """
-        needed when ATOMS MOVE! IGNORED otherwise ! input variables that control ionic motion in molecular dynamics run or structural relaxation.
+        needed when ATOMS MOVE! IGNORED otherwise ! input variables that control ionic motion in
+        molecular dynamics run or structural relaxation.
+
         :return:
         """
         pass
@@ -182,7 +203,9 @@ class VCRelaxInput(PWscfInput):
     @LazyNamelist
     def cell_namelist(self):
         """
-        needed when CELL MOVES! IGNORED otherwise ! input variables that control the cell-shape evolution in a variable-cell-shape MD or structural relaxation.
+        needed when CELL MOVES! IGNORED otherwise ! input variables that control the cell-shape evolution
+        in a variable-cell-shape MD or structural relaxation.
+
         :return:
         """
         pass

@@ -10,7 +10,7 @@ from typing import *
 import numpy as np
 from lazy_property import LazyProperty
 
-from pyque.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints
+from pyque.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints, CellParameters
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
@@ -364,9 +364,8 @@ class PWscfInputLexer:
                 raise RuntimeError("No match found! Check you 'CELL_PARAMETERS' line!")
             option = match.group(1)
             if option == '':
-                warnings.warn(
-                    'Not specifying unit is DEPRECATED and will no longer be allowed in the future!',
-                    category=DeprecationWarning)
+                warnings.warn('Not specifying unit is DEPRECATED and will no longer be allowed in the future!',
+                              category=DeprecationWarning)
                 option = 'bohr'
             for line in self.get_cell_parameters()[1:]:
                 if line.strip() == '/':
@@ -374,7 +373,7 @@ class PWscfInputLexer:
                 if re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()):
                     v1, v2, v3 = re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()).groups()
                     cell_params.append([v1, v2, v3])
-            return cell_params, option
+            return np.array(cell_params), option
 
 
 # ====================================== The followings are output readers. ======================================

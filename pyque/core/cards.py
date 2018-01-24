@@ -9,13 +9,17 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
+import re
 from collections import namedtuple
+
+import numpy as np
+
 from pyque.tools.numbers import all_integer_like, all_float_like, is_float
 from pyque.tools.strings import strings_to_integers, all_string_like, is_string_like, string_to_general_float, \
     strings_to_floats
 
 # ========================================= What can be exported? =========================================
-__all__ = ['AtomicSpecies', 'AtomicPosition', 'AutomaticKPoints']
+__all__ = ['AtomicSpecies', 'AtomicPosition', 'AutomaticKPoints', 'CellParameters']
 
 
 class AtomicSpecies(namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotential'])):
@@ -32,6 +36,11 @@ class AtomicSpecies(namedtuple('AtomicSpecies', ['name', 'mass', 'pseudopotentia
         else:
             raise TypeError
         return AtomicSpecies(self.name, mass, self.pseudopotential)
+
+    def __str__(self) -> str:
+        return '{0} {1} {2}'.format(self.name, self.mass, self.pseudopotential)
+
+    __repr__ = __str__
 
 
 class AutomaticKPoints(namedtuple('AutomaticKPoints', ['grid', 'offsets'])):
@@ -52,6 +61,11 @@ class AutomaticKPoints(namedtuple('AutomaticKPoints', ['grid', 'offsets'])):
         else:
             raise TypeError
         return AutomaticKPoints(grid, offsets)
+
+    def __str__(self) -> str:
+        return '{0} {1}'.format(' '.join(list(map(str, self.grid))), ' '.join(list(map(str, self.offsets))))
+
+    __repr__ = __str__
 
 
 class AtomicPosition(namedtuple('AtomicPosition', ['name', 'pos', 'if_pos'])):
@@ -81,3 +95,15 @@ class AtomicPosition(namedtuple('AtomicPosition', ['name', 'pos', 'if_pos'])):
         else:
             raise TypeError
         return AtomicPosition(self.name, pos, if_pos)
+
+    def __str__(self) -> str:
+        return '{0} {1} {2}'.format(self.name, ' '.join(list(map(str, self.pos))),
+                                    ' '.join(list(map(str, self.if_pos))))
+
+    __repr__ = __str__
+
+
+class CellParameters:
+    def __str__(self):
+        return re.sub("[\[\]]", ' ', np.array2string(self,
+                                                     formatter={'float_kind': lambda x: "{:20.10f}".format(x)}))
