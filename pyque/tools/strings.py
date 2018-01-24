@@ -214,7 +214,7 @@ def is_string_like(obj: object) -> bool:
     return isinstance(obj, str)
 
 
-def all_string_like(iterable: Iterable) -> bool:
+def all_string_like(iterable: Iterable[object]) -> bool:
     """
     If any element of an iterable is not a string, return `True`.
 

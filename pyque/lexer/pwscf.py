@@ -10,10 +10,7 @@ from typing import *
 import numpy as np
 from lazy_property import LazyProperty
 
-from pyque.core.cards import AtomicSpecies, AtomicPosition, KPoints
-from pyque.lexer.simple import SimpleLexer, NamelistLexer
-from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, DEFAULT_SYSTEM_NAMELIST, DEFAULT_ELECTRONS_NAMELIST, \
-    DEFAULT_IONS_NAMELIST, DEFAULT_CELL_NAMELIST
+from pyque.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
@@ -29,39 +26,14 @@ class RangeIndices(namedtuple('RangeIndices', ['begin', 'end'])):
 # ========================================= define useful functions =========================================
 
 
-# ====================================== The followings are input readers. ======================================
-class CONTROLNamelistLexer(NamelistLexer):
-    def __init__(self, instream: List[str]):
-        super(CONTROLNamelistLexer, self).__init__(instream, DEFAULT_CONTROL_NAMELIST)
-
-
-class SYSTEMNamelistLexer(NamelistLexer):
-    def __init__(self, instream: List[str]):
-        super(SYSTEMNamelistLexer, self).__init__(instream, DEFAULT_SYSTEM_NAMELIST)
-
-
-class ELECTRONSNamelistLexer(NamelistLexer):
-    def __init__(self, instream: List[str]):
-        super(ELECTRONSNamelistLexer, self).__init__(instream, DEFAULT_ELECTRONS_NAMELIST)
-
-
-class IONSNamelistLexer(NamelistLexer):
-    def __init__(self, instream: List[str]):
-        super(IONSNamelistLexer, self).__init__(instream, DEFAULT_IONS_NAMELIST)
-
-
-class CELLNamelistLexer(NamelistLexer):
-    def __init__(self, instream: List[str]):
-        super(CELLNamelistLexer, self).__init__(instream, DEFAULT_CELL_NAMELIST)
-
-
+# ====================================== The followings are core data structures. ======================================
 class PWscfInputLexer:
     """
     This class reads a standard Quantum ESPRESSO PWscf input file or string in, and lex it.
     """
 
     def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
-        self.linesep = "[\r\n]"
+        self.linesep = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
         self.namelist_sep = "/\s*[\r\n]"
         self.__text_stream = TextStream(instream=instream, infile=infile)
 
@@ -141,11 +113,13 @@ class PWscfInputLexer:
 
         :return: All namelists found in the input.
         """
-        keys = set(self.__get_namelist_identifier_positions().keys())
-        if keys < {'&CONTROL', '&SYSTEM', '&ELECTRONS'}:
-            warnings.warn('Not enough necessary namelists given!')
+        keys = list(self.__get_namelist_identifier_positions().keys())
+        for i, k in enumerate(keys):
+            if not k == self.namelist_identifiers[i]:
+                # Namelists must appear in the order given below.
+                raise RuntimeError("Namelists Must be in order 'CONTROL', 'SYSTEM', 'ELECTRONS', 'IONS', 'CELL'!")
         else:
-            return keys
+            return set(map(lambda s: s[1:], keys))
 
     @LazyProperty
     def cards_found(self) -> Optional[Set[str]]:
@@ -157,6 +131,7 @@ class PWscfInputLexer:
         """
         keys = set(self.__get_card_identifier_positions().keys())
         if keys < {'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS'}:
+            # 'ATOMIC_SPECIES', 'ATOMIC_POSITIONS', and 'K_POINTS' are necessary cards.
             warnings.warn('Not enough necessary namelists given!')
         else:
             return keys
@@ -165,34 +140,36 @@ class PWscfInputLexer:
         pass
         # return self._section_with_bounds('!', '\R', include_heading, include_ending)
 
-    def __get_namelist(self, identifier) -> Optional[List[str]]:
-        if identifier in self.namelists_found:
+    def __get_namelist(self, group_name) -> Optional[List[str]]:
+        # TODO: This will fail when ',' is inside a value of a parameter.
+        identifier = '&' + group_name
+        if group_name in self.namelists_found:
             begin, end = self.__get_namelist_identifier_positions()[identifier]
             return re.split(self.linesep, self.__text_stream.contents[begin:end])
         else:
-            warnings.warn("Identifier '{0}' not found in input!".format(identifier), stacklevel=2)
+            warnings.warn("Identifier '{0}' is not found in input!".format(identifier), stacklevel=2)
 
     def __get_card(self, identifier) -> Optional[List[str]]:
         if identifier in self.cards_found:
             begin, end = self.__get_card_identifier_positions()[identifier]
             return re.split(self.linesep, self.__text_stream.contents[begin:end])
         else:
-            warnings.warn("Identifier '{0}' not found in input!".format(identifier), stacklevel=2)
+            warnings.warn("Identifier '{0}' is not found in input!".format(identifier), stacklevel=2)
 
     def get_control_namelist(self):
-        return self.__get_namelist('&CONTROL')
+        return self.__get_namelist('CONTROL')
 
     def get_system_namelist(self):
-        return self.__get_namelist('&SYSTEM')
+        return self.__get_namelist('SYSTEM')
 
     def get_electrons_namelist(self):
-        return self.__get_namelist('&ELECTRONS')
+        return self.__get_namelist('ELECTRONS')
 
     def get_ions_namelist(self):
-        return self.__get_namelist('&IONS')
+        return self.__get_namelist('IONS')
 
     def get_cell_namelist(self):
-        return self.__get_namelist('&CELL')
+        return self.__get_namelist('CELL')
 
     def get_atomic_species(self):
         return self.__get_card('ATOMIC_SPECIES')
@@ -215,13 +192,34 @@ class PWscfInputLexer:
     def get_atomic_forces(self):
         return self.__get_card('ATOMIC_FORCES')
 
+    def lex_namelist(self, group_name: str) -> Optional[Dict[str, str]]:
+        """
+        A generic method to read a namelist.
+        Note you cannot write more than one parameter in each line!
+
+        :return: a dictionary that stores the inputted information of the intended card
+        """
+        result = dict()
+        for line in self.__get_namelist(group_name):  # Read each line in the namelist until '/'
+            s: str = line.strip()
+            # Use '=' as the delimiter, split the stripped line into a key and a value.
+            # Skip this line if a line starts with '&' (namelist caption) or '!' (comment) or
+            # this line is empty ('').
+            if s.startswith('&') or s.startswith('!') or not s:
+                continue
+            k, v = s.split('=', maxsplit=1)
+            k: str = k.strip()
+            v: str = v.strip().rstrip(',').strip().split('!')[0]  # Ignore trailing comma of the line
+            result.update({k: v.strip()})
+        return result
+
     def lex_control_namelist(self) -> Dict[str, str]:
         """
         Read everything that falls within 'CONTROL' namelist.
 
         :return: A dictionary that stores the information of 'CONTROL' namelist.
         """
-        return CONTROLNamelistLexer(self.get_control_namelist()).lex_namelist()
+        return self.lex_namelist('&CONTROL')
 
     def lex_system_namelist(self) -> Dict[str, str]:
         """
@@ -229,7 +227,7 @@ class PWscfInputLexer:
 
         :return: A dictionary that stores the inputted information of 'SYSTEM' namelist.
         """
-        return SYSTEMNamelistLexer(self.get_system_namelist()).lex_namelist()
+        return self.lex_namelist('&SYSTEM')
 
     def lex_electrons_namelist(self) -> Dict[str, str]:
         """
@@ -237,21 +235,41 @@ class PWscfInputLexer:
 
         :return: A dictionary that stores the information of 'ELECTRONS' namelist.
         """
-        return ELECTRONSNamelistLexer(self.get_electrons_namelist()).lex_namelist()
+        return self.lex_namelist('&ELECTRONS')
+
+    def lex_ions_namelist(self) -> Dict[str, str]:
+        """
+        Read everything that falls within 'IONS' namelist.
+
+        :return: A dictionary that stores the information of 'IONS' namelist.
+        """
+        return self.lex_namelist('&IONS')
+
+    def lex_cell_namelist(self) -> Dict[str, str]:
+        """
+        Read everything that falls within 'CELL' namelist.
+
+        :return: A dictionary that stores the information of 'IONS' namelist.
+        """
+        return self.lex_namelist('&CELL')
 
     def lex_atomic_species(self) -> Optional[List[AtomicSpecies]]:
-        atomic_species = []
-        for line in self.get_atomic_species():
-            # Skip the title line, any empty line, or a line of comment.
-            if 'ATOMIC_SPECIES' in line.upper() or not line.strip() or line.strip().startswith('!'):
-                continue
-            match = re.match(r"(\S+)\s*(-?\d*\.?\d*)\s*(\S+)\s*", line.strip())
-            if match is None:
-                warnings.warn("No match found in the line {0}!".format(line))
-            else:
-                name, mass, pseudopotential = match.groups()
-                atomic_species.append(AtomicSpecies(name, mass, pseudopotential))
-        return atomic_species
+        s: Optional[List[str]] = self.get_atomic_species()
+        if not s:  # If the returned result is ``None``.
+            warnings.warn("'ATOMIC_SPECIES' not found in input!", stacklevel=2)
+        else:
+            atomic_species = []
+            for line in s[1:]:
+                # Skip the title line, any empty line, or a line of comment.
+                if not line.strip() or line.strip().startswith('!'):
+                    continue
+                match = re.match(r"(\S+)\s*(-?\d*\.?\d*)\s*(\S+)\s*", line.strip())
+                if match is None:
+                    warnings.warn("No match found in the line {0}!".format(line))
+                else:
+                    name, mass, pseudopotential = match.groups()
+                    atomic_species.append(AtomicSpecies(name, mass, pseudopotential))
+            return atomic_species
 
     def lex_atomic_positions(self) -> Optional[Tuple[List[AtomicPosition], str]]:
         s: Optional[List[str]] = self.get_atomic_positions()
@@ -273,23 +291,25 @@ class PWscfInputLexer:
                 # If this line is an empty line or a line of comment.
                 if line.strip() == '' or line.strip().startswith('!'):
                     continue
+                if line.strip() == '/':
+                    raise RuntimeError('Do not start any line in cards with a "/" character!')
                 if re.match("{.*}", line):
                     match = re.match(
                         "(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*{\s*([01])?\s*([01])?\s*([01])?\s*}",
                         line.strip())
                     name, x, y, z, if_pos1, if_pos2, if_pos3 = match.groups()
-                    atomic_positions.append(AtomicPosition(name, x, y, z, if_pos1, if_pos2, if_pos3))
+                    atomic_positions.append(AtomicPosition(name, [x, y, z], [if_pos1, if_pos2, if_pos3]))
                 else:
                     match = re.match("(\w+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)\s*(-?\d+\.\d+)", line.strip())
                     if match is None:
                         warnings.warn("No match found in the line {0}!".format(line))
                     else:
                         name, x, y, z = match.groups()
-                        atomic_positions.append(AtomicPosition(name, x, y, z, 1, 1, 1))
+                        atomic_positions.append(AtomicPosition(name, [x, y, z], ['1', '1', '1']))
             return atomic_positions, option
 
     # TODO: finish this method
-    def lex_k_points(self) -> Union[None, str, Tuple[KPoints, str]]:
+    def lex_k_points(self) -> Union[None, str, Tuple[AutomaticKPoints, str]]:
         """
         Find 'K_POINTS' line in the file, and read the k-mesh.
         We allow options and comments on the same line as 'K_POINTS':
@@ -315,11 +335,13 @@ class PWscfInputLexer:
             for line in s[1:]:
                 if line.strip() == '' or line.strip().startswith('!'):
                     continue
+                if line.strip() == '/':
+                    raise RuntimeError('Do not start any line in cards with a "/" character!')
                 line = line.split()
                 grid, offsets = line[0:3], line[3:7]
-                return KPoints(grid=grid, offsets=offsets), option
+                return AutomaticKPoints(grid=grid, offsets=offsets), option
         elif option in {'tpiba', 'crystal', 'tpiba_b', 'crystal_b', 'tpiba_c', 'crystal_c'}:
-            pass
+            return NotImplemented
         else:
             raise ValueError("Unknown option '{0}' given!".format(option))
 
@@ -347,6 +369,8 @@ class PWscfInputLexer:
                     category=DeprecationWarning)
                 option = 'bohr'
             for line in self.get_cell_parameters()[1:]:
+                if line.strip() == '/':
+                    raise RuntimeError('Do not start any line in cards with a "/" character!')
                 if re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()):
                     v1, v2, v3 = re.match("(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*(-?\d*\.\d*)\s*", line.strip()).groups()
                     cell_params.append([v1, v2, v3])
@@ -354,7 +378,33 @@ class PWscfInputLexer:
 
 
 # ====================================== The followings are output readers. ======================================
-class PWscfOutputLexer(SimpleLexer):
+class PWscfOutputLexer:
+    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None, encoding: Optional[str] = None,
+                 newline='\n'):
+        self.text_stream = TextStream(instream, infile, encoding, newline)
+
+    def _match_one_pattern(self, pattern: str, *args, **kwargs) -> Union[None, Any, List]:
+        """
+        This method matches a pattern which exists only once in the file.
+
+        :param pattern: a regular expression that you want to match
+        :param args: a wrapper function which determines the returned type of value
+        :return: Determined by the `wrapper`, the value you want to grep out from pyque.the file.
+        """
+        s = self.text_stream.contents()
+        match: Optional[List[str]] = re.findall(pattern, s,
+                                                **kwargs)  # `match` is either an empty list or a list of strings.
+        if match:
+            if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
+                return match
+            elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
+                wrapper, = args
+                return [wrapper(m) for m in match]
+            else:
+                raise TypeError('Multiple wrappers are given! Only one should be given!')
+        else:  # If no match is found
+            print('Pattern {0} not found in string {1}!'.format(pattern, s))
+
     def lex_lattice_parameter(self) -> float:
         """
         Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.
@@ -474,13 +524,12 @@ class PWscfOutputLexer(SimpleLexer):
         stress_atomic = np.zeros((3, 3))
         stress_kbar = np.zeros((3, 3))
         stress = {'atomic': stress_atomic, 'kbar': stress_kbar}
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if 'total   stress' in line:
-                    for i in range(3):  # Read a 3x3 matrix
-                        line = f.readline()
-                        stress_atomic[i][:] = list(map(float, line.split()))[0:3]
-                        stress_kbar[i][:] = list(map(float, line.split()))[3:6]
+        for line in self.text_stream.stream_generator():
+            if 'total   stress' in line:
+                for i in range(3):  # Read a 3x3 matrix
+                    line = next(line)
+                    stress_atomic[i][:] = list(map(float, line.split()))[0:3]
+                    stress_kbar[i][:] = list(map(float, line.split()))[3:6]
         return stress[unit]
 
     def lex_k_coordinates(self, out_file: str, coordinate_system: Optional[str] = 'crystal'):
@@ -504,11 +553,11 @@ class PWscfOutputLexer(SimpleLexer):
         else:
             raise ValueError("Unknown coordinate system type! It can be either 'Cartesian' or 'crystal'!")
 
-        with open(self.infile, 'r') as f, open(out_file, 'w') as g:
+        with open(out_file, 'w') as g:
             flag = False  # If flag is true, read line and match pattern, if not true, no need to match pattern
             k_count = 0  # Count how many k-points have been read
             k_num = None  # How many k-points in total, given by Quantum ESPRESSO
-            for line in f:
+            for line in self.text_stream.stream_generator():
                 if 'number of k points=' in line:
                     k_num = re.findall("number of k points=\s+(\d+)", line)[0]
                     g.write("{0}\n".format(k_num))
@@ -543,19 +592,18 @@ class PWscfOutputLexer(SimpleLexer):
                         "They maybe too close so there is no space between them! Try to add a space!"
         stress = np.zeros((3, 3))
 
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if name in line and 'stress' in line:  # Read the first line of the matrix
-                    try:
-                        stress[0][:] = list(map(float, re.findall(name + reg1, line)[0][:]))
-                    except IndexError:
-                        raise IndexError(error_message)
-                    try:
-                        for i in range(1, 3):  # Read the rest 2 lines of matrix
-                            line = f.readline()
-                            stress[i][:] = list(map(float, re.findall(reg2, line)[0][:]))
-                    except IndexError:
-                        raise IndexError(error_message)
+        for line in self.text_stream.stream_generator():
+            if name in line and 'stress' in line:  # Read the first line of the matrix
+                try:
+                    stress[0][:] = list(map(float, re.findall(name + reg1, line)[0][:]))
+                except IndexError:
+                    raise IndexError(error_message)
+                try:
+                    for i in range(1, 3):  # Read the rest 2 lines of matrix
+                        line = next(line)
+                        stress[i][:] = list(map(float, re.findall(reg2, line)[0][:]))
+                except IndexError:
+                    raise IndexError(error_message)
         return stress
 
     def lex_processors_num(self) -> int:

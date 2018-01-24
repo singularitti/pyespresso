@@ -14,7 +14,7 @@ PyQuE: the missing processing toolkit for QE
    contributing
    overview
    tutorials
-   Intro to Data Structures
+   intro
    api
    style
 

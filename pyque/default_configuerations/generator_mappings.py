@@ -2,7 +2,7 @@
 
 from functools import partialmethod
 
-from pyque.meta.namelist import CONTROLNamelistParameter, SYSTEMNamelistParameter, CELLNamelistParameter
+from pyque.meta.namelist import CONTROLNamelistVariable, SYSTEMNamelistVariable, CELLNamelistVariable
 from pyque.tools.strings import strings_to_integers
 
 
@@ -14,17 +14,17 @@ def partialclass(cls, *args, **kwds):
 
 
 PWSCF_GENERATOR_CONFIG = {
-    'pseudopotential directory': partialclass(CONTROLNamelistParameter, 'pseudo_dir'),
-    'prefix': partialclass(CONTROLNamelistParameter, 'prefix'),
-    'fictitious cell mass': partialclass(CELLNamelistParameter, 'wmass'),
-    'number of atoms': partialclass(SYSTEMNamelistParameter, 'nat'),
-    'number of atomic types': partialclass(SYSTEMNamelistParameter, 'ntyp'),
-    'energy cutoff': partialclass(SYSTEMNamelistParameter, 'ecutwfc'),
-    'density cutoff': partialclass(SYSTEMNamelistParameter, 'ecutrho'),
-    'smearing': partialclass(SYSTEMNamelistParameter, 'smearing'),
-    'occupations': partialclass(SYSTEMNamelistParameter, 'occupations'),
-    'degauss': partialclass(SYSTEMNamelistParameter, 'degauss'),
-    'scratch folder': partialclass(CONTROLNamelistParameter, 'outdir'),
+    'pseudopotential directory': partialclass(CONTROLNamelistVariable, 'pseudo_dir'),
+    'prefix': partialclass(CONTROLNamelistVariable, 'prefix'),
+    'fictitious cell mass': partialclass(CELLNamelistVariable, 'wmass'),
+    'number of atoms': partialclass(SYSTEMNamelistVariable, 'nat'),
+    'number of atomic types': partialclass(SYSTEMNamelistVariable, 'ntyp'),
+    'energy cutoff': partialclass(SYSTEMNamelistVariable, 'ecutwfc'),
+    'density cutoff': partialclass(SYSTEMNamelistVariable, 'ecutrho'),
+    'smearing': partialclass(SYSTEMNamelistVariable, 'smearing'),
+    'occupations': partialclass(SYSTEMNamelistVariable, 'occupations'),
+    'degauss': partialclass(SYSTEMNamelistVariable, 'degauss'),
+    'scratch folder': partialclass(CONTROLNamelistVariable, 'outdir'),
     'k-points': strings_to_integers,
     'shift': strings_to_integers
 }

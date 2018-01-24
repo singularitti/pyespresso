@@ -14,7 +14,7 @@ from collections import OrderedDict
 from typing import *
 from lazy_property import LazyProperty
 
-from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, CONTROLNamelistParameter
+from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, CONTROLNamelistVariable
 
 
 class PWscfInteractiveConsole:
@@ -36,12 +36,12 @@ class PWscfInteractiveConsole:
 
     def generate_control_namelist(self):
         cs = code.InteractiveConsole()
-        odict: MutableMapping[str, Tuple[Union[str, int, float, bool], str]] = DEFAULT_CONTROL_NAMELIST.typed_parameters
+        odict: MutableMapping[str, Tuple[Union[str, int, float, bool], str]] = DEFAULT_CONTROL_NAMELIST.typed_variables
         user_dict = OrderedDict()
         for name, (value, value_type) in odict.items():
             raw_val = cs.raw_input(prompt="Please input the value you want for name '{0}', \
                 the type of it is '{1}', the default value of it is {2}:".format(name, value_type, value))
-            user_dict[name] = CONTROLNamelistParameter(name, raw_val)
+            user_dict[name] = CONTROLNamelistVariable(name, raw_val)
         return user_dict
 
     # def generate_system_namelist(self):

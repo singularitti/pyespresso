@@ -633,7 +633,7 @@ class Cell:
         if is_cell(other):
             attrs = ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type',
                      '_eps', '_silent']
-            return all(_cell_initial_values_equal(self.__dict__[x], other.__dict__[x]) for x in attrs)
+            return all(_cell_initial_values_equal(getattr(self, x), getattr(other, x)) for x in attrs)
         else:
             raise TypeError('{0} is not a cell type!'.format(other))
 
@@ -650,7 +650,7 @@ class Cell:
             attrs = ['lattice', 'positions', 'numbers', 'magmoms', '_symprec', '_angle_tolerance', '_symbol_type',
                      '_eps', '_silent']
             for x in attrs:  # Find the first attribute which are not equal for the 2 cells, then exit
-                if not _cell_initial_values_equal(self.__dict__[x], other.__dict__[x]):
+                if not _cell_initial_values_equal(getattr(self, x), getattr(other, x)):
                     print('Attribute {0} for the 2 cells are not equal!'.format(x))
                     return True
             else:
@@ -707,7 +707,7 @@ class SimpleCell:
         """
         if is_simple_cell(other):
             attrs = ['lattice', 'positions', 'numbers']
-            return all(np.array_equal(self.__dict__[x], other.__dict__[x]) for x in attrs)
+            return all(np.array_equal(getattr(self, x), getattr(other, x)) for x in attrs)
         else:
             raise TypeError('{0} is not a simple cell type!'.format(other))
 
@@ -721,7 +721,7 @@ class SimpleCell:
         if is_simple_cell(other):
             attrs = ['lattice', 'positions', 'numbers']
             for x in attrs:  # Find the first attribute which are not equal for the 2 cells, then exit
-                if not np.array_equal(self.__dict__[x], other.__dict__[x]):
+                if not np.array_equal(getattr(self, x), getattr(other, x)):
                     print('Attribute {0} for the 2 simple cells are not equal!'.format(x))
                     return True
             else:

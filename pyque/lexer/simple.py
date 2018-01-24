@@ -4,19 +4,20 @@
 import re
 from typing import *
 
-from pyque.meta.namelist import DefaultNamelist, is_namelist
 from pyque.meta.text import TextStream
 
+
 # ========================================= What can be exported? =========================================
-__all__ = ['SimpleLexer', 'NamelistLexer']
 
 
 # ================================= These are some type aliases or type definitions. =================================
 
 # ========================================= define useful data structures =========================================
+class SimpleLexer:
+    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None, encoding: Optional[str] = None,
+                 newline='\n'):
+        self.text_stream = TextStream(instream, infile, encoding, newline)
 
-
-class SimpleLexer(TextStream):
     def _match_one_string(self, pattern: str, *args):
         pass
 
@@ -28,21 +29,20 @@ class SimpleLexer(TextStream):
         :param args: a wrapper function which determines the returned type of value
         :return: Determined by the `wrapper`, the value you want to grep out from pyque.the file.
         """
-        with open(self.infile, 'r') as f:
-            s = f.read()
-            match: Optional[List[str]] = re.findall(pattern, s,
-                                                    **kwargs)  # `match` is either an empty list or a list of strings.
-            if match:
-                if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
-                    return match
-                elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
-                    wrapper, = args
-                    return [wrapper(m) for m in match]
-                else:
-                    raise TypeError('Multiple wrappers are given! Only one should be given!')
-            else:  # If no match is found
-                print('Pattern {0} not found in string {1}!'.format(pattern, s))
-                return None
+        s = self.text_stream.contents()
+        match: Optional[List[str]] = re.findall(pattern, s,
+                                                **kwargs)  # `match` is either an empty list or a list of strings.
+        if match:
+            if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
+                return match
+            elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
+                wrapper, = args
+                return [wrapper(m) for m in match]
+            else:
+                raise TypeError('Multiple wrappers are given! Only one should be given!')
+        else:  # If no match is found
+            print('Pattern {0} not found in string {1}!'.format(pattern, s))
+            return None
 
     def _read_n_columns(self, n: int) -> List[List[str]]:
         """
@@ -52,17 +52,16 @@ class SimpleLexer(TextStream):
         :return: a list of `n` columns that contain the contents of each column
         """
         n_columns = [[] for _ in range(n)]
-        with open(self.infile, 'r') as f:
-            for line in f:
-                if not line.split():  # If line is ''
-                    f.readline()
-                else:
-                    sp = line.split()
-                    try:
-                        for i, column in enumerate(n_columns):
-                            column.append(sp[i])
-                    except IndexError:
-                        print('You want more columns than you have! Check your file at line {0}!'.format(line))
+        for line in self.text_stream.contents:
+            if not line.split():  # If line is ''
+                continue
+            else:
+                sp = line.split()
+                try:
+                    for i, column in enumerate(n_columns):
+                        column.append(sp[i])
+                except IndexError:
+                    print('You want more columns than you have! Check your file at line {0}!'.format(line))
         return n_columns
 
     def read_two_columns(self) -> List[List[str]]:
@@ -85,56 +84,9 @@ class SimpleLexer(TextStream):
         keys = []
         values = []
         # Add utf-8 support because we may use special characters.
-        with open(self.infile, 'r', encoding='utf-8') as f:
-            for line in f:
-                sp = line.split()
-                keys.append(sp[col_index])
-                del sp[col_index]  # Remove the indexing column
-                values.append(func(sp))
+        for line in self.text_stream.stream_generator():
+            sp = line.split()
+            keys.append(sp[col_index])
+            del sp[col_index]  # Remove the indexing column
+            values.append(func(sp))
         return dict(zip(keys, values))
-
-
-class NamelistLexer:
-    def __init__(self, instream, namelist: object):
-        """
-        Match card between card title and the following '/' character.
-
-        :param namelist: a card has many names defined by Quantum ESPRESSO
-        """
-        if is_namelist(namelist):
-            self.namelist: DefaultNamelist = namelist
-        else:
-            raise TypeError('{0} is not a namelist!'.format(namelist))
-        self.instream: List[str] = instream
-
-    def lex_namelist(self) -> Dict[str, str]:
-        """
-        A generic method to read a namelist.
-        Note you cannot write more than one parameter in each line!
-
-        :return: a dictionary that stores the inputted information of the intended card
-        """
-        namelist_names = set(self.namelist.names)
-        result = dict()
-        for line in self.instream:  # Read each line in the namelist until '/'
-            s: str = line.strip()
-            # Use '=' as the delimiter, split the stripped line into a key and a value.
-            # Skip this line if a line starts with '&' (namelist caption) or '!' (comment) or this line is empty ('').
-            if s.startswith('&') or s.startswith('!') or not s:
-                continue
-            k, v = s.split('=', maxsplit=1)
-            k: str = k.strip()
-            v: str = v.strip().rstrip(',').strip().split('!')[0]  # Ignore trailing comma of the line
-            # Some keys have numbers as their labels, like 'celldm(i)', where $i = 1, \ldots, 6$. So we need to
-            # separate them.
-            if '(' in k:
-                # Only take the part before the first '('
-                k_prefix = re.match("(\w+)\(?(\d*)\)?", k, flags=re.IGNORECASE).group(1)
-            else:
-                k_prefix = k
-            if k_prefix in namelist_names:
-                # Only capture the value, ignore possible comment
-                result.update({k: v.strip()})
-            else:
-                raise KeyError("'{0}' is not a valid name in '{1}' namelist!".format(k_prefix, self.namelist.caption))
-        return result
