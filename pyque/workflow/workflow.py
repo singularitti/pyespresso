@@ -202,7 +202,7 @@ print("K0 = %6.3f" % std[1])
 print("Kp = %6.3f\n" % std[2])
 
 print("chi = %7.4f" % chi)
-pv.write("Results for a Vinet EoS fitting:\n")
+pv.write("Results for a VinetEoS EoS fitting:\n")
 pv.write("V0 = %6.4f    K0 = %4.2f    Kp = %4.2f\n" % (eosPar[0], eosPar[1], eosPar[2]))
 pv.close()
 
@@ -330,7 +330,7 @@ print("chi = %7.4f\n" % chi)
 print("The final EoS is written in the file Out_file.dat\n")
 print("I hope you have a great day! See you next time.")
 
-out.write("Final Results for a Vinet EoS fitting:\n")
+out.write("Final Results for a VinetEoS EoS fitting:\n")
 out.write("V0 = %6.4f    K0 = %4.2f    Kp = %4.2f\n" % (eosFinalPar[0], eosFinalPar[1], eosFinalPar[2]))
 out.close()
 

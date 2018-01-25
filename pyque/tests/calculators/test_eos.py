@@ -8,15 +8,15 @@ But if unittest does not pass, there must be bug(s) in the program.
 
 import unittest
 
-from pyque.calculator.eos import Vinet
+from pyque.tools.eos import VinetEoS
 
 
 class TestVinet(unittest.TestCase):
     def setUp(self):
-        self.vinet = Vinet()
+        self.vinet = VinetEoS()
 
     def test_vinet(self):
         self.assertAlmostEqual(self.vinet.p_vs_v(100, 137.6852, 283.29, 4.86), 190.99334615)
 
     def test_solve_p_vs_v(self):
-        self.assertAlmostEqual(self.vinet.solve_p_vs_v(0, 137.6852, 283.29, 4.86)[0], 137.6852)
+        self.assertAlmostEqual(self.vinet.solve_v_by_p(0, 137.6852, 283.29, 4.86)[0], 137.6852)

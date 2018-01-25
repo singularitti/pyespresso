@@ -27,7 +27,7 @@ class BatchTemplateLexer(SimpleLexer):
 
         :return: '#!/bin/sh' or something like that.
         """
-        for line in self.stream_generator():
+        for line in self.text_stream.stream_generator():
             if line.startswith('#!'):
                 return line.strip("\n")
         else:
@@ -35,7 +35,7 @@ class BatchTemplateLexer(SimpleLexer):
             return None
 
     def parse_directives(self):
-        for line in self.stream_generator():
+        for line in self.text_stream.stream_generator():
             if line.startswith('#!'):
                 line = next(line)
 
@@ -53,12 +53,11 @@ class SlurmSystemBatchLexer(SimpleLexer):
 
         :return: '#!/bin/sh' or something like that.
         """
-        for line in self.stream_generator():
+        for line in self.text_stream.stream_generator():
             if line.startswith('#!'):
                 return line.strip("\n")
         else:
             warnings.warn('No shebang was found for this input!')
-            return None
 
     def parse_directives(self) -> Dict[str, str]:
         """
@@ -68,7 +67,7 @@ class SlurmSystemBatchLexer(SimpleLexer):
         """
 
         directives = {}
-        for line in self.stream_generator():
+        for line in self.text_stream.stream_generator():
             if 'SBATCH' in line.upper():
                 directive_name, directive_value = re.match("#\s*SBATCH\s*--?(\w*-?\w*-?\w*)\s?=?(\w+:?\w*:?\w*)",
                                                            line).groups()
@@ -82,7 +81,7 @@ class SlurmSystemBatchLexer(SimpleLexer):
         :return:
         """
         modules = set()
-        for line in self.stream_generator():
+        for line in self.text_stream.stream_generator():
             if 'module load' in line:
                 module, = re.match("module load\s+(\w.*)", line).groups()
                 modules.add(module)
@@ -98,4 +97,4 @@ class SlurmSystemBatchLexer(SimpleLexer):
         def predicate(s):
             return any(s.startswith(token) for token in ['#', '\n', 'module load'])
 
-        return [line.rstrip("\n") for line in filterfalse(predicate, self.stream_generator())]
+        return [line.rstrip("\n") for line in filterfalse(predicate, self.text_stream.stream_generator())]

@@ -5,15 +5,14 @@ from typing import *
 
 import numpy as np
 
-from pyque.lexer.simple import SimpleLexer, NamelistLexer
-from pyque.meta.namelist import DEFAULT_INPUTPH_NAMELIST
+from pyque.lexer.simple import SimpleLexer
 from pyque.tools.strings import strings_to_floats
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
 
 
-class INPUTPHNamelistLexer(NamelistLexer):
+class INPUTPHNamelistLexer:
     def __init__(self, infile):
         super().__init__(infile, DEFAULT_INPUTPH_NAMELIST)
 
@@ -73,8 +72,7 @@ class PhononOutputLexer(SimpleLexer):
         :return: q-points array and bands array.
         """
         path_num = len(density)
-        q_array = np.concatenate(
-            [np.zeros([1, density[i], 3]) for i in range(path_num)])
+        q_array = np.concatenate([np.zeros([1, density[i], 3]) for i in range(path_num)])
         q = []  # A list of all q-points
         bands = []  # A list of all bands
         with open(self.infile, 'r') as f:

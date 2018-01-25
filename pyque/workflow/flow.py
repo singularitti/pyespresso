@@ -457,14 +457,14 @@ def create_ph_input(name):
 
 
 def vinet(V, V0, K0, Kp):
-    """ Vinet EoS functions """
+    """ VinetEoS EoS functions """
     f = (V / V0) ** (1 / 3)
     P = 3 * K0 * ((1 - f) / f ** 2) * np.exp(1.5 * (Kp - 1) * (1 - f))
     return P
 
 
 def dvinet(V, paramd):
-    """ First derivative ofo Vinet EoS. Necessary to find the volumes with the Newton-Raphson method"""
+    """ First derivative ofo VinetEoS EoS. Necessary to find the volumes with the Newton-Raphson method"""
     f = (V / paramd[0]) ** (1 / 3)
     dP = -3 * paramd[1] * (1 / f ** 2 + (2 * (1 - f)) / f ** 3 + (1.5 * (1 - f) * (paramd[2] - 1)) / f ** 2) * np.exp(
         1.5 * (paramd[2] - 1) * (1 - f)) * (1 / (3 * paramd[0] * f ** 2))

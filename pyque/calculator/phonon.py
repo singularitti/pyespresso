@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
-import pyque.calculator.maths as mm
-from pyque.tools.converters import *
+import pyque.tools.maths as mm
 from pyque.lexer.phonon import *
 
 # Type aliases

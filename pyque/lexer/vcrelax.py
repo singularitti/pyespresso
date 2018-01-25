@@ -25,7 +25,7 @@ class VCRelaxOutfileReader:
         v_list = []
         with open(inp, 'r') as f:
             for line in islice(f, start, None):
-                if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
+                if 'Results' in line:  # Read lines until meet "Results for a VinetEoS EoS fitting"
                     break
                 else:
                     sp = line.split()
@@ -49,7 +49,7 @@ class VCRelaxOutfileReader:
         with open(inp, 'r') as f:
             for line in islice(f, start, None):
                 count += 1
-                if 'Results' in line:  # Read lines until meet "Results for a Vinet EoS fitting"
+                if 'Results' in line:  # Read lines until meet "Results for a VinetEoS EoS fitting"
                     sp = f.readline().split()  # Read next line
                     if 'V0' in sp:
                         v0 = float(sp[2])

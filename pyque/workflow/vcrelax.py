@@ -1,144 +1,106 @@
 #!/usr/bin/env python3
-# created at Jul 21, 2017 12:30 by Qi Zhang
 """
 This will do crude guess and vc-relax simulation automatically.
 """
 
+import copy
 import os
+import pathlib
+import re
 import subprocess
 import time
+from typing import *
+import schedule
 
 import numpy as np
-from scipy.optimize import curve_fit
 
-from pyque.lexer.batch import BatchTemplateLexer
-from . import flow
+from pyque.core.qe_input import PWscfInput
+from pyque.core.submitter import Submitter
+from pyque.lexer.pwscf import PWscfOutputLexer
+from pyque.tools.eos import VinetEoS
 
 
 class VCRelaxSubmitter:
-    def __init__(self, job_head: str):
-        self.input_dat = 'submitters.dat'
-        self.pressures, self.v0, self.k0, self.k0p, self.vecs, self.vol_sc = self.read_input_params(
-            self.input_dat)
-        self.pressures_num = self.pressures.size
+    def __init__(self, volumes, pwscf_inp, batch_inp):
+        self.volumes = volumes
+        self.pwscf_inp: PWscfInput = pwscf_inp
+        self.batch_inp = batch_inp
         self.error = 'CRASH'
-        self.ps_cg, self.vs_cg, self.eos_opt_cg, self.eos_cov_cg = self._fit_crude_guess()
-        # Scheduling
-        tree = BatchTemplateLexer(job_head).tree
-        self.cores_num = tree['cores_num']
-        self.nodes_num = tree['nodes_num']
-        self.modules = tree['modules']
-        self.shell_shebang = tree['shell_shebang']
 
-    @staticmethod
-    def read_input_params(filename: str) -> tuple:
-        """
-        submitters.dat has information on the calculation:
-        The pressures to be calculated,
-        the initial guess for V0, K0 and K0',
-        and the lattice vectors, necessary to calculate the lattice parameter with the volume.
+    @property
+    def scaling_factors(self) -> List[float]:
+        a1, a2, a3 = self.pwscf_inp.cell_parameters['value']
+        v0 = np.fabs(np.dot(a3, np.cross(a1, a2)))
+        return [(vol / v0) ** (1 / 3) for vol in self.volumes]
 
-        :param filename: str
-        :return: (np.ndarray, float, float, float)
-        """
-        with open(filename, 'r') as f:
-            lines = f.readlines()
-
-        # Convert str to numpy.float64
-        pressures = np.array(lines[0].split(), dtype=float)
-        num_pressures = pressures.size
-        if num_pressures < 7:
-            print('You have' + str(num_pressures) + 'pressure points!')
-            print(
-                'At least 7 are necessary for a good quality EOS fitting, please, modify your submitters basics.')
-        else:
-            print('You have' + str(num_pressures) +
-                  'pressure points, more than 7! You are a smart user!')
-
-        v0, k0, k0p = np.array(lines[1].split(), dtype=float)
-        # lattice vectors a1, a2, a3
-        a1 = np.array(lines[2].split(), dtype=float)
-        a2 = np.array(lines[3].split(), dtype=float)
-        a3 = np.array(lines[4].split(), dtype=float)
-        vecs = np.stack((a1, a2, a3))
-        # volume of a simple cubic
-        vol_sc = np.fabs(np.dot(a3, np.cross(a1, a2)))
-
-        return pressures, v0, k0, k0p, vecs, vol_sc
-
-    def _distribute_task(self) -> int:
+    def distribute_task(self) -> int:
         """
         Distribute calculations on different pressures evenly to all processors you have.
 
         :return: number of cores per pressure
         """
-        print('You have {0} pressures and {1} cores.'.format(self.pressures_num, self.cores_num * self.nodes_num))
-        div = int(self.nodes_num * self.cores_num / self.pressures_num)
-
-        if (self.nodes_num * self.cores_num) % self.pressures_num == 0:
-            print('Therefore, I will consider {0} cores per pressure.'.format(div))
+        scheduler = self.batch_inp
+        tasks_number = len(self.volumes)
+        cpus_per_task, remainder = divmod(scheduler.nodes_number * scheduler.cpus_per_node, tasks_number)
+        if not remainder:  # If *remainder* is 0.
+            print('Therefore, I will consider {0} cpus per volume.'.format(cpus_per_task))
         else:
-            raise TypeError('Number of cores is not divided by number of pressures!')
+            import warnings
+            warnings.warn('Number of cpus is not divided by number of volumes!', stacklevel=2)
+        return cpus_per_task
 
-        return div
-
-    def crude_guess(self):
+    def generate_crude_guess_folder(self):
         """
         This subroutine creates 'cg_' folders, and then starts each crude guess defined in each 'cg_' folders,
         and monitor it with a job_id.
 
         :return:
         """
-        cg_found = []
+        cg_found = set()
 
-        for p in self.pressures:
-            if os.path.exists('cg_' + str(p)):
-                # Checks if cg_p folders exist.
-                print('Folders cg for P = ' + str(p) + 'found.')
-                cg_found.append(p)
+        for v in self.volumes:
+            job_dir = 'cg_{0}'.format(v)
+            if pathlib.Path(job_dir).is_dir():
+                # Check if cg_ folders exist.
+                print('Folders cg for V = {0} found.'.format(v))
+                if pathlib.Path(job_dir + '/job.sh').exists() and pathlib.Path(job_dir + '/pwscf.in').exists():
+                    cg_found.add(v)
 
-        # Return the sorted, unique values in self.pressures that are not in cg_found.
-        not_calculated: np.ndarray = np.setdiff1d(self.pressures, cg_found)
+        # Return the sorted, unique values in *self.volumes* that are not in cg_found.
+        not_calculated: Set[float] = set(self.volumes) - cg_found
 
-        # If flag_cg is True, continuously calculate.
-        if not_calculated == np.array([]):
+        if not_calculated == set():
             print('All cg calculations exist. Proceeding to vc-relax calculation.')
-            flag_cg = False
+            return schedule.CancelJob
         else:
-            print('There are remaining pressures {0} to be calculated.'.format(not_calculated.tolist()))
-            flag_cg = True
-
-        while flag_cg:
+            print('There are remaining volumes {0} to be calculated.'.format(not_calculated))
             # Create jobs for those which have not been calculated.
             # If all have been calculated, skip this part and goes to vc-relax optimization.
-            # The create_files accept an array, so it calculates the whole array, but I think maybe we can make it
-            # accept one and loop against the array?
-            print('Now I will generate the basics for a crude guess scf calculation.')
-            flow.create_files(not_calculated, (self.v0, self.k0,
-                                               self.k0p), self.vecs, self.vol_sc, 'cg_', 'scf')
-            flow.create_job(self.job_lines, not_calculated, self._distribute_task(), 'job-cg.sh', 'cg_', 'pw',
-                            self.modules)
+            print('Now I will generate the folders for a crude guess scf calculation.')
+            for i, v in enumerate(not_calculated):
+                pathlib.Path('./cg_{0}'.format(v)).mkdir(parents=False, exist_ok=False)
+                inp = copy.deepcopy(self.pwscf_inp)
+                inp.system_namelist['celldm(1)'] *= self.scaling_factors[i]
+                inp.to_text_file('./cg_{0}/pwscf.in'.format(v))
+                self.batch_inp.directive.cpus_per_task = self.distribute_task()
+                self.batch_inp.to_text_file('./cg_{0}/job.sh'.format(v))
 
-            job_sub = subprocess.Popen(['sbatch', 'job-cg.sh'], stdout=subprocess.PIPE)
-            output = job_sub.stdout.read().split()[-1]
-            job_id = int(output)
-            print('Job submitted. The job ID is {0}.'.format(job_id))
-            print('Waiting for calculation. This can take a while, you can grab a coffee!')
-
-            # This part monitors the job execution.
-            flag_job_cg = True
-            while flag_job_cg:
-                job_status = subprocess.Popen(['squeue', '-j', str(job_id)],
-                                              stdout=subprocess.PIPE)  # request SLURM queue information
-                outqueue = job_status.stdout.read().split()
-                # readers is a string that contains the job ID. If it is not in the queue information, the job is done.
-                if output not in outqueue:
-                    print(
-                        "Crude guess is done! Continuing calculation... I hope your coffee was good!")
-                    flag_job_cg = False
-                else:  # If it is, sleeps a little bit and request queue information again.
-                    time.sleep(2)
-            flag_cg = False
+    def submit_crude_guess(self):
+        schedule.every(3).seconds.do(self.generate_crude_guess_folder)
+        ids = []
+        for v in self.volumes:
+            path = 'cg_' + str(v)
+            while not pathlib.Path(path + '/job.sh').exists() or not pathlib.Path(path + '/inp' + v + '.in').exists():
+                # create job.sh or inp.in
+                new_id = Submitter('job.sh').submit()
+                if new_id:
+                    ids.append(new_id)
+                else:
+                    time.sleep(5)
+        if len(ids) == len(self.volumes):
+            return ids
+        else:
+            return None
 
     def read_crude_guess_output(self) -> tuple:
         """
@@ -151,50 +113,28 @@ class VCRelaxSubmitter:
         ps = []
         vs = []
 
-        for p in self.pressures:
+        for p in self.volumes:
             if self.error in os.listdir('cg_' + str(p)):
-                # If 'CRASH' basics exist, something went wrong. Stop the workflow.
-                raise FileExistsError(
-                    'Something went wrong, CRASH basics found. Check your cg outputs.')
+                # If 'CRASH' file exists, something went wrong. Stop the workflow.
+                raise RuntimeError('Something went wrong, CRASH basics found. Check your cg outputs.')
             else:
-                output_file = 'cg_' + str(p) + '/' + 'cg_' + str(p) + '.out'
+                output_file = 'cg_' + str(p) + '/cg_' + str(p) + '.out'
                 try:
                     with open(output_file, 'r') as cg_out:
-                        lines = cg_out.readlines()
+                        lines = cg_out.read()
                 except FileNotFoundError:  # Check if readers basics exist.
-                    print('The readers file for P ={0} was not found. \
-                        Removing it from list and continuing calculation.'.format(p))
+                    print('The file for P = {0} was not found. Remove it from list and continue calculation.'.format(p))
                     error_files_num += 1
                 else:
-                    for i in range(len(lines)):
-                        if re.findall('P=', lines[i]):
-                            ps.append(
-                                float(lines[i].split('=')[-1].strip()) / 10)
-                        if re.findall('volume', lines[i]):
-                            vs.append(float(lines[i].split()[-2].strip()))
+                    lexer = PWscfOutputLexer(instream=lines)
+                    vs.append(lexer.lex_cell_volume())
+                    ps.append(lexer.lex_pressure())
 
-        if error_files_num > int(self.pressures_num / 2):
-            # If more that a half of the calculations are not found, stop the workflow.
-            raise RuntimeError('More than a half of pressures were not calculated.')
-
-        if set(ps) != set(self.pressures) or len(ps) != len(vs):
+        if set(ps) != set(self.volumes) or len(ps) != len(vs):
             # If the number of volumes are not equal to the number of pressures, something is wrong, stop the workflow.
             raise RuntimeError('Some pressures were not found in the basics. Please, review your data.')
 
         return ps, vs
-
-    def _fit_crude_guess(self) -> Tuple[List[float], List[float], np.ndarray, np.ndarray]:
-        """
-        This will use the submitters V0, K0, and K0', as well as the list of P and V from read_crude_guess_output,
-        to fit the Vinet equation of state.
-        eos_opt are the returned V0, K0, and K0' for Vinet EOS.
-        eos_cov are the estimated covariance of eos_opt.
-
-        :return: (list, list, np.ndarray, np.ndarray)
-        """
-        ps, vs = self.read_crude_guess_output()
-        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, self.v0, self.k0, self.k0p)
-        return ps, vs, eos_opt, eos_cov
 
     def write_crude_guess_result(self):
         """
@@ -203,32 +143,30 @@ class VCRelaxSubmitter:
 
         :return:
         """
-        print('The initial volumes and pressures were written in the file Initial_PxV.dat')
+        print('The initial volumes and pressures were written in the file Initial_P_vs_V.')
 
-        ps, vs, eos_opt, eos_cov = self._fit_crude_guess()
+        ps, vs = self.read_crude_guess_output()
+        eos_opt, eos_cov = self.vinet.fit_p_vs_v(vs, ps)
         std = np.sqrt(np.diag(eos_cov))
 
-        with open('Initial_PxV.dat', 'w') as cg:
-            cg.write('Initial PxV\n')
-            cg.write('P (GPa)     V (au^3)\n')
+        with open('Initial_P_vs_V', 'w') as f:
+            f.write('P (GPa)     V (au^3)\n')
 
             for i in range(0, len(ps)):
-                cg.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
+                f.write("{:7.2f}   {:7.2f}\n".format(ps[i], vs[i]))
 
             print('EOS fitted, these are the standard deviations:')
-            print('std V0 = %6.3f' % std[0])
-            print('std K0 = %6.3f' % std[1])
-            print('std Kp = %6.3f' % std[2])
+            print('std V0 = {:6.3f}'.format(std[0]))
+            print('std K0 = {:6.3f}'.format(std[1]))
+            print('std K0p = {:6.3f}'.format(std[2]))
 
             chi2 = 0
             for i in range(0, len(ps)):
-                chi2 = chi2 + (ps[i] - flow.vinet(vs[i],
-                                                  eos_opt[0], eos_opt[1], eos_opt[2])) ** 2
+                chi2 = chi2 + (ps[i] - VinetEoS(eos_opt[0], eos_opt[1], eos_opt[2]).p_vs_v(vs[i])) ** 2
             chi = np.sqrt(chi2)
-            print('chi = %7.4f' % chi)
-            cg.write('Results for a Vinet EOS fitting:')
-            cg.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' %
-                     (eos_opt[0], eos_opt[1], eos_opt[2]))
+            print('chi = {:7.4f}'.format(chi))
+            f.write('Results for a VinetEoS EOS fitting:')
+            f.write('V0 = {:6.4f}    K0 = {:4.2f}    K0p = {:4.2f}'.format(eos_opt[0], eos_opt[1], eos_opt[2]))
 
     def vc_relax(self):
         """
@@ -241,14 +179,14 @@ class VCRelaxSubmitter:
 
         vc_found = []
 
-        for ps in self.pressures:
+        for ps in self.volumes:
             if os.path.exists('vc_' + str(ps)):
                 # Checks if cg_p folders exist.
                 print('Folders vc for P = ' + str(ps) + 'found.')
                 vc_found.append(ps)
 
         # Return the sorted, unique values in self.pressures that are not in cg_found.
-        uncalculated: np.ndarray = np.setdiff1d(self.pressures, vc_found)
+        uncalculated: np.ndarray = np.setdiff1d(self.volumes, vc_found)
         # If flag_cg is True, continuously calculate.
         if uncalculated == np.array([]):
             print('All vc calculations exist. Proceeding to EOS fitting.')
@@ -262,7 +200,7 @@ class VCRelaxSubmitter:
             print('Now I will generate the basics for a vc-relax calculation.')
             flow.create_files(uncalculated, eos_opt, self.vecs,
                               self.vol_sc, 'vc_', 'vc-relax')
-            flow.create_job(self.job_lines, uncalculated, self._distribute_task(), 'job-vc.sh', 'vc_', 'pw',
+            flow.create_job(self.job_lines, uncalculated, self.distribute_task(), 'job-vc.sh', 'vc_', 'pw',
                             self.modules)
 
             job_sub_vc = subprocess.Popen(
@@ -301,7 +239,7 @@ class VCRelaxSubmitter:
         paux = []
         vs = []
 
-        for p in self.pressures:
+        for p in self.volumes:
             if self.error in os.listdir('vc_' + str(p)):
                 print(
                     'CRASH file found. Something went wrong with the vc-relax calculation, check your basics.')
@@ -325,21 +263,9 @@ class VCRelaxSubmitter:
 
         return ps, vs
 
-    def _fit_vc_relax(self):
-        """
-        This will use the submitters V0, K0, and K0', as well as the list of P and V from read_vc_relax_output,
-        to fit the Vinet equation of state.
-        eos_opt are the returned V0, K0, and K0' for Vinet EOS.
-        eos_cov are the estimated covariance of eos_opt.
-
-        :return: (list, list, np.ndarray, np.ndarray)
-        """
-        ps, vs = self.read_vc_relax_output()
-        eos_opt, eos_cov = curve_fit(flow.vinet, vs, ps, *self.eos_opt_cg)
-        return ps, vs, eos_opt, eos_cov
-
     def write_vc_relax_result(self):
-        ps, vs, eos_opt, eos_cov = self._fit_vc_relax()
+        ps, vs = self.read_vc_relax_output()
+        eos_opt, eos_cov = self.vinet.fit_p_vs_v(vs, ps)
 
         if len(ps) != len(vs):
             raise ValueError(
@@ -354,7 +280,7 @@ class VCRelaxSubmitter:
             vc.write('P (GPa)    V (au^3)\n')
             for i in range(len(ps)):
                 vc.write("%7.2f   %7.2f\n" % (ps[i], vs[i]))
-                vc.write('Final Results for a Vinet EOS fitting:\n')
+                vc.write('Final Results for a VinetEoS EOS fitting:\n')
                 vc.write('V0 = %6.4f    K0 = %4.2f    Kp = %4.2f' %
                          (eos_opt[0], eos_opt[1], eos_opt[2]))
 
