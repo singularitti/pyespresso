@@ -14,7 +14,7 @@ from collections import OrderedDict
 from typing import *
 from lazy_property import LazyProperty
 
-from pyque.meta.namelist import DEFAULT_CONTROL_NAMELIST, CONTROLNamelistVariable
+from pyque.core.namelist import DEFAULT_CONTROL_NAMELIST, CONTROLNamelistVariable
 
 
 class PWscfInteractiveConsole:

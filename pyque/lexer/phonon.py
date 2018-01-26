@@ -77,7 +77,7 @@ class PhononOutputLexer(SimpleLexer):
         bands = []  # A list of all bands
         with open(self.infile, 'r') as f:
             headline = f.readline()
-            nbnd = int(re.findall("nbnd=\s+(\d+)", headline)[0])  # Number of bands for each q-point
+            nbnd = int(re.findall("nbnd=\s+(\d+)", headline )[0])  # Number of bands for each q-point
             nq = int(re.findall("nks=\s+(\d+)", headline)[0])
             bands_array = np.concatenate(
                 [np.zeros([path_num, density[i], nbnd]) for i in range(path_num)])

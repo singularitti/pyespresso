@@ -35,7 +35,7 @@ class PWscfInputLexer:
     def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
         self.linesep = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
         self.namelist_sep = "/\s*[\r\n]"
-        self.__text_stream = TextStream(instream=instream, infile=infile)
+        self.__text_stream = TextStream(inp=instream, infile=infile)
 
     @property
     def namelist_identifiers(self) -> List[str]:

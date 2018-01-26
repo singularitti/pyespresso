@@ -5,7 +5,7 @@ from typing import *
 from pyque.core.cards import AutomaticKPoints
 from pyque.core.qe_input import PWscfInput
 from pyque.lexer.pwscf import PWscfInputLexer
-from pyque.meta.namelist import namelist_variable, NamelistDict
+from pyque.core.namelist import namelist_variable, NamelistDict
 
 # ========================================= What can be exported? =========================================
 __all__ = ['PWscfInputParser']

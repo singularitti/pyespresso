@@ -1,57 +1,50 @@
 #!/usr/bin/env python3
+"""
+The example of Quantum ESPRESSO input is got from
+`here <https://github.com/maxhutch/quantum-espresso/blob/master/PW/examples/example02/run_example>`_.
+"""
 
-from unittest import TestCase
+import unittest
 
 from pyque.meta.text import TextStream
 
-instream = """\
+inp = """\
 &CONTROL
-calculation = 'scf'
-restart_mode = 'from_scratch'
-tstress = .true.
-tprnfor = .true.
-prefix = 'Fe-hcp'
-pseudo_dir = './pseudo'
-outdir = './tmp'
-etot_conv_thr = 1.0E-6
-forc_conv_thr = 1.0D-4
-dt = 15
-nstep = 100
+  calculation  = "relax",
+  prefix       = "CO",
+  pseudo_dir   = "$PSEUDO_DIR",
+  outdir       = "$TMP_DIR",
 /
 &SYSTEM
-ibrav = 0
-celldm(1) = 4.493745
-nat = 2
-ntyp = 1
-ecutwfc = 80.0
-ecutrho = 320.0
-occupations = 'smearing'
-degauss = 0.005
-smearing = 'mp'
+  ibrav     = 0,
+  nat       = 2,
+  ntyp      = 2,
+  ecutwfc   = 24.D0,
+  ecutrho   = 144.D0,
 /
 &ELECTRONS
-diagonalization = 'david'
-mixing_mode = 'plain'
-mixing_beta = 0.3
-conv_thr = 1.0d-8
+  conv_thr    = 1.D-7,
+  mixing_beta = 0.7D0,
 /
-CELL_PARAMETERS
-          1.0000000000         0.0000000000         0.0000000000 
-         -0.5000000000         0.8660254000         0.0000000000 
-          0.0000000000         0.0000000000         1.6040000000  
+&IONS
+/
+CELL_PARAMETERS bohr
+12.0  0.0  0.0
+ 0.0 12.0  0.0
+ 0.0  0.0 12.0
 ATOMIC_SPECIES
-Fe   1.0   Fe.KS.GGA-PBE-paw.UPF   
-ATOMIC_POSITIONS { crystal }
-Fe   0.333333333333333   0.666666666666667   0.250000000000000   
-Fe   0.666666666666667   0.333333333333333   0.750000000000000   
-K_POINTS { automatic }
-4 4 4 1 1 1
+O  1.00  O.pz-rrkjus.UPF
+C  1.00  C.pz-rrkjus.UPF
+ATOMIC_POSITIONS {bohr}
+C  2.256  0.0  0.0
+O  0.000  0.0  0.0  0 0 0
+K_POINTS {Gamma}
 """
 
 
-class StreamTester(TestCase):
+class StreamTester(unittest.TestCase):
     def setUp(self):
-        self.ts = TextStream(instream=instream)
+        self.ts = TextStream(inp)
 
     def test_contents(self):
-        self.assertEqual(self.ts.contents, instream)
+        self.assertEqual(self.ts.contents, inp)
