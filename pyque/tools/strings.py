@@ -11,7 +11,6 @@
 
 import re
 from typing import *
-import fortranformat as ff
 
 # ========================================= What can be exported? =========================================
 __all__ = ['strings_to_', 'strings_to_integers', 'strings_to_floats', 'string_to_double_precision_float',

@@ -19,3 +19,21 @@ def compute_3d_distance(point1: List[float], point2: List[float]) -> np.float64:
     point1 = np.array(point1)
     point2 = np.array(point2)
     return np.sqrt(((point2 - point1) ** 2).sum())
+
+
+def derivative1d(a: Union[np.ndarray, List[float]], b: Union[np.ndarray, List[float]]):
+    """
+    Given 2 array-like objects, compute the first-order derivative for *a* W.R.T *b*.
+
+    :param a: An array-like object, same length as *b*.
+    :param b: An array-like object, same length as *a*.
+    :return: A numpy array which has the same length as *a* and *b*.
+
+    .. doctest::
+
+        >>> a = np.array([1, 2, 3, 5, 6])
+        >>> b = np.array([0.5, 1.5, 1, 2, 3])
+        >>> derivative1d(a, b)
+        array([1. , 4. , 6. , 1.5, 1. ])
+    """
+    return np.gradient(a) / np.gradient(b)
