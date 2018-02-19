@@ -9,7 +9,6 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
-from pyque.meta.text import TextStream
 from lazy_property import LazyWritableProperty
 
 

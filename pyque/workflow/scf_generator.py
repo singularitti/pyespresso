@@ -6,7 +6,7 @@ from typing import DefaultDict
 
 from lazy_property import LazyProperty
 
-from pyque.default_configuerations.generator_mappings import pwscf_generator_config
+from pyque.settings.generator_mappings import pwscf_generator_config
 from pyque.meta.text import TextStream
 
 

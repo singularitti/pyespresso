@@ -5,10 +5,10 @@ import warnings
 from itertools import filterfalse
 from typing import *
 
-from pyque.lexer.simple import SimpleLexer
+from pyque.lexer import simple
 
 
-class BatchTemplateLexer(SimpleLexer):
+class BatchTemplateLexer(simple.SimpleLexer):
     def parse_scheduler(self) -> str:
         return self._match_one_pattern("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
 
@@ -47,7 +47,7 @@ class BatchTemplateLexer(SimpleLexer):
                 'shebang': self.parse_shebang()}
 
 
-class SlurmSystemBatchLexer(SimpleLexer):
+class SlurmSystemBatchLexer(simple.SimpleLexer):
     def parse_shebang(self) -> Optional[str]:
         """
 

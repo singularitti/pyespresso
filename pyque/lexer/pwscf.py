@@ -10,7 +10,7 @@ from typing import *
 import numpy as np
 from lazy_property import LazyProperty
 
-from pyque.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints, CellParameters
+from pyque.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints
 from pyque.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
@@ -32,10 +32,10 @@ class PWscfInputLexer:
     This class reads a standard Quantum ESPRESSO PWscf input file or string in, and lex it.
     """
 
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
-        self.linesep = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
+    def __init__(self, inp: str):
+        self.newline = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
         self.namelist_sep = "/\s*[\r\n]"
-        self.__text_stream = TextStream(inp=instream, infile=infile)
+        self.__text_stream = TextStream(inp, newline=self.newline)
 
     @property
     def namelist_identifiers(self) -> List[str]:
@@ -62,7 +62,7 @@ class PWscfInputLexer:
         """
         match_records = dict()
         identifiers: List[str] = self.namelist_identifiers
-        s: str = self.__text_stream.contents
+        s: str = self.__text_stream.content
         for pattern in identifiers:
             # ``re.compile`` will produce a regular expression object, on which we can use its ``search`` method.
             m0 = re.compile(pattern, flags=re.IGNORECASE).search(s, match_records.get(pattern, pos))
@@ -91,7 +91,7 @@ class PWscfInputLexer:
         """
         match_records = dict()
         identifiers: List[str] = self.card_identifiers
-        s: str = self.__text_stream.contents
+        s: str = self.__text_stream.content
         if not pos:
             pos = list(self.__get_namelist_identifier_positions().values())[-1].end
         for pattern in identifiers:
@@ -145,14 +145,14 @@ class PWscfInputLexer:
         identifier = '&' + group_name
         if group_name in self.namelists_found:
             begin, end = self.__get_namelist_identifier_positions()[identifier]
-            return re.split(self.linesep, self.__text_stream.contents[begin:end])
+            return re.split(self.newline, self.__text_stream.content[begin:end])
         else:
             warnings.warn("Identifier '{0}' is not found in input!".format(identifier), stacklevel=2)
 
     def __get_card(self, identifier) -> Optional[List[str]]:
         if identifier in self.cards_found:
             begin, end = self.__get_card_identifier_positions()[identifier]
-            return re.split(self.linesep, self.__text_stream.contents[begin:end])
+            return re.split(self.newline, self.__text_stream.content[begin:end])
         else:
             warnings.warn("Identifier '{0}' is not found in input!".format(identifier), stacklevel=2)
 
@@ -378,9 +378,8 @@ class PWscfInputLexer:
 
 # ====================================== The followings are output readers. ======================================
 class PWscfOutputLexer:
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None, encoding: Optional[str] = None,
-                 newline='\n'):
-        self.text_stream = TextStream(instream, infile, encoding, newline)
+    def __init__(self, inp: str, encoding: Optional[str] = None, newline='\n'):
+        self.text_stream = TextStream(inp, encoding, newline)
 
     def _match_one_pattern(self, pattern: str, *args, **kwargs) -> Union[None, Any, List]:
         """
@@ -390,7 +389,7 @@ class PWscfOutputLexer:
         :param args: a wrapper function which determines the returned type of value
         :return: Determined by the `wrapper`, the value you want to grep out from pyque.the file.
         """
-        s = self.text_stream.contents()
+        s = self.text_stream.content
         match: Optional[List[str]] = re.findall(pattern, s,
                                                 **kwargs)  # `match` is either an empty list or a list of strings.
         if match:
@@ -523,7 +522,7 @@ class PWscfOutputLexer:
         stress_atomic = np.zeros((3, 3))
         stress_kbar = np.zeros((3, 3))
         stress = {'atomic': stress_atomic, 'kbar': stress_kbar}
-        for line in self.text_stream.stream_generator():
+        for line in self.text_stream.generator():
             if 'total   stress' in line:
                 for i in range(3):  # Read a 3x3 matrix
                     line = next(line)
@@ -556,7 +555,7 @@ class PWscfOutputLexer:
             flag = False  # If flag is true, read line and match pattern, if not true, no need to match pattern
             k_count = 0  # Count how many k-points have been read
             k_num = None  # How many k-points in total, given by Quantum ESPRESSO
-            for line in self.text_stream.stream_generator():
+            for line in self.text_stream.generator():
                 if 'number of k points=' in line:
                     k_num = re.findall("number of k points=\s+(\d+)", line)[0]
                     g.write("{0}\n".format(k_num))
@@ -591,7 +590,7 @@ class PWscfOutputLexer:
                         "They maybe too close so there is no space between them! Try to add a space!"
         stress = np.zeros((3, 3))
 
-        for line in self.text_stream.stream_generator():
+        for line in self.text_stream.generator():
             if name in line and 'stress' in line:  # Read the first line of the matrix
                 try:
                     stress[0][:] = list(map(float, re.findall(name + reg1, line)[0][:]))

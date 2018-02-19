@@ -3,7 +3,7 @@
 from markdown import markdownFromFile
 from setuptools import setup
 
-setup(name='PyQuE',
+setup(name='pyque',
       version='0.0.1',
       classifiers=[
           'Development Status :: 0.0.1',

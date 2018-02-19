@@ -6,7 +6,7 @@ from typing import Union
 
 from lazy_property import LazyWritableProperty, LazyProperty
 
-from pyque.default_configuerations.scheduler import DEFAULT_SLURM_CONFIG
+from pyque.settings.scheduler import DEFAULT_SLURM_SETTING
 from pyque.meta.descriptors import LabeledDescriptor, DescriptorOwnerMeta
 
 # ========================================= What can be exported? =========================================
@@ -37,7 +37,7 @@ class _Time(LabeledDescriptor):
 
 def _slurm_system_config(item: str):
     if True:
-        return DEFAULT_SLURM_CONFIG[item]
+        return DEFAULT_SLURM_SETTING[item]
 
 
 class SlurmSystem(metaclass=DescriptorOwnerMeta):

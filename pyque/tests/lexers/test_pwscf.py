@@ -54,7 +54,7 @@ K_POINTS {automatic}
 
 class TestPWscfInputLexer(unittest.TestCase):
     def setUp(self):
-        self.lexer = PWscfInputLexer(instream=instream_sample)
+        self.lexer = PWscfInputLexer(inp=instream_sample)
 
     def test_namelists_found(self):
         self.assertEqual(self.lexer.namelists_found, {'&CONTROL', '&SYSTEM', '&ELECTRONS'})

@@ -4,7 +4,7 @@
 import re
 from typing import *
 
-from pyque.meta.text import TextStream
+from ..meta import text
 
 
 # ========================================= What can be exported? =========================================
@@ -14,9 +14,8 @@ from pyque.meta.text import TextStream
 
 # ========================================= define useful data structures =========================================
 class SimpleLexer:
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None, encoding: Optional[str] = None,
-                 newline='\n'):
-        self.text_stream = TextStream(instream, infile, encoding, newline)
+    def __init__(self, inp: Optional[str] = None):
+        self.text_stream = text.TextStream(inp)
 
     def _match_one_string(self, pattern: str, *args):
         pass
@@ -29,7 +28,7 @@ class SimpleLexer:
         :param args: a wrapper function which determines the returned type of value
         :return: Determined by the `wrapper`, the value you want to grep out from pyque.the file.
         """
-        s = self.text_stream.contents()
+        s = self.text_stream.content()
         match: Optional[List[str]] = re.findall(pattern, s,
                                                 **kwargs)  # `match` is either an empty list or a list of strings.
         if match:
@@ -52,7 +51,7 @@ class SimpleLexer:
         :return: a list of `n` columns that contain the contents of each column
         """
         n_columns = [[] for _ in range(n)]
-        for line in self.text_stream.contents:
+        for line in self.text_stream.content:
             if not line.split():  # If line is ''
                 continue
             else:
@@ -84,7 +83,7 @@ class SimpleLexer:
         keys = []
         values = []
         # Add utf-8 support because we may use special characters.
-        for line in self.text_stream.stream_generator():
+        for line in self.text_stream.generator():
             sp = line.split()
             keys.append(sp[col_index])
             del sp[col_index]  # Remove the indexing column

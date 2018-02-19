@@ -16,7 +16,7 @@ from typing import Union, Dict, Set
 import addict
 from lazy_property import LazyWritableProperty
 
-from pyque.default_configuerations.namelist import TYPED_NAMELISTS, NAMELISTS_NAMES
+from pyque.settings.namelist import TYPED_NAMELISTS, NAMELISTS_NAMES
 from pyque.tools.strings import string_to_general_float, all_string_like
 
 # ========================================= What can be exported? =========================================

@@ -126,7 +126,7 @@ class VCRelaxSubmitter:
                     print('The file for P = {0} was not found. Remove it from list and continue calculation.'.format(p))
                     error_files_num += 1
                 else:
-                    lexer = PWscfOutputLexer(instream=lines)
+                    lexer = PWscfOutputLexer(inp=lines)
                     vs.append(lexer.lex_cell_volume())
                     ps.append(lexer.lex_pressure())
 
