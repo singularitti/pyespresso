@@ -146,7 +146,7 @@ class VCRelaxSubmitter:
         print('The initial volumes and pressures were written in the file Initial_P_vs_V.')
 
         ps, vs = self.read_crude_guess_output()
-        eos_opt, eos_cov = self.vinet.fit_p_vs_v(vs, ps)
+        eos_opt, eos_cov = self.vinet.fit_p_of_v(vs, ps)
         std = np.sqrt(np.diag(eos_cov))
 
         with open('Initial_P_vs_V', 'w') as f:
@@ -162,7 +162,7 @@ class VCRelaxSubmitter:
 
             chi2 = 0
             for i in range(0, len(ps)):
-                chi2 = chi2 + (ps[i] - VinetEoS(eos_opt[0], eos_opt[1], eos_opt[2]).p_vs_v(vs[i])) ** 2
+                chi2 = chi2 + (ps[i] - VinetEoS(eos_opt[0], eos_opt[1], eos_opt[2]).p_of_v(vs[i])) ** 2
             chi = np.sqrt(chi2)
             print('chi = {:7.4f}'.format(chi))
             f.write('Results for a VinetEoS EOS fitting:')
@@ -265,7 +265,7 @@ class VCRelaxSubmitter:
 
     def write_vc_relax_result(self):
         ps, vs = self.read_vc_relax_output()
-        eos_opt, eos_cov = self.vinet.fit_p_vs_v(vs, ps)
+        eos_opt, eos_cov = self.vinet.fit_p_of_v(vs, ps)
 
         if len(ps) != len(vs):
             raise ValueError(

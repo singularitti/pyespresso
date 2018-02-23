@@ -16,7 +16,7 @@ class TestVinet(unittest.TestCase):
         self.vinet = VinetEoS()
 
     def test_vinet(self):
-        self.assertAlmostEqual(self.vinet.p_vs_v(100, 137.6852, 283.29, 4.86), 190.99334615)
+        self.assertAlmostEqual(self.vinet.p_of_v(100, 137.6852, 283.29, 4.86), 190.99334615)
 
     def test_solve_p_vs_v(self):
         self.assertAlmostEqual(self.vinet.solve_v_by_p(0, 137.6852, 283.29, 4.86)[0], 137.6852)
