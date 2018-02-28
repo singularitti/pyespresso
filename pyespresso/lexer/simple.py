@@ -1,21 +1,30 @@
 #!/usr/bin/env python3
-# created at Oct 20, 2017 6:13 PM by Qi Zhang
+"""
+:mod:`mod` -- title
+========================================
 
+.. module mod
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: doc
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
+
+import io
 import re
 from typing import *
 
-from ..meta import text
-
+from pyespresso.meta import text
 
 # ========================================= What can be exported? =========================================
+__all__ = ['SimpleLexer']
 
 
 # ================================= These are some type aliases or type definitions. =================================
 
 # ========================================= define useful data structures =========================================
 class SimpleLexer:
-    def __init__(self, inp: Optional[str] = None):
-        self.text_stream = text.TextStream(inp)
+    def __init__(self, inp: Union[str, io.StringIO, None] = None, newline: Optional[str] = None, **kwargs):
+        self.text_stream = text.TextStream(inp, newline, **kwargs)
 
     def _match_one_string(self, pattern: str, *args):
         pass

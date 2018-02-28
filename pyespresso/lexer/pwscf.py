@@ -32,7 +32,7 @@ class PWscfInputLexer:
     This class reads a standard Quantum ESPRESSO PWscf input file or string in, and lex it.
     """
 
-    def __init__(self, inp: str):
+    def __init__(self, inp: Optional[str] = None):
         self.newline = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
         self.namelist_sep = "/\s*[\r\n]"
         self.__text_stream = TextStream(inp, newline=self.newline)

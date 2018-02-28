@@ -106,7 +106,6 @@ ENV/
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
-*.log
 *.lot
 *.fls
 *.out
@@ -345,7 +344,6 @@ _build
 *.dll
 *.exe
 *.o
-*.so
 
 # Packages #
 ############
@@ -362,7 +360,6 @@ _build
 
 # Logs and databases #
 ######################
-*.log
 *.sql
 *.sqlite
 

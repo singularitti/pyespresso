@@ -3,17 +3,17 @@
 from typing import *
 
 from pyespresso.core.cards import AutomaticKPoints
+from pyespresso.core.namelist import namelist_variable, NamelistDict
 from pyespresso.core.qe_input import PWscfInput
 from pyespresso.lexer.pwscf import PWscfInputLexer
-from pyespresso.core.namelist import namelist_variable, NamelistDict
 
 # ========================================= What can be exported? =========================================
 __all__ = ['PWscfInputParser']
 
 
 class PWscfInputParser:
-    def __init__(self, instream: Optional[str] = None, infile: Optional[str] = None):
-        self.lexer = PWscfInputLexer(instream, infile)
+    def __init__(self, inp: Optional[str] = None):
+        self.lexer = PWscfInputLexer(inp)
 
     def parse_namelist(self, group_name: str):
         d = self.lexer.lex_namelist(group_name)

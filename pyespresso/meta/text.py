@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 :mod:`text` -- Text Data Model
-========================================
+==============================
 
 .. module text
    :platform: Unix, Windows, Mac, Linux
@@ -11,8 +11,7 @@
 
 import io
 import pathlib
-import shutil
-import sys
+from sys import stdin
 from typing import Optional, Iterator, Tuple, Union
 
 from lazy_property import LazyProperty
@@ -35,7 +34,8 @@ class TextStream:
     then the string will be parsed by this separator.
     If you give a file path in *inp*, and if it is valid, then the file will be read.
 
-    :param inp:
+    :param inp: Input, can be a string, an ``io.StringIO`` object, or ``None`` (which means read from standard input).
+        If the *inp* is a valid path for the system, the file the *inp* directs will be used.
     :param newline: This optional argument is just the ``newline`` argument for the builtin ``open`` function
         or the argument for ``StringIO``.
     :param kwargs:
@@ -50,7 +50,7 @@ class TextStream:
         self.__infile_path = None
 
         if inp is None:
-            self.__stream: io.StringIO = io.StringIO(sys.stdin.read(), newline=newline)
+            self.__stream: io.StringIO = io.StringIO(stdin.read(), newline=newline)
         elif isinstance(inp, str):
             if pathlib.Path(inp).expanduser().is_file():
                 self.__infile_path = inp
@@ -156,6 +156,8 @@ class TextStream:
         :param filename:
         :return: ``None``
         """
+        import shutil
+
         if not pathlib.Path(filename).expanduser().exists():
             raise FileNotFoundError()
 
