@@ -3,7 +3,7 @@
 from markdown import markdownFromFile
 from setuptools import setup
 
-setup(name='pyque',
+setup(name='pyespresso',
       version='0.0.1',
       classifiers=[
           'Development Status :: 0.0.1',
@@ -12,13 +12,12 @@ setup(name='pyque',
       ],
       description='The Pythonic Quantum ESPRESSO package',
       long_description=markdownFromFile(input='README.md'),
-      url='https://bitbucket.org/singularitti/pyque',
+      url='https://bitbucket.org/singularitti/pyespresso',
       author='Qi Zhang',
       author_email='qz2280@columbia.edu',
       license='MIT',
       install_requires=['addict',
                         'beeprint',
-                        'fortranformat',
                         'json_tricks',
                         'lazy-property',
                         'Markdown',
