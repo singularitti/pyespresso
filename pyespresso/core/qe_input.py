@@ -4,15 +4,14 @@ import os
 import re
 import warnings
 from typing import *
-import io
 
 import numpy as np
 from json_tricks import dump, dumps
 from lazy_property import LazyWritableProperty
 
+from pyespresso.core.namelist import LazyNamelist, NamelistDict
 from pyespresso.meta.card import LazyCard
 from pyespresso.meta.descriptors import LabeledDescriptor
-from pyespresso.meta.namelist import LazyNamelist, NamelistDict
 from pyespresso.tools.path_generators import path_generator
 
 # ========================================= What can be exported? =========================================

@@ -10,17 +10,17 @@ from pyespresso.lexer import simple
 
 class BatchTemplateLexer(simple.SimpleLexer):
     def parse_scheduler(self) -> str:
-        return self._match_one_pattern("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
+        return self.match_one_string("Scheduler:\s*(\w+)", flags=re.IGNORECASE)
 
     def parse_modules(self) -> List[str]:
         match = re.findall("Necessary modules.*:\s*(\w.*)", str(self), flags=re.IGNORECASE | re.MULTILINE)
         return list(map(lambda s: s.strip(), match[0].split(',')))
 
     def parse_nodes_num(self) -> int:
-        return self._match_one_pattern("Number of nodes:\s*(\d+)")
+        return self.match_one_string("Number of nodes:\s*(\d+)")
 
     def parse_cores_num(self) -> int:
-        return self._match_one_pattern("Number of processors:\s*(\d+)")
+        return self.match_one_string("Number of processors:\s*(\d+)")
 
     def parse_shebang(self) -> Optional[str]:
         """

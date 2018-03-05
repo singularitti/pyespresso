@@ -13,7 +13,7 @@ import io
 import re
 from typing import *
 
-from pyespresso.meta import text
+from pyespresso.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
 __all__ = ['SimpleLexer']
@@ -24,33 +24,41 @@ __all__ = ['SimpleLexer']
 # ========================================= define useful data structures =========================================
 class SimpleLexer:
     def __init__(self, inp: Union[str, io.StringIO, None] = None, newline: Optional[str] = None, **kwargs):
-        self.text_stream = text.TextStream(inp, newline, **kwargs)
+        self.text_stream = TextStream(inp, newline, **kwargs)
 
-    def _match_one_string(self, pattern: str, *args):
-        pass
-
-    def _match_one_pattern(self, pattern: str, *args, **kwargs):
+    def match_one_string(self, pattern: str, flags: Optional[int] = 0) -> Optional[str]:
         """
         This method matches a pattern which exists only once in the file.
 
         :param pattern: a regular expression that you want to match
-        :param args: a wrapper function which determines the returned type of value
+        :param flags:
         :return: Determined by the `wrapper`, the value you want to grep out from pyespresso.the file.
         """
-        s = self.text_stream.content()
-        match: Optional[List[str]] = re.findall(pattern, s,
-                                                **kwargs)  # `match` is either an empty list or a list of strings.
-        if match:
-            if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
-                return match
-            elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
-                wrapper, = args
-                return [wrapper(m) for m in match]
-            else:
-                raise TypeError('Multiple wrappers are given! Only one should be given!')
-        else:  # If no match is found
-            print('Pattern {0} not found in string {1}!'.format(pattern, s))
+        text: str = self.text_stream.content
+        regex: Pattern = re.compile(pattern, flags)
+        match: Optional[Match] = regex.search(text)
+
+        if not match:  # If no match is found
+            print("Pattern {0} is not found!".format(pattern))
             return None
+
+        return match.group(0)
+
+    def _match_to_float(self, pattern: str) -> Optional[float]:
+        _: Optional[str] = self.match_one_string(pattern)
+
+        if not _:  # If no match is found
+            return None
+
+        return float(_)
+
+    def _match_to_int(self, pattern: str) -> Optional[int]:
+        _: Optional[str] = self.match_one_string(pattern)
+
+        if not _:  # If no match is found
+            return None
+
+        return int(_)
 
     def _read_n_columns(self, n: int) -> List[List[str]]:
         """

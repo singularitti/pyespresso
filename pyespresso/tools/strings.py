@@ -86,8 +86,6 @@ def string_to_double_precision_float(s: str) -> float:
     """
     first, second, exponential = re.match("(-?\d*)\.?(-?\d*)d(-?\d+)", s, re.IGNORECASE).groups()
     return float(first + '.' + second + 'e' + exponential)
-    # reader = ff.FortranRecordReader('(D64.32)')
-    # return reader.read(s)[0]
 
 
 def string_to_general_float(s: str) -> float:

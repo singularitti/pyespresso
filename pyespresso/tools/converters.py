@@ -175,8 +175,8 @@ class MoleConverter(UnitConverter):
         return options[option]().simple_converter(num / self.avogadro_const, from_unit, to_unit)
 
 
-def call_simple_converter(physical_quantity: str, numeric: Union[int, float, list, np.ndarray], from_unit: str,
-                          to_unit: str) -> Union[float, List[float], np.ndarray]:
+def simple_converter(physical_quantity: str, numeric: Union[int, float, list, np.ndarray], from_unit: str,
+                     to_unit: str) -> Union[float, List[float], np.ndarray]:
     """
     This is a polymorphism function, it can apply to any object that defined simple_converter method.
 

@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""
+:mod:`mod` -- title
+========================================
+
+.. module mod
+   :platform: Unix, Windows, Mac, Linux
+   :synopsis: doc
+.. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
+"""
 
 import operator
 import os
@@ -11,7 +20,10 @@ import numpy as np
 from lazy_property import LazyProperty
 
 from pyespresso.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints
+from pyespresso.lexer.simple import SimpleLexer
 from pyespresso.meta.text import TextStream
+from pyespresso.tools.strings import strings_to_integers
+from pyespresso.settings.pwscf import supported_content, stress_mapping
 
 # ========================================= What can be exported? =========================================
 __all__ = ['PWscfInputLexer', 'PWscfOutputLexer']
@@ -377,140 +389,13 @@ class PWscfInputLexer:
 
 
 # ====================================== The followings are output readers. ======================================
-class PWscfOutputLexer:
-    def __init__(self, inp: str, encoding: Optional[str] = None, newline='\n'):
-        self.text_stream = TextStream(inp, encoding, newline)
+class PWscfOutputLexer(SimpleLexer):
+    def whatis(self, property: str):
+        pass
 
-    def _match_one_pattern(self, pattern: str, *args, **kwargs) -> Union[None, Any, List]:
-        """
-        This method matches a pattern which exists only once in the file.
-
-        :param pattern: a regular expression that you want to match
-        :param args: a wrapper function which determines the returned type of value
-        :return: Determined by the `wrapper`, the value you want to grep out from pyespresso.the file.
-        """
-        s = self.text_stream.content
-        match: Optional[List[str]] = re.findall(pattern, s,
-                                                **kwargs)  # `match` is either an empty list or a list of strings.
-        if match:
-            if len(args) == 0:  # If no wrapper argument is given, return directly the matched string
-                return match
-            elif len(args) == 1:  # If wrapper argument is given, i.e., not empty, then apply wrapper to the match
-                wrapper, = args
-                return [wrapper(m) for m in match]
-            else:
-                raise TypeError('Multiple wrappers are given! Only one should be given!')
-        else:  # If no match is found
-            print('Pattern {0} not found in string {1}!'.format(pattern, s))
-
-    def lex_lattice_parameter(self) -> float:
-        """
-        Do not use it "as-is". This is a scaling number, not a 3x3 matrix containing the Cartesian coordinates.
-
-        :return: a scaling number that multiplies `CELL_PARAMETERS` is the read Cartesian coordinates of the primitive
-            vectors of a crystal.
-        """
-        return self._match_one_pattern("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float)
-
-    def lex_total_energy(self) -> float:
-        """
-        Read total energy from pyespresso.the output file. The val unit is Rydberg.
-
-        :return: total energy
-        """
-        return self._match_one_pattern("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float)
-
-    def lex_cell_volume(self) -> float:
-        """
-        Read the unit-cell volume, which is given at the beginning of the file.
-        The val unit is $\text{bohr}^3$.
-
-        :return: unit-cell volume
-        """
-        return self._match_one_pattern("unit-cell volume\s+=\s+(\d+\.\d+)", float)
-
-    def lex_pressure(self) -> float:
-        """
-        Read the pressure, which is at the bottom of the file.
-        The val unit is kbar.
-
-        :return: pressure at this volume
-        """
-        return self._match_one_pattern("P=\s+(-?\d+\.\d+)", float)
-
-    def lex_kinetic_energy_cutoff(self) -> float:
-        """
-        Read kinetic-energy cutoff, at the beginning of the file.
-
-        :return: kinetic-energy cutoff, $E_\text{cut}$
-        """
-        return self._match_one_pattern("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float)
-
-    def lex_charge_density_cutoff(self) -> float:
-        """
-        Read charge density cutoff, at the beginning of the file.
-
-        :return: charge density cutoff, $\rho_\text{cut}$
-        """
-        return self._match_one_pattern("charge density cutoff\s+=\s*(-?\d+\.\d+)", float)
-
-    def lex_atoms_num_per_cell(self) -> int:
-        return self._match_one_pattern("number of atoms\/cell\s+=\s*(\d+)", int)
-
-    def lex_atoms_types_num(self) -> int:
-        return self._match_one_pattern("number of atomic INPUTPH_types\s+=\s*(\d+)", int)
-
-    def lex_electrons_num(self) -> float:
-        return self._match_one_pattern("number of electrons\s+=\s*(-?\d+\.\d+)", float)
-
-    def lex_mixing_beta(self) -> float:
-        return self._match_one_pattern("mixing beta\s+=\s*(-?\d*\.\d+)", float)
-
-    def lex_nstep(self) -> int:
-        return self._match_one_pattern("nstep\s+=\s*(\d+)", int)
-
-    def lex_iteration_num(self) -> int:
-        """
-
-        :return: the number of iterations used to reach self-consistent convergence
-        """
-        return self._match_one_pattern("number of iterations used\s+=\s*(\d+)", int)
-
-    def lex_kinetic_stress(self) -> np.ndarray:
-        return self._lex_stress('kinetic')
-
-    def lex_local_stress(self) -> np.ndarray:
-        return self._lex_stress('local')
-
-    def lex_nonlocal_stress(self) -> np.ndarray:
-        return self._lex_stress('nonloc.')
-
-    def lex_hartree_stress(self) -> np.ndarray:
-        return self._lex_stress('hartree')
-
-    def lex_exc_cor_stress(self) -> np.ndarray:
-        return self._lex_stress('exc-cor')
-
-    def lex_corecor_stress(self) -> np.ndarray:
-        return self._lex_stress('corecor')
-
-    def lex_ewald_stress(self) -> np.ndarray:
-        return self._lex_stress('ewald')
-
-    def lex_hubbard_stress(self) -> np.ndarray:
-        return self._lex_stress('hubbard')
-
-    def lex_london_stress(self) -> np.ndarray:
-        return self._lex_stress('london')
-
-    def lex_xdm_stress(self) -> np.ndarray:
-        return self._lex_stress('XDM')
-
-    def lex_dft_nl_stress(self) -> np.ndarray:
-        return self._lex_stress('dft-nl')
-
-    def lex_ts_vdw_stress(self) -> np.ndarray:
-        return self._lex_stress('TS-vdW')
+    def lex_stress(self, stress_type: str):
+        stress = stress_mapping[stress_type]
+        return self._lex_stress(stress)
 
     def lex_total_stress(self, unit: Optional[str] = 'atomic') -> np.ndarray:
         """
@@ -586,8 +471,9 @@ class PWscfOutputLexer:
         """
         reg1 = "\s+stress\s+\(kbar\)\s*(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)"
         reg2 = "(-?\d+\.\d{2})\s*(-?\d+\.\d{2})\s*(-?\d+\.\d{2})"
-        error_message = "Some of the numbers in {0} stress are not distinguished!\n".format(name) + \
-                        "They maybe too close so there is no space between them! Try to add a space!"
+        error_message = """\
+        Some of the numbers in {0} stress are not distinguished!
+        They maybe too close so there is no space between them! Try to add a space!""".format(name)
         stress = np.zeros((3, 3))
 
         for line in self.text_stream.generator():
@@ -604,20 +490,24 @@ class PWscfOutputLexer:
                     raise IndexError(error_message)
         return stress
 
-    def lex_processors_num(self) -> int:
+    def lex_processors_num(self) -> Optional[int]:
         """
         Read how many processors were used in this calculation, which is given at the beginning of the file.
 
         :return: an integer denotes how many processors were used
         """
-        return self._match_one_pattern("running on\s*(\d+)\s+", int)
+        text: str = self.text_stream.content
+        regex: Pattern = re.compile("running on\s*(\d+)\s+ | Serial version")
+        match: Optional[Match] = regex.search(text)
 
-    def lex_symmetry_operations_num(self) -> int:
-        return self._match_one_pattern("(\d+)\s+Sym\. Ops.*found", int)
+        if not match:  # If no match is found
+            return None
 
-    def lex_fft_dimensions(self) -> List[int]:
+        return match.group(0)
+
+    def lex_fft_dimensions(self) -> Iterable[int]:
         """
 
         :return: a list contains 3 integers that denotes the FFT grid we use
         """
-        return list(map(int, self._match_one_pattern("FFT dimensions:\s+\(\s*(\d+),\s*(\d+),\s*(\d+)\)")))
+        return strings_to_integers(self.match_one_string("FFT dimensions:\s+\(\s*(\d+),\s*(\d+),\s*(\d+)\)"))

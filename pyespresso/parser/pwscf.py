@@ -74,3 +74,22 @@ class PWscfInputParser:
         #     setattr(obj, _.lower(), self.parse_card(_))
         obj.eval()
         return obj
+
+
+class PWscfOutputParser:
+    supported_content = {
+        'lattice_parameter': ("lattice parameter \(alat\)\s+=\s*(\d+\.\d+)", float),
+        'total_energy': ("!\s+total\s+energy\s+=\s+(-?\d+\.\d+)", float),
+        'cell_volume': ("unit-cell volume\s+=\s+(\d+\.\d+)", float),
+        'pressure': ("P=\s+(-?\d+\.\d+)", float),
+        'kinetic_energy_cutoff': ("kinetic-energy cutoff\s+=\s*(-?\d+\.\d+)", float),
+        'charge_density_cutoff': ("charge density cutoff\s+=\s*(-?\d+\.\d+)", float),
+        'atoms_num_per_cell': ("number of atoms\/cell\s+=\s*(\d+)", int),
+        'atoms_types_num': ("number of atomic INPUTPH_types\s+=\s*(\d+)", int),
+        'electrons_num': ("number of electrons\s+=\s*(-?\d+\.\d+)", float),
+        'ks_states_num': ("number of Kohn-Sham states\s*=\s*(\d+)", int),
+        'mixing_beta': ("mixing beta\s+=\s*(-?\d*\.\d+)", float),
+        'nstep': ("nstep\s+=\s*(\d+)", int),
+        'iteration_num': ("number of iterations used\s+=\s*(\d+)", int),
+        'symmetry_operations_num': ("(\d+)\s+Sym\. Ops.*found", int)
+    }
