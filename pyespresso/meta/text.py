@@ -36,27 +36,21 @@ class TextStream:
 
     :param inp: Input, can be a string, an ``io.StringIO`` object, or ``None`` (which means read from standard input).
         If the *inp* is a valid path for the system, the file the *inp* directs will be used.
-    :param newline: This optional argument is just the ``newline`` argument for the builtin ``open`` function
-        or the argument for ``StringIO``.
-    :param kwargs:
 
     .. [#f] Referenced from `here <https://docs.microsoft.com/en-us/cpp/c-runtime-library/text-and-binary-streams>`_.
     """
 
-    def __init__(self, inp: Union[str, io.StringIO, None] = None, newline: Optional[str] = None, **kwargs):
-        self.newline = newline
-        self.__open_kwargs: dict = kwargs
-
+    def __init__(self, inp: Union[str, io.StringIO, None] = None):
         self.__infile_path = None
 
         if inp is None:
-            self.__stream: io.StringIO = io.StringIO(stdin.read(), newline=newline)
+            self.__stream: io.StringIO = io.StringIO(stdin.read())
         elif isinstance(inp, str):
             if pathlib.Path(inp).expanduser().is_file():
                 self.__infile_path = inp
                 self.__stream = None
             else:
-                self.__stream: io.StringIO = io.StringIO(inp, newline=newline)
+                self.__stream: io.StringIO = io.StringIO(inp)
         elif isinstance(inp, io.StringIO):
             self.__stream = inp
         else:
@@ -72,7 +66,7 @@ class TextStream:
         if self.__infile_path is None:
             return self.__stream
         else:
-            with open(self.__infile_path, newline=self.newline, **self.__open_kwargs) as f:
+            with open(self.__infile_path) as f:
                 return io.StringIO(f.read())
 
     @LazyProperty
@@ -98,7 +92,7 @@ class TextStream:
             for line in stream:
                 yield line
         else:
-            with open(self.__infile_path, newline=self.newline, **self.__open_kwargs) as f:
+            with open(self.__infile_path) as f:
                 for line in f:
                     yield line
 
@@ -113,7 +107,7 @@ class TextStream:
             for line in stream:
                 yield line, stream.tell()
         else:
-            with open(self.__infile_path, newline=self.newline, **self.__open_kwargs) as f:
+            with open(self.__infile_path) as f:
                 for line in iter(f.readline, ''):
                     yield line, f.tell()
 
@@ -131,7 +125,7 @@ class TextStream:
             for line in stream:
                 yield line
         else:
-            with open(self.__infile_path, newline=self.newline, **self.__open_kwargs) as f:
+            with open(self.__infile_path) as f:
                 f.seek(offset, whence)
                 for line in f:
                     yield line
@@ -146,7 +140,7 @@ class TextStream:
         if self.__infile_path is None:
             return self.__stream.getvalue()
         else:
-            with open(self.__infile_path, newline=self.newline, **self.__open_kwargs) as f:
+            with open(self.__infile_path) as f:
                 return f.read()
 
     def to_file(self, filename: str) -> None:

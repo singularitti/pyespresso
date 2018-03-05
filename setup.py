@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-from markdown import markdownFromFile
 from setuptools import setup
+
+with open('README.rst') as f:
+    README = f.read()
 
 setup(name='pyespresso',
       version='0.0.1',
@@ -11,7 +13,7 @@ setup(name='pyespresso',
           'Programming Language :: Python :: 3.5',
       ],
       description='The Pythonic Quantum ESPRESSO package',
-      long_description=markdownFromFile(input='README.md'),
+      long_description=README,
       url='https://bitbucket.org/singularitti/pyespresso',
       author='Qi Zhang',
       author_email='qz2280@columbia.edu',
@@ -20,16 +22,17 @@ setup(name='pyespresso',
                         'beeprint',
                         'json_tricks',
                         'lazy-property',
-                        'Markdown',
                         'matplotlib',
                         'numpy',
                         'scipy',
-                        'spglib'],
+                        'spglib'
+                        ],
       include_package_data=True,
       packages=['basics',
                 'calculators',
                 'miscellaneous',
                 'plotters',
                 'readers',
-                'submitters'],
+                'submitters'
+                ],
       zip_safe=False)
