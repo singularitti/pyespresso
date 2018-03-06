@@ -9,12 +9,14 @@
 .. moduleauthor:: Qi Zhang <qz2280@columbia.edu>
 """
 
-import io
 import pathlib
+from io import StringIO
 from sys import stdin
 from typing import Optional, Iterator, Tuple, Union
 
 from lazy_property import LazyProperty
+
+from pyespresso.tools.os_path import is_path_exists_or_creatable
 
 # ========================================= What can be exported? =========================================
 __all__ = ['TextStream']
@@ -34,40 +36,37 @@ class TextStream:
     then the string will be parsed by this separator.
     If you give a file path in *inp*, and if it is valid, then the file will be read.
 
-    :param inp: Input, can be a string, an ``io.StringIO`` object, or ``None`` (which means read from standard input).
+    :param inp: Input, can be a string, an ``StringIO`` object, or ``None`` (which means read from standard input).
         If the *inp* is a valid path for the system, the file the *inp* directs will be used.
 
     .. [#f] Referenced from `here <https://docs.microsoft.com/en-us/cpp/c-runtime-library/text-and-binary-streams>`_.
     """
 
-    def __init__(self, inp: Union[str, io.StringIO, None] = None):
+    def __init__(self, inp: Union[str, StringIO, None] = None, **kwargs):
         self.__infile_path = None
 
         if inp is None:
-            self.__stream: io.StringIO = io.StringIO(stdin.read())
+            self.__stream = StringIO(stdin.read())
         elif isinstance(inp, str):
             if pathlib.Path(inp).expanduser().is_file():
                 self.__infile_path = inp
-                self.__stream = None
+                with open(inp, **kwargs) as f:
+                    self.__stream = StringIO(f.read())
             else:
-                self.__stream: io.StringIO = io.StringIO(inp)
-        elif isinstance(inp, io.StringIO):
+                self.__stream: StringIO = StringIO(inp)
+        elif isinstance(inp, StringIO):
             self.__stream = inp
         else:
             raise TypeError("The type '{0}' of *inp* argument is not supported!".format(type(inp)))
 
     @LazyProperty
-    def stream(self) -> io.StringIO:
+    def stream(self) -> StringIO:
         """
         Read-only property.
 
         :return:
         """
-        if self.__infile_path is None:
-            return self.__stream
-        else:
-            with open(self.__infile_path) as f:
-                return io.StringIO(f.read())
+        return self.__stream
 
     @LazyProperty
     def infile_path(self) -> Optional[pathlib.PurePath]:
@@ -87,14 +86,10 @@ class TextStream:
 
         :return: An iterator.
         """
-        if self.__infile_path is None:
-            stream = self.__stream
-            for line in stream:
-                yield line
-        else:
-            with open(self.__infile_path) as f:
-                for line in f:
-                    yield line
+        stream = self.__stream
+        stream.seek(0)
+        for line in stream:
+            yield line
 
     def generator_telling_position(self) -> Iterator[Tuple[str, int]]:
         """
@@ -102,33 +97,22 @@ class TextStream:
 
         :return: An iterator.
         """
-        if self.__infile_path is None:
-            stream = self.__stream
-            for line in stream:
-                yield line, stream.tell()
-        else:
-            with open(self.__infile_path) as f:
-                for line in iter(f.readline, ''):
-                    yield line, f.tell()
+        stream = self.__stream
+        stream.seek(0)
+        for line in stream:
+            yield line, stream.tell()
 
     def generator_starts_from(self, offset, whence: Optional[int] = 0) -> Iterator[str]:
         """
-
 
         :param offset:
         :param whence:
         :return:
         """
-        if self.__infile_path is None:
-            stream = self.__stream
-            stream.seek(offset, whence)
-            for line in stream:
-                yield line
-        else:
-            with open(self.__infile_path) as f:
-                f.seek(offset, whence)
-                for line in f:
-                    yield line
+        stream = self.__stream
+        stream.seek(offset, whence)
+        for line in stream:
+            yield line
 
     @LazyProperty
     def content(self) -> str:
@@ -137,11 +121,7 @@ class TextStream:
 
         :return: The whole contents of the file or the string.
         """
-        if self.__infile_path is None:
-            return self.__stream.getvalue()
-        else:
-            with open(self.__infile_path) as f:
-                return f.read()
+        return self.__stream.getvalue()
 
     def to_file(self, filename: str) -> None:
         """
@@ -152,8 +132,8 @@ class TextStream:
         """
         import shutil
 
-        if not pathlib.Path(filename).expanduser().exists():
-            raise FileNotFoundError()
+        if not is_path_exists_or_creatable(filename):
+            raise OSError('PATH is not reachable or exists!')
 
         with open(filename, 'w') as f:
             self.__stream.seek(0)
