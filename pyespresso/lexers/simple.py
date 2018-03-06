@@ -23,8 +23,8 @@ __all__ = ['SimpleLexer']
 
 # ========================================= define useful data structures =========================================
 class SimpleLexer:
-    def __init__(self, inp: Union[str, io.StringIO, None] = None, newline: Optional[str] = None, **kwargs):
-        self.text_stream = TextStream(inp, newline, **kwargs)
+    def __init__(self, inp: Union[str, io.StringIO, None] = None, **kwargs):
+        self.text_stream = TextStream(inp, **kwargs)
 
     def match_one_string(self, pattern: str, flags: Optional[int] = 0) -> Optional[str]:
         """

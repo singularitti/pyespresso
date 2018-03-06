@@ -20,7 +20,7 @@ import numpy as np
 from lazy_property import LazyProperty
 
 from pyespresso.core.cards import AtomicSpecies, AtomicPosition, AutomaticKPoints
-from pyespresso.lexer.simple import SimpleLexer
+from pyespresso.lexers.simple import SimpleLexer
 from pyespresso.meta.text import TextStream
 from pyespresso.tools.strings import strings_to_integers
 from pyespresso.settings.pwscf import supported_content, stress_mapping
@@ -44,10 +44,10 @@ class PWscfInputLexer:
     This class reads a standard Quantum ESPRESSO PWscf input file or string in, and lex it.
     """
 
-    def __init__(self, inp: Optional[str] = None):
+    def __init__(self, inp: Optional[str] = None, **kwargs):
         self.newline = "[\r\n,]"  # TODO: This will fail when ',' is inside a value of a parameter.
         self.namelist_sep = "/\s*[\r\n]"
-        self.__text_stream = TextStream(inp)
+        self.__text_stream = TextStream(inp, **kwargs)
 
     @property
     def namelist_identifiers(self) -> List[str]:

@@ -5,7 +5,7 @@ from os.path import join, pardir
 from unittest import TestCase
 
 from pyespresso.core.batch_input import BatchInput
-from pyespresso.lexer.batch import BatchTemplateLexer
+from pyespresso.lexers.batch import BatchTemplateLexer
 
 
 class BatchInputTester(TestCase):

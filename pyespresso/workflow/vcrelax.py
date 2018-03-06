@@ -16,7 +16,7 @@ import numpy as np
 
 from pyespresso.core.qe_input import PWscfInput
 from pyespresso.core.submitter import Submitter
-from pyespresso.lexer.pwscf import PWscfOutputLexer
+from pyespresso.lexers.pwscf import PWscfOutputLexer
 from pyespresso.tools.eos import VinetEoS
 
 

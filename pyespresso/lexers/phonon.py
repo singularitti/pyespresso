@@ -5,7 +5,7 @@ from typing import *
 
 import numpy as np
 
-from pyespresso.lexer.simple import SimpleLexer
+from pyespresso.lexers.simple import SimpleLexer
 from pyespresso.tools.strings import strings_to_floats
 
 # Type aliases

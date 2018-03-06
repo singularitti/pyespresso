@@ -9,7 +9,7 @@ import numpy as np
 from numpy.linalg import inv
 
 from pyespresso.tools.tensors import crystal_classes
-from pyespresso.lexer.elasticity import ElasticityOutputLexer
+from pyespresso.lexers.elasticity import ElasticityOutputLexer
 
 
 class ElasticityCalculator:

@@ -12,7 +12,7 @@ from lazy_property import LazyWritableProperty
 from pyespresso.core.namelist import LazyNamelist, NamelistDict
 from pyespresso.meta.card import LazyCard
 from pyespresso.meta.descriptors import LabeledDescriptor
-from pyespresso.tools.path_generators import path_generator
+from pyespresso.tools.os_path import path_generator
 
 # ========================================= What can be exported? =========================================
 __all__ = ['is_pwscf_input', 'print_pwscf_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',

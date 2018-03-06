@@ -13,7 +13,7 @@
 import unittest
 
 from pyespresso.core.cards import *
-from pyespresso.lexer.pwscf import PWscfInputLexer
+from pyespresso.lexers.pwscf import PWscfInputLexer
 
 instream_sample = """\
 &control

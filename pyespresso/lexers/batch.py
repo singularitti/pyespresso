@@ -5,7 +5,7 @@ import warnings
 from itertools import filterfalse
 from typing import *
 
-from pyespresso.lexer import simple
+from pyespresso.lexers import simple
 
 
 class BatchTemplateLexer(simple.SimpleLexer):
@@ -16,10 +16,10 @@ class BatchTemplateLexer(simple.SimpleLexer):
         match = re.findall("Necessary modules.*:\s*(\w.*)", str(self), flags=re.IGNORECASE | re.MULTILINE)
         return list(map(lambda s: s.strip(), match[0].split(',')))
 
-    def parse_nodes_num(self) -> int:
+    def parse_nodes_num(self) -> Optional[int]:
         return self.match_one_string("Number of nodes:\s*(\d+)")
 
-    def parse_cores_num(self) -> int:
+    def parse_cores_num(self) -> Optional[int]:
         return self.match_one_string("Number of processors:\s*(\d+)")
 
     def parse_shebang(self) -> Optional[str]:

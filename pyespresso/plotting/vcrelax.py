@@ -2,7 +2,7 @@
 # created at Jul 19, 2017 16:11 by Qi Zhang
 
 from pyespresso.plotting.plot_basic import *
-from pyespresso.lexer.elasticity import *
+from pyespresso.lexers.elasticity import *
 
 
 class PlotVCRelaxOutput(SingleAxes):

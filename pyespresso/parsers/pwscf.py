@@ -2,44 +2,31 @@
 
 from typing import *
 
+from f90nml import Parser as NamelistParser
+
 from pyespresso.core.cards import AutomaticKPoints
-from pyespresso.core.namelist import namelist_variable, NamelistDict
 from pyespresso.core.qe_input import PWscfInput
-from pyespresso.lexer.pwscf import PWscfInputLexer
+from pyespresso.lexers.pwscf import PWscfInputLexer
+from pyespresso.meta.text import TextStream
 
 # ========================================= What can be exported? =========================================
 __all__ = ['PWscfInputParser']
 
 
 class PWscfInputParser:
-    def __init__(self, inp: Optional[str] = None):
+    def __init__(self, inp: Optional[str] = None, **kwargs):
+        self.__text_stream = TextStream(inp, **kwargs)
         self.lexer = PWscfInputLexer(inp)
 
-    def parse_namelist(self, group_name: str):
-        d = self.lexer.lex_namelist(group_name)
-        # You do not need to worry about ``NamelistVariable`` here if you use ``==``.
-        return NamelistDict({k: namelist_variable(group_name, k, v) for k, v in d.items()})
+    def parse_namelist(self):
+        parser = NamelistParser()
+        return parser.read(self.__text_stream.stream)
 
-    def parse_control_namelist(self):
-        return self.parse_namelist('CONTROL')
-
-    def parse_system_namelist(self):
-        return self.parse_namelist('SYSTEM')
-
-    def parse_electrons_namelist(self):
-        return self.parse_namelist('ELECTRONS')
-
-    def parse_ions_namelist(self):
-        return self.parse_namelist('IONS')
-
-    def parse_cell_namelist(self):
-        return self.parse_namelist('CELL')
-
-    def parse_card(self, card_name: str):
+    def parse_card(self):
         return {'ATOMIC_SPECIES': self.parse_atomic_species, 'ATOMIC_POSITIONS': self.parse_atomic_positions,
                 'K_POINTS': self.parse_k_points, 'CELL_PARAMETERS': self.parse_cell_parameters,
                 'OCCUPATIONS': NotImplemented, 'CONSTRAINTS': NotImplemented,
-                'ATOMIC_FORCES': NotImplemented}[card_name]
+                'ATOMIC_FORCES': NotImplemented}
 
     def parse_atomic_species(self):
         return {'value': [_.eval() for _ in self.lexer.lex_atomic_species()]}

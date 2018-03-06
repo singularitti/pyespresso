@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 from pyespresso.calculator.phonon import *
-from pyespresso.lexer.elasticity import *
+from pyespresso.lexers.elasticity import *
 
 
 class PhononPlotData:

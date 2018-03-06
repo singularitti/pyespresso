@@ -5,7 +5,7 @@ from typing import Iterable, Union, Set, List, Optional
 from lazy_property import LazyWritableProperty, LazyProperty
 
 from pyespresso.core.scheduler import available_schedulers, SchedulerSystem
-from pyespresso.tools.path_generators import path_generator
+from pyespresso.tools.os_path import path_generator
 from pyespresso.tools.sets import add_elements_to_set, remove_elements_from_set
 from pyespresso.tools.strings import all_string_like
 

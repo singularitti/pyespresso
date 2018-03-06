@@ -8,7 +8,7 @@ from typing import *
 
 import numpy as np
 
-from pyespresso.lexer.simple import SimpleLexer
+from pyespresso.lexers.simple import SimpleLexer
 
 
 class ElasticityOutputLexer(SimpleLexer):

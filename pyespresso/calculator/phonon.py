@@ -2,7 +2,7 @@
 # created at Aug 18, 2017 11:21 PM by Qi Zhang
 
 import pyespresso.tools.maths as mm
-from pyespresso.lexer.phonon import *
+from pyespresso.lexers.phonon import *
 
 # Type aliases
 IntArray = Union[int, List[int], np.ndarray]
