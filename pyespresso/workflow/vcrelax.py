@@ -14,7 +14,7 @@ import schedule
 
 import numpy as np
 
-from pyespresso.core.qe_input import PWscfInput
+from pyespresso.core.qe_input import PWInput
 from pyespresso.core.submitter import Submitter
 from pyespresso.lexers.pwscf import PWscfOutputLexer
 from pyespresso.tools.eos import VinetEoS
@@ -23,7 +23,7 @@ from pyespresso.tools.eos import VinetEoS
 class VCRelaxSubmitter:
     def __init__(self, volumes, pwscf_inp, batch_inp):
         self.volumes = volumes
-        self.pwscf_inp: PWscfInput = pwscf_inp
+        self.pwscf_inp: PWInput = pwscf_inp
         self.batch_inp = batch_inp
         self.error = 'CRASH'
 

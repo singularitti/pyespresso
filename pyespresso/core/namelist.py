@@ -20,7 +20,7 @@ from pyespresso.settings.namelist import TYPED_NAMELISTS, NAMELISTS_NAMES
 from pyespresso.tools.strings import string_to_general_float, all_string_like
 
 # ========================================= What can be exported? =========================================
-__all__ = ['LazyNamelist', 'NamelistDict', 'builtin_to_qe_string', 'qe_string_to_builtin', 'namelist_variable',
+__all__ = ['LazyNamelist', 'NamelistDict', 'builtin_to_f90', 'f90_to_builtin', 'namelist_variable',
            'NamelistVariable', 'CONTROLNamelistVariable', 'SYSTEMNamelistVariable',
            'ELECTRONSNamelistVariable', 'IONSNamelistVariable', 'CELLNamelistVariable', 'INPUTPHNamelistVariable']
 
@@ -83,7 +83,7 @@ def namelist_variable(group_name: str, name: str, value: NamelistVariableValue):
             'INPUTPH': INPUTPHNamelistVariable}[group_name](name, value)
 
 
-def builtin_to_qe_string(obj: object):
+def builtin_to_f90(obj: object):
     """
     An instance of a builtin type can be converted to a Quantum ESPRESSO legal string.
 
@@ -105,12 +105,12 @@ def builtin_to_qe_string(obj: object):
         raise TypeError("Invalid type '{0}' is given!".format(type(obj).__name__))
 
 
-def qe_string_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
+def f90_to_builtin(obj: Union[int, float, bool, str], desired_type: str):
     """
     A Quantum ESPRESSO legal string can be converted to an instance of a Python builtin type.
 
     :param obj: Legal type of *obj* can be one of ``int``, ``str``, ``bool``, ``float``, cannot be anything else. This
-        maybe a little bit confusing because the name of this function is *qe_string_to_builtin*. However, it is for
+        maybe a little bit confusing because the name of this function is *f90_to_builtin*. However, it is for
         compatibility consideration because you may already have a an instance of a Python builtin type.
     :param desired_type: Should be a string indicating the type you want the *obj* to be converted to.
     :return: An instance of a Python builtin type, converted from *obj*.
@@ -150,7 +150,7 @@ class LazyNamelist(LazyWritableProperty):
     def to_text(self):
         d = dict()
         for k, v in self.method.items():
-            d.update({k: builtin_to_qe_string(v)})
+            d.update({k: builtin_to_f90(v)})
         return '\n'.join(list(d.items()))
 
 
@@ -171,7 +171,7 @@ class NamelistDict(addict.Dict):
     def to_text(self):
         lines = []
         for k, v in self.items():
-            lines.append("{0} = {1}".format(k, builtin_to_qe_string(v.value)))
+            lines.append("{0} = {1}".format(k, builtin_to_f90(v.value)))
         return '\n'.join(lines)
 
 
@@ -242,7 +242,7 @@ class NamelistVariable(NamelistVariableABC):
 
     @property
     def value(self) -> NamelistVariableValue:
-        return qe_string_to_builtin(self.__value, self.default_type)
+        return f90_to_builtin(self.__value, self.default_type)
 
     @value.setter
     def value(self, new_value: NamelistVariableValue) -> None:
@@ -250,14 +250,14 @@ class NamelistVariable(NamelistVariableABC):
 
     def eval(self) -> None:
         # This will change the value!
-        self.__value = qe_string_to_builtin(self.__value, self.default_type)
+        self.__value = f90_to_builtin(self.__value, self.default_type)
 
     @property
     def in_namelist(self) -> str:
         return self.__in_namelist
 
     def to_qe_str(self) -> str:
-        return builtin_to_qe_string(self.value)
+        return builtin_to_f90(self.value)
 
     def to_dict(self) -> Dict[str, Union[str, NamelistVariableValue]]:
         return {'name': self.name, 'value': self.value, 'default_type': self.default_type}

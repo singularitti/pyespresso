@@ -2,119 +2,47 @@
 
 import os
 import re
-import warnings
 from typing import *
 
+import addict
 import numpy as np
 from json_tricks import dump, dumps
 from lazy_property import LazyWritableProperty
 
 from pyespresso.core.namelist import LazyNamelist, NamelistDict
-from pyespresso.meta.card import LazyCard
-from pyespresso.meta.descriptors import LabeledDescriptor
 from pyespresso.tools.os_path import path_generator
 
 # ========================================= What can be exported? =========================================
-__all__ = ['is_pwscf_input', 'print_pwscf_input', 'PWscfInput', 'SCFInput', 'VCRelaxInput',
-           'PHononInput']
+__all__ = ['is_pw_input', 'print_pw_input', 'PWInput', 'PHononInput']
 
 # ========================================= variables declaration =========================================
 _input_attr = {'CONTROL': 'control_namelist', 'SYSTEM': 'system_namelist', 'ELECTRONS': 'electrons_namelist'}
 
 
 # ========================================= define useful functions =========================================
-def is_pwscf_input(obj: object):
-    if isinstance(obj, PWscfInput):
+def is_pw_input(obj: object):
+    if isinstance(obj, PWInput):
         return True
     return False
 
 
-def print_pwscf_input(obj: object):
-    if is_pwscf_input(obj):
+def print_pw_input(obj: object):
+    if is_pw_input(obj):
         try:
             from beeprint import pp
             pp(obj)
         except ModuleNotFoundError:
             print(obj)
     else:
-        raise TypeError("{0} is not a {1} object!".format(obj, type(obj).__name__))
+        raise TypeError("{0} is not a {1} object!".format(obj, obj.__class__.__name__))
 
 
 # ========================================= define useful data structures =========================================
-class _OptionWithWarning(LabeledDescriptor):
-    def __set__(self, instance, new_option: str):
-        if not new_option:  # if new_option is None:
-            warnings.warn('Not specifying units is DEPRECATED and will no longer be allowed in the future!',
-                          category=DeprecationWarning)
-        else:
-            instance.__dict__[self.label] = new_option
 
 
 # ========================================= most important data structures =========================================
-class PWscfInput:
-    @LazyNamelist
-    def control_namelist(self) -> NamelistDict:
-        """
-        Input variables that control the flux of the calculation and the amount of I/O on disk and on the screen.
-
-        :return:
-        """
-        return NamelistDict()
-
-    @LazyNamelist
-    def system_namelist(self) -> NamelistDict:
-        """
-        Input variables that specify the system under study.
-
-        :return:
-        """
-        return NamelistDict()
-
-    @LazyNamelist
-    def electrons_namelist(self) -> NamelistDict:
-        """
-        input variables that control the algorithms used to reach the self-consistent solution of KS
-        equations for the electrons.
-
-        :return:
-        """
-        return NamelistDict()
-
-    @LazyNamelist
-    def ions_namelist(self) -> NamelistDict:
-        return NamelistDict()
-
-    @LazyNamelist
-    def cell_namelist(self) -> NamelistDict:
-        return NamelistDict()
-
-    @LazyCard
-    def cell_parameters(self) -> Dict:
-        return {'option': None, 'value': None}
-
-    @LazyCard
-    def atomic_species(self) -> Dict:
-        """
-        name, mass and pseudopotential used for each atomic species present in the system
-        :return:
-        """
-        return {'option': None, 'value': None}
-
-    @LazyCard
-    def atomic_positions(self) -> Dict:
-        """
-        type and coordinates of each atom in the unit cell
-        :return:
-        """
-        return {'option': None, 'value': None}
-
-    @LazyWritableProperty
-    def k_points(self) -> Dict:
-        """
-        coordinates and weights of the k-points used for BZ integration
-        :return:
-        """
-        return {'option': None, 'value': None}
+class PWInput(addict.Dict):
+    __slots__ = ('namelists', 'cards', 'eval', 'to_dict', 'to_text', 'to_text_file', 'to_json', 'to_json_file')
 
     def eval(self):
         for attr in dir(self):
@@ -182,32 +110,6 @@ class PWscfInput:
             dump(self.to_dict(), f)
         print("Object '{0}' is successfully written to file {1}!".format(type(self).__name__,
                                                                          os.path.abspath(outfile_path)))
-
-
-class SCFInput(PWscfInput):
-    pass
-
-
-class VCRelaxInput(PWscfInput):
-    @LazyNamelist
-    def ions_namelist(self):
-        """
-        needed when ATOMS MOVE! IGNORED otherwise ! input variables that control ionic motion in
-        molecular dynamics run or structural relaxation.
-
-        :return:
-        """
-        pass
-
-    @LazyNamelist
-    def cell_namelist(self):
-        """
-        needed when CELL MOVES! IGNORED otherwise ! input variables that control the cell-shape evolution
-        in a variable-cell-shape MD or structural relaxation.
-
-        :return:
-        """
-        pass
 
 
 class PHononInput:
